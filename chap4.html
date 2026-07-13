@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 4 — Fiche de révision — Fixed Job Priority (FJP) / EDF</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  h4.sub{font-size:.92rem; margin:1.1rem 0 .4rem; font-family:Helvetica,Arial,sans-serif; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.03em;}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  .formal .step{margin:.3rem 0;}
+  .q{font-style:italic; color:var(--sub); font-size:.93rem; margin:.5rem 0; padding-left:.9rem; border-left:3px dotted var(--border);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  code{background:var(--shade); padding:.05rem .3rem; border-radius:3px; font-family:monospace; font-size:.9em;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 4 — Fiche de révision</h1>
+<p class="subtitle">Fixed Job Priority (FJP) assignment — INFO-F404. Entièrement consacré à EDF : optimalité, puis tests de schedulabilité du cas le plus simple au plus général. 🔍 = exemple chiffré d'abord, 📝 = version formelle à citer à l'oral.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s40">Introduction : de FTP à FJP</a></li>
+<li><a href="#s41">Optimalité d'EDF</a></li>
+<li><a href="#s42">Tests de schedulabilité</a>
+  <ol>
+  <li><a href="#s42a">Synchrone, deadline implicite</a></li>
+  <li><a href="#s42b">Synchrone, deadline arbitraire</a></li>
+  <li><a href="#s42c">Asynchrone, deadline arbitraire</a></li>
+  </ol>
+</li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s40">4.0 — Introduction : de FTP à FJP</h2>
+<div class="concept">
+<p><span class="lead">Contexte</span> Le chapitre précédent fixait une priorité <b>par tâche</b>, une fois pour toutes (FTP). Ici, la priorité est fixée <b>par job</b>, à l'exécution : deux jobs de la même tâche peuvent avoir des priorités différentes. L'algorithme étudié dans tout ce chapitre est <b>EDF</b> <span class="eng">(Earliest Deadline First)</span> : à chaque instant, le CPU va au job actif dont la deadline absolue est la plus proche.</p>
+<div class="remark"><span class="lead">Pourquoi EDF mérite tout un chapitre</span> Contrairement à RM/DM (optimaux seulement dans des cas restreints), EDF va se révéler optimal dans un sens beaucoup plus large — et ça change même la façon de raisonner sur "combien de jobs faut-il vérifier" pour conclure qu'un système est correct.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s41">4.1 — Optimalité d'EDF</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 51 — faisabilité (au niveau job)</span> Un ensemble de jobs $J$ est <b>faisable</b> s'il existe <i>un</i> ordonnancement — n'importe lequel, pas forcément EDF — qui respecte toutes les deadlines de $J$.</div>
+<div class="remark"><span class="lead">Différence avec la faisabilité FTP</span> Au chapitre 3, "FTP-faisable" voulait dire "il existe une <i>affectation de priorités par tâche</i> qui marche". Ici, "faisable" est une notion plus large et plus fine : elle porte sur un ensemble de <i>jobs</i> quelconque, sans même supposer qu'ils viennent de tâches périodiques structurées. C'est ce qui va permettre à EDF d'être optimal dans un sens que RM/DM ne pouvaient pas atteindre.</div>
+<div class="def"><span class="lead">Theorem 52 — optimalité d'EDF</span> Si un ensemble de jobs $J$ est faisable, alors EDF ordonnance $J$ avec succès (aucune deadline ratée).</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Deux jobs, relâchés ensemble à $t=0$ :</p>
+<ul>
+<li>$j_1$ : $e_1=1$, $d_1=3$ (deadline plus lointaine)</li>
+<li>$j_2$ : $e_2=1$, $d_2=2$ (deadline plus proche — EDF le veut en premier)</li>
+</ul>
+<p><span class="step-title">Un ordonnancement faisable, mais pas encore EDF :</span> $j_1$ tourne d'abord ([0,1)), puis $j_2$ ([1,2)). Vérifions que c'est bien faisable : $j_1$ finit en $t=1\le d_1=3$ ✓. $j_2$ finit en $t=2\le d_2=2$ ✓ — tout juste bon, mais valide.</p>
+<div class="diagram">
+<svg viewBox="0 0 280 134" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="121" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="113.3" y1="18" x2="113.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="113.3" y="121" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="186.7" y1="18" x2="186.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="186.7" y="121" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="260.0" y1="18" x2="260.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="260.0" y="121" font-size="9" fill="#888" text-anchor="middle">3</text>
+<text x="2" y="49.0" font-size="12" fill="#222" font-weight="bold">j1</text>
+<line x1="40" y1="45.0" x2="260.0" y2="45.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="73.3" height="28" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="76.7" y="49.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M260.0,59 L256.0,67 L264.0,67 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="91.0" font-size="12" fill="#222" font-weight="bold">j2</text>
+<line x1="40" y1="87.0" x2="260.0" y2="87.0" stroke="#ccc" stroke-width="1"/>
+<rect x="113.3" y="73" width="73.3" height="28" fill="#3a5e56" opacity="0.82" rx="2"/><text x="150.0" y="91.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,64 L36.0,57 L44.0,57 Z" fill="#3a5e56"/>
+<path d="M186.7,101 L182.7,109 L190.7,109 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">Avant échange : $j_1$ puis $j_2$ — faisable, mais $j_2$ (deadline la plus proche) n'est pas en premier. Ce n'est pas encore EDF.</p>
+</div>
+<p><span class="step-title">On corrige, un seul échange :</span> à $t=0$, ce planning fait tourner $j_1$ alors qu'EDF voudrait $j_2$ (deadline plus proche). On repère où $j_2$ tourne dans le planning original — ici en $[1,2)$, qui est <i>avant</i> la deadline de $j_1$ ($d_1=3$). On échange simplement les deux créneaux :</p>
+<div class="diagram">
+<svg viewBox="0 0 280 134" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="121" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="113.3" y1="18" x2="113.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="113.3" y="121" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="186.7" y1="18" x2="186.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="186.7" y="121" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="260.0" y1="18" x2="260.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="260.0" y="121" font-size="9" fill="#888" text-anchor="middle">3</text>
+<text x="2" y="49.0" font-size="12" fill="#222" font-weight="bold">j2</text>
+<line x1="40" y1="45.0" x2="260.0" y2="45.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="73.3" height="28" fill="#3a5e56" opacity="0.82" rx="2"/><text x="76.7" y="49.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#3a5e56"/>
+<path d="M186.7,59 L182.7,67 L190.7,67 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<text x="2" y="91.0" font-size="12" fill="#222" font-weight="bold">j1</text>
+<line x1="40" y1="87.0" x2="260.0" y2="87.0" stroke="#ccc" stroke-width="1"/>
+<rect x="113.3" y="73" width="73.3" height="28" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="150.0" y="91.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,64 L36.0,57 L44.0,57 Z" fill="#7a3b2e"/>
+<path d="M260.0,101 L256.0,109 L264.0,109 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+</svg>
+<p class="caption">Après échange : $j_2$ passe en premier (comme EDF le veut), $j_1$ récupère l'ancien créneau de $j_2$.</p>
+</div>
+<p><span class="step-title">Pourquoi l'échange ne casse jamais rien :</span> $j_2$ finit maintenant encore plus tôt qu'avant ($t=1$ au lieu de $t=2$) — forcément encore avant sa deadline. Et $j_1$ récupère le créneau $[1,2)$, qui se trouve être <i>avant</i> sa propre deadline $d_1=3$ (on le savait déjà, puisque c'est justement le créneau où $j_2$ tournait dans le planning original, et $j_2$ devait forcément finir avant $d_2=2\le d_1=3$). Après cet échange, le planning coïncide avec EDF à $t=0$, et il ne reste plus qu'un seul job actif à $t=1$ — donc il coïncide trivialement avec EDF partout ensuite aussi.</p>
+<p><span class="step-title">L'idée générale, au-delà de cet exemple :</span> on répète ce type d'échange, instant par instant : si à un instant $t$ le planning ne fait pas ce qu'EDF ferait, on échange le job en cours avec celui qu'EDF aurait choisi — cet échange ne peut jamais faire rater une deadline, exactement pour la raison qu'on vient de voir. En répétant ce processus pour $t=0,1,2,\dots$ sans jamais s'arrêter, on obtient un planning qui coïncide avec EDF partout, tout en restant faisable à chaque étape.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle (induction)</span> Soit $\sigma^{(0)}$ un ordonnancement faisable quelconque de $J$ (il existe par hypothèse). On construit $\sigma^{(i)}$ tel que $\sigma^{(i)}$ est faisable et coïncide avec EDF sur $\{0,\dots,i-1\}$.</p>
+<p class="step"><span class="lead">Cas de base</span> $\sigma^{(0)}$ est faisable par hypothèse.</p>
+<p class="step"><span class="lead">Étape inductive</span> Si $\sigma^{(i)}(i)=\text{edf}(i)$, on garde $\sigma^{(i+1)}=\sigma^{(i)}$. Sinon, soit $j_1=\sigma^{(i)}(i)$ et $j_2=\text{edf}(i)$, de deadlines $d_1,d_2$. Comme $\sigma^{(i)}$ est faisable, $j_2$ termine avant $d_2$, donc $\sigma^{(i)}$ exécute $j_2$ à un instant de $[i,d_2)$. Par définition d'EDF, $d_2\le d_1$, donc ce créneau est aussi avant $d_1$. On échange les exécutions de $j_1$ et $j_2$ dans $\sigma^{(i)}$ pour obtenir $\sigma^{(i+1)}$ : $j_1$ reste exécuté avant $d_1$. Par construction, $\sigma^{(i+1)}$ coïncide avec EDF sur $\{0,\dots,i\}$.</p>
+<p class="step">Par effet domino, $\sigma^{(\infty)}$ correspond à EDF et reste faisable à chaque étape. $\blacksquare$</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Une autre preuve, plus courte (par l'absurde)</div>
+<p>Il existe une deuxième façon de voir la même chose, utile à connaître car elle est plus rapide à écrire à l'oral. On suppose, pour arriver à une contradiction, qu'EDF <i>rate</i> une deadline $d$ — la toute première qu'il rate. Juste avant cet instant $d$, il y a forcément eu une période où le CPU a tourné <b>sans aucune interruption</b> (sinon, s'il y avait eu un moment d'inactivité, EDF aurait déjà fini tout ce qu'il avait à faire à ce moment-là, et n'aurait accumulé aucun retard depuis). Soit $t_0$ le début de cette période ininterrompue. Pendant tout $[t_0,d)$, EDF n'exécute que des jobs de deadline $\le d$ (par définition d'EDF, il choisit toujours le plus urgent disponible). Or, s'il rate la deadline $d$, c'est que la charge totale de travail de tous ces jobs (deadline $\le d$) dépasse la place disponible : $\text{charge} \gt d-t_0$. Mais <b>n'importe quel</b> ordonnanceur doit exécuter cette même charge avant $d$ — et la capacité maximale du CPU sur $[t_0,d)$ est justement $d-t_0$. Donc aucun ordonnanceur, même optimal, ne pourrait faire mieux : le système n'était pas faisable du tout, contradiction avec l'hypothèse de départ.</p>
+</div>
+<div class="remark"><span class="lead">Portée du résultat</span> Cette preuve fonctionne au niveau <b>job</b>, sans supposer de structure périodique. Elle vaut donc automatiquement aussi pour les systèmes asynchrones et à deadlines arbitraires — un résultat plus fort que ce qu'on pouvait obtenir avec RM/DM (limités à synchrone + implicit/constrained).</div>
+</div>
+
+<hr class="divider">
+<h2 id="s42">4.2 — Tests de schedulabilité</h2>
+<p>On va du cas le plus simple (synchrone, deadline implicite) au plus général (asynchrone, deadline arbitraire) — à chaque étape, une hypothèse se relâche et le test devient un peu plus subtil.</p>
+
+<h3 id="s42a"><span class="n">A.</span> Synchrone, deadline implicite</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> on sait déjà (Lemma 14) que $U(\tau)\le1$ est nécessaire pour n'importe quel ordonnanceur. La question : est-ce que ce test simple suffit aussi, avec EDF ?</p>
+<div class="def"><span class="lead">Theorem 53</span> $U(\tau)\le1$ est une condition <b>nécessaire et suffisante</b> de schedulabilité pour des tâches périodiques synchrones à deadline implicite (avec EDF).</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>L'idée de la preuve est une astuce : on invente un ordonnanceur <b>fictif</b>, impossible à construire en vrai, juste pour prouver qu'une solution existe.</p>
+<p>Deux tâches, $U(\tau)=1$ pile (le cas le plus serré possible) :</p>
+<ul>
+<li>$\tau_1$ : $C_1=2$, $T_1=D_1=4$ → $U_1=0{,}5$</li>
+<li>$\tau_2$ : $C_2=3$, $T_2=D_2=6$ → $U_2=0{,}5$</li>
+</ul>
+<p><span class="step-title">L'ordonnanceur fictif "à parts égales" :</span> au lieu de donner tout le CPU à une seule tâche à la fois, imagine qu'on puisse le découper en tranches infinitésimales et donner à chaque tâche une part continue, proportionnelle à son utilisation. Ici, $\tau_1$ reçoit en permanence $50\%$ du CPU, et $\tau_2$ reçoit en permanence les $50\%$ restants — comme si les deux tâches tournaient "en même temps", chacune au ralenti.</p>
+<p><span class="step-title">Pourquoi chaque job finit pile à temps :</span> le job de $\tau_1$ a une fenêtre de $T_1=4$ unités entre son relâchement et sa deadline. Avec $50\%$ du CPU en continu pendant ces 4 unités, il accumule $0{,}5\times4=2=C_1$ unités de calcul — exactement ce qu'il lui faut, ni plus ni moins, terminé pile à la deadline. Même chose pour $\tau_2$ : $0{,}5\times6=3=C_2$, terminé pile à sa deadline $T_2=6$.</p>
+<p><span class="step-title">Ce que ça prouve :</span> ce planning fictif — même s'il est physiquement irréalisable (aucun CPU ne peut vraiment exécuter deux choses à la fois en continu) — respecte quand même toutes les deadlines. Il prouve donc que l'ensemble de jobs est <b>faisable</b> au sens de la Definition 51 (il existe <i>un</i> planning qui marche, sans obligation qu'il soit réalisable). Et comme on vient de montrer qu'EDF est optimal (Theorem 52) — si un planning faisable existe, EDF réussit aussi — EDF (le vrai, discret, réalisable) réussit forcément lui aussi sur ce système.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Soit $\tau$ un ensemble de $n$ tâches périodiques implicit-deadline avec $U(\tau)\le1$. Construisons un ordonnancement fictif <span class="eng">"processor sharing"</span> $S$ : le temps est découpé en tranches infinitésimales, et $\tau_i$ reçoit une fraction $U(\tau_i)$ du CPU à chaque tranche. Comme $U(\tau)\le1$, un tel planning peut être construit (la somme des fractions ne dépasse jamais 100%). Pour chaque job de $\tau_i$, ce planning fournit exactement $U(\tau_i)\times T_i=C_i$ unités de CPU entre l'arrivée et la deadline du job — donc aucune deadline n'est ratée. $J$ est donc faisable (Definition 51).</p>
+<p class="step"><span class="lead">Corollary 54</span> Un système périodique implicit-deadline est EDF-faisable ssi $U(\tau)\le1$ — conséquence directe de l'optimalité d'EDF (Theorem 52) combinée à ce qu'on vient de montrer.</p>
+</div>
+<div class="remark"><span class="lead">Piège</span> Ce test $U(\tau)\le1$ est nécessaire ET suffisant <b>seulement</b> pour EDF + deadline implicite. Pour RM (chapitre 3), $U(\tau)\le1$ n'était que nécessaire — un système avec $U(\tau)=0{,}9$ pouvait très bien échouer sous RM tout en réussissant sous EDF. C'est là toute la force d'EDF.</div>
+</div>
+
+<h3 id="s42b"><span class="n">B.</span> Synchrone, deadline arbitraire</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> dès que $D_i$ peut dépasser $T_i$, la formule $U(\tau)\le1$ ne suffit plus (elle ne dit rien sur l'ordre, et plusieurs jobs de la même tâche peuvent maintenant se chevaucher). Il faut d'autres outils.</p>
+
+<div class="remark"><span class="lead">Le cas synchrone reste le pire cas</span> Comme pour la famille FTP (chapitre 3), le cas synchrone (tout relâché à $t=0$) reste le pire scénario possible pour EDF aussi : si un système synchrone est EDF-faisable, alors la même tâche avec des offsets différents (asynchrone) ou en version sporadique l'est aussi. On peut donc se concentrer sur le cas synchrone pour développer les tests.</div>
+
+<div class="story">
+<div class="story-title">🔍 Une surprise : le premier job n'est plus le pire cas</div>
+<p>Avec RM/DM (chapitre 3), le premier job (cas synchrone) donnait toujours le pire temps de réponse (Lemma 25). Avec EDF, ce n'est <b>plus vrai</b>, même en deadline implicite ! Voici la preuve par l'exemple :</p>
+<p>Deux tâches synchrones, $D_i=T_i$ : $\tau_1{=}(C{=}2,T{=}4)$, $\tau_2{=}(C{=}3,T{=}7)$.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="65.9" y1="18" x2="65.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="65.9" y="125" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="91.9" y1="18" x2="91.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="91.9" y="125" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="117.8" y1="18" x2="117.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="117.8" y="125" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="143.7" y1="18" x2="143.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="143.7" y="125" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="169.6" y1="18" x2="169.6" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="169.6" y="125" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="195.6" y1="18" x2="195.6" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="195.6" y="125" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="221.5" y1="18" x2="221.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="221.5" y="125" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="247.4" y1="18" x2="247.4" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="247.4" y="125" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="273.3" y1="18" x2="273.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="273.3" y="125" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="299.3" y1="18" x2="299.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="299.3" y="125" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="325.2" y1="18" x2="325.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="325.2" y="125" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="351.1" y1="18" x2="351.1" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="351.1" y="125" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="377.0" y1="18" x2="377.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="377.0" y="125" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="403.0" y1="18" x2="403.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="403.0" y="125" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="428.9" y1="18" x2="428.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="428.9" y="125" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="454.8" y1="18" x2="454.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="454.8" y="125" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="480.7" y1="18" x2="480.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="480.7" y="125" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="506.7" y1="18" x2="506.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="506.7" y="125" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="532.6" y1="18" x2="532.6" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="532.6" y="125" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="558.5" y1="18" x2="558.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="558.5" y="125" font-size="9" fill="#888" text-anchor="middle">20</text>
+<line x1="584.4" y1="18" x2="584.4" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="584.4" y="125" font-size="9" fill="#888" text-anchor="middle">21</text>
+<line x1="610.4" y1="18" x2="610.4" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="610.4" y="125" font-size="9" fill="#888" text-anchor="middle">22</text>
+<line x1="636.3" y1="18" x2="636.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="636.3" y="125" font-size="9" fill="#888" text-anchor="middle">23</text>
+<line x1="662.2" y1="18" x2="662.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="662.2" y="125" font-size="9" fill="#888" text-anchor="middle">24</text>
+<line x1="688.1" y1="18" x2="688.1" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="688.1" y="125" font-size="9" fill="#888" text-anchor="middle">25</text>
+<line x1="714.1" y1="18" x2="714.1" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="714.1" y="125" font-size="9" fill="#888" text-anchor="middle">26</text>
+<line x1="740.0" y1="18" x2="740.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="740.0" y="125" font-size="9" fill="#888" text-anchor="middle">27</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="740.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="65.9" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="169.6" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="195.6" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="247.4" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="273.3" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="351.1" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="377.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="454.8" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="480.7" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="558.5" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="584.4" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="662.2" y="31" width="51.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="688.1" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M143.7,22 L139.7,15 L147.7,15 Z" fill="#7a3b2e"/>
+<path d="M247.4,22 L243.4,15 L251.4,15 Z" fill="#7a3b2e"/>
+<path d="M351.1,22 L347.1,15 L355.1,15 Z" fill="#7a3b2e"/>
+<path d="M454.8,22 L450.8,15 L458.8,15 Z" fill="#7a3b2e"/>
+<path d="M558.5,22 L554.5,15 L562.5,15 Z" fill="#7a3b2e"/>
+<path d="M662.2,22 L658.2,15 L666.2,15 Z" fill="#7a3b2e"/>
+<path d="M143.7,61 L139.7,69 L147.7,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M247.4,61 L243.4,69 L251.4,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M351.1,61 L347.1,69 L355.1,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M454.8,61 L450.8,69 L458.8,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M558.5,61 L554.5,69 L562.5,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M662.2,61 L658.2,69 L666.2,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="740.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="91.9" y="75" width="77.8" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="130.7" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<rect x="221.5" y="75" width="25.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="234.4" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="299.3" y="75" width="51.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="325.2" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="403.0" y="75" width="51.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="428.9" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="506.7" y="75" width="25.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="519.6" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="610.4" y="75" width="51.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="636.3" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="714.1" y="75" width="25.9" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="727.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M221.5,66 L217.5,59 L225.5,59 Z" fill="#3a5e56"/>
+<path d="M403.0,66 L399.0,59 L407.0,59 Z" fill="#3a5e56"/>
+<path d="M584.4,66 L580.4,59 L588.4,59 Z" fill="#3a5e56"/>
+<path d="M221.5,105 L217.5,113 L225.5,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<path d="M403.0,105 L399.0,113 L407.0,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<path d="M584.4,105 L580.4,113 L588.4,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">EDF sur $\tau_1{=}(C{=}2,T{=}4)$, $\tau_2{=}(C{=}3,T{=}7)$ (égalité de deadline départagée en faveur de $\tau_1$).</p>
+</div>
+<p><span class="step-title">Ce qu'on observe :</span> le <b>premier</b> job de $\tau_2$ (relâché en 0) finit en $t=5$ : temps de réponse $5$. Le <b>quatrième</b> job de $\tau_2$ (relâché en 21) finit en $t=27$ : temps de réponse $6 \gt 5$ ! Le premier job n'est donc <b>pas</b> le pire cas ici — contrairement à ce qu'on avait avec RM/DM.</p>
+<p><span class="step-title">Pourquoi ça peut arriver avec EDF (et pas avec RM/DM) :</span> sous RM/DM, la priorité d'une tâche est toujours la même, donc son "rang" par rapport aux autres ne change jamais — le pire cas est toujours de tout regrouper au début. Sous EDF, la priorité relative de deux tâches change dans le temps (ça dépend de qui a la deadline la plus proche <i>à cet instant précis</i>). Comme les périodes (4 et 7) ne s'alignent pas de façon simple, chaque nouveau job de $\tau_2$ rencontre un motif d'interférence légèrement différent de celui du premier — parfois plus favorable, parfois moins. Ici, le job 4 tombe sur un motif où il doit céder le CPU à deux reprises à des jobs de $\tau_1$ avant de pouvoir finir, alors que le premier job n'avait cédé qu'une fois — d'où un temps de réponse plus long.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pas d'inactivité avant un raté</div>
+<p>Puisque le premier job ne suffit plus, il faut une autre idée pour borner combien de jobs vérifier. Voici l'idée centrale, avec un exemple qui rate <i>volontairement</i> une deadline pour qu'on puisse observer le phénomène :</p>
+<p>$\tau_1{=}(C{=}3,D{=}T{=}4)$, $\tau_2{=}(C{=}3,D{=}T{=}5)$ — ici $U(\tau)=3/4+3/5=1{,}35\gt1$, donc on sait déjà (Lemma 14) qu'une deadline <i>va</i> être ratée quelque part. La question n'est pas "est-ce que ça rate" mais "à quoi ressemble le planning juste avant que ça rate".</p>
+<div class="diagram">
+<svg viewBox="0 0 360 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="82.9" y1="18" x2="82.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="82.9" y="125" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="125.7" y1="18" x2="125.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="125.7" y="125" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="168.6" y1="18" x2="168.6" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="168.6" y="125" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="211.4" y1="18" x2="211.4" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="211.4" y="125" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="254.3" y1="18" x2="254.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="254.3" y="125" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="297.1" y1="18" x2="297.1" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="297.1" y="125" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="340.0" y1="18" x2="340.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="340.0" y="125" font-size="9" fill="#888" text-anchor="middle">7</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="340.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="128.6" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="104.3" y="50.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M211.4,61 L207.4,69 L215.4,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="340.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="168.6" y="75" width="128.6" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="232.9" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M254.3,105 L250.3,113 L258.3,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<circle cx="254.3" cy="90.0" r="8" fill="#b23b3b"/><text x="254.3" y="93.5" font-size="10" fill="white" text-anchor="middle" font-weight="bold">X</text>
+</svg>
+<p class="caption">$\tau_1$ (deadline 4, plus urgente) tourne en premier, sans interruption ; $\tau_2$ enchaîne aussitôt, sans le moindre répit — et rate quand même sa deadline en $t=5$.</p>
+</div>
+<p><span class="step-title">Ce qu'on observe :</span> il n'y a <b>aucun</b> instant d'inactivité entre $t=0$ et le raté en $t=5$. Le CPU tourne à plein régime, sans la moindre pause, jusqu'au moment où tout s'effondre.</p>
+<p><span class="step-title">Pourquoi ça doit toujours être vrai :</span> si le CPU avait été inactif à un instant $t'$ avant le raté, ça voudrait dire que tout le travail déjà arrivé avant $t'$ était déjà terminé à $t'$ — comme repartir de zéro. À partir de $t'$, on aurait un nouveau "sous-problème" indépendant du passé. Mais alors, comme EDF choisit toujours le job le plus urgent disponible, s'il n'arrivait pas à finir tout ce qui a une deadline $\le d$ dans la fenêtre $[t',d)$, c'est que la charge de travail dans cette fenêtre dépasse déjà sa longueur — et ça, <b>aucun</b> ordonnanceur ne pourrait le faire, EDF ou pas (même argument que dans la preuve par l'absurde de l'optimalité d'EDF). Il ne peut donc pas exister d'instant d'inactivité "propre" juste avant un raté : la période porteuse du problème remonte forcément jusqu'au tout début de la surcharge, sans aucune pause entre les deux.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> <b>Theorem 57.</b> Pour EDF sur un système synchrone périodique à deadline contrainte, il n'y a aucune unité de temps inactive avant qu'une deadline soit ratée. <b>Theorem 58</b> étend ceci aux <i>points</i> d'inactivité (pas seulement les unités) pour les deadlines arbitraires.</p>
+<p class="step"><span class="lead">Corollary 59 — intervalle de faisabilité</span> $[0,L)$ est un intervalle de faisabilité pour EDF sur un système synchrone périodique à deadline arbitraire, où $L$ est le premier point d'inactivité, plus petite solution de
+$$L=\sum_{i=1}^n\left\lceil\frac{L}{T_i}\right\rceil C_i$$
+calculable par point fixe : $w_0=\sum_iC_i$, $w_{k+1}=\sum_i\lceil w_k/T_i\rceil C_i$.</p>
+</div>
+</div>
+
+<h3 id="s42c"><span class="n">C.</span> Asynchrone, deadline arbitraire</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> le cas le plus général : offsets quelconques, deadlines quelconques. On ne peut plus se ramener au cas synchrone (ce n'est plus forcément le pire cas dès qu'on est asynchrone).</p>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre la notion de "configuration"</div>
+<p>Pour savoir si un planning va se répéter à l'identique, il faut un moyen de dire "l'état du système à l'instant $t$ est <i>exactement</i> le même qu'à l'instant $t'$" — pas juste "ça se ressemble", mais vraiment assez pour garantir que tout ce qui va se passer ensuite sera identique dans les deux cas. C'est ce que capture la <b>configuration</b>.</p>
+<p>Pour chaque tâche $\tau_i$, on retient trois informations à l'instant $t$ :</p>
+<ul>
+<li>$\gamma_i(t)$ : le temps écoulé depuis le dernier relâchement de $\tau_i$ — "où en est son horloge interne".</li>
+<li>$\alpha_i(t)$ : le nombre de jobs de $\tau_i$ actuellement actifs (pas encore finis) — utile surtout en deadline arbitraire, où plusieurs jobs peuvent s'accumuler.</li>
+<li>$\beta_i(t)$ : le nombre d'unités de CPU déjà englouties par le <b>plus ancien</b> job actif de $\tau_i$ — "combien de travail lui reste-t-il".</li>
+</ul>
+<p><span class="step-title">Exemple concret</span> : $\tau_1{=}(C{=}2,T{=}4,D{=}4,O{=}0)$, $\tau_2{=}(C{=}3,T{=}4,D{=}7,O{=}2)$ — attention, $\tau_2$ a $D_2=7 \gt T_2=4$ : deadline arbitraire, donc plusieurs jobs de $\tau_2$ peuvent être actifs en même temps. Hyper-période $P=\text{lcm}(4,4)=4$.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="69.2" y1="18" x2="69.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="69.2" y="125" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="98.3" y1="18" x2="98.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="98.3" y="125" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="127.5" y1="18" x2="127.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="127.5" y="125" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="156.7" y1="18" x2="156.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="156.7" y="125" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="185.8" y1="18" x2="185.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="185.8" y="125" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="215.0" y1="18" x2="215.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="215.0" y="125" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="244.2" y1="18" x2="244.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="244.2" y="125" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="273.3" y1="18" x2="273.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="273.3" y="125" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="302.5" y1="18" x2="302.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="302.5" y="125" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="331.7" y1="18" x2="331.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="331.7" y="125" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="360.8" y1="18" x2="360.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="360.8" y="125" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="390.0" y1="18" x2="390.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="390.0" y="125" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="419.2" y1="18" x2="419.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="419.2" y="125" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="448.3" y1="18" x2="448.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="448.3" y="125" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="477.5" y1="18" x2="477.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="477.5" y="125" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="506.7" y1="18" x2="506.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="506.7" y="125" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="535.8" y1="18" x2="535.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="535.8" y="125" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="565.0" y1="18" x2="565.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="565.0" y="125" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="594.2" y1="18" x2="594.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="594.2" y="125" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="623.3" y1="18" x2="623.3" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="623.3" y="125" font-size="9" fill="#888" text-anchor="middle">20</text>
+<line x1="652.5" y1="18" x2="652.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="652.5" y="125" font-size="9" fill="#888" text-anchor="middle">21</text>
+<line x1="681.7" y1="18" x2="681.7" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="681.7" y="125" font-size="9" fill="#888" text-anchor="middle">22</text>
+<line x1="710.8" y1="18" x2="710.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="710.8" y="125" font-size="9" fill="#888" text-anchor="middle">23</text>
+<line x1="740.0" y1="18" x2="740.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="740.0" y="125" font-size="9" fill="#888" text-anchor="middle">24</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="740.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="69.2" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="156.7" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="185.8" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="273.3" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="302.5" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="390.0" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="419.2" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="535.8" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="565.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="681.7" y="31" width="58.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="710.8" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M156.7,22 L152.7,15 L160.7,15 Z" fill="#7a3b2e"/>
+<path d="M273.3,22 L269.3,15 L277.3,15 Z" fill="#7a3b2e"/>
+<path d="M390.0,22 L386.0,15 L394.0,15 Z" fill="#7a3b2e"/>
+<path d="M506.7,22 L502.7,15 L510.7,15 Z" fill="#7a3b2e"/>
+<path d="M623.3,22 L619.3,15 L627.3,15 Z" fill="#7a3b2e"/>
+<path d="M156.7,61 L152.7,69 L160.7,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M273.3,61 L269.3,69 L277.3,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M390.0,61 L386.0,69 L394.0,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M506.7,61 L502.7,69 L510.7,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M623.3,61 L619.3,69 L627.3,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M740.0,61 L736.0,69 L744.0,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="740.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="98.3" y="75" width="58.3" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="127.5" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="215.0" y="75" width="58.3" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="244.2" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="331.7" y="75" width="58.3" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="360.8" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="448.3" y="75" width="87.5" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="492.1" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<rect x="594.2" y="75" width="87.5" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="637.9" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M98.3,66 L94.3,59 L102.3,59 Z" fill="#3a5e56"/>
+<path d="M215.0,66 L211.0,59 L219.0,59 Z" fill="#3a5e56"/>
+<path d="M331.7,66 L327.7,59 L335.7,59 Z" fill="#3a5e56"/>
+<path d="M448.3,66 L444.3,59 L452.3,59 Z" fill="#3a5e56"/>
+<path d="M302.5,105 L298.5,113 L306.5,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<path d="M419.2,105 L415.2,113 L423.2,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<path d="M535.8,105 L531.8,113 L539.8,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<path d="M652.5,105 L648.5,113 L656.5,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<circle cx="652.5" cy="90.0" r="8" fill="#b23b3b"/><text x="652.5" y="93.5" font-size="10" fill="white" text-anchor="middle" font-weight="bold">X</text>
+</svg>
+<p class="caption">$\tau_2$ (deadline arbitraire, $D_2{=}7\gt T_2{=}4$) rate finalement sa deadline en $t=21$, alors que tout semblait aller bien jusque là.</p>
+</div>
+<p><span class="step-title">Regardons deux instants qui se ressemblent, $t=6$ et $t=10$ :</span> à $t=6$, le job de $\tau_2$ le plus ancien encore actif est celui relâché en $t=2$ (deadline$=9$) — il a déjà reçu 2 unités de calcul (pendant $[2,4)$) : $\beta_2(6)=2$. À $t=10$, le job le plus ancien encore actif est celui relâché en $t=6$ (deadline$=13$) — il n'a reçu qu'1 unité pour l'instant (pendant $[7,8)$) : $\beta_2(10)=1$.</p>
+<p><span class="step-title">Le "aha" :</span> $t=6$ et $t=10$ sont séparés d'exactement une hyper-période ($P=4$... non, $10-6=4=P$ ✓). On pourrait espérer que le système soit déjà "recalé" et se répète depuis $t=6$. Mais $\beta_2(6)=2 \ne \beta_2(10)=1$ : le plus ancien job actif de $\tau_2$ n'a <b>pas</b> avancé du même montant dans les deux cas ! La configuration est différente — donc rien ne garantit que ce qui se passe après $t=10$ va reproduire ce qui s'est passé après $t=6$. Et de fait, ça ne se reproduit pas : un peu plus loin, $\tau_2$ finit par rater sa deadline en $t=21$, alors que tout s'était bien passé jusqu'à $t=10$.</p>
+<p><span class="step-title">La leçon :</span> "aucune deadline ratée jusqu'ici" ne suffit pas à conclure "aucune ne sera jamais ratée", tant que la configuration n'est pas <i>identique</i> à une étape antérieure — sinon, le système peut encore basculer plus tard, même après une longue période sans problème apparent.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Definition 60 — configuration</span> $$C_S(R,t)=\big((\gamma_1(t),\alpha_1(t),\beta_1(t)),\dots,(\gamma_n(t),\alpha_n(t),\beta_n(t))\big)$$
+avec $\gamma_i(t)=(t-O_i)\bmod T_i$, $\alpha_i(t)$ = nombre de jobs actifs de $\tau_i$, $\beta_i(t)$ = CPU déjà consommé par le plus ancien job actif de $\tau_i$.</p>
+<p class="step"><span class="lead">Theorem 61</span> Le planning EDF d'un système asynchrone périodique à deadline arbitraire est faisable ssi : (1) toute deadline dans $[0,O_{\max}+2P)$ est respectée, <b>et</b> (2) $C_S(R,O_{\max}+P)=C_S(R,O_{\max}+2P)$.</p>
+<p class="step"><span class="lead">Pourquoi les deux conditions sont nécessaires</span> Le système ci-dessus le montre : toutes les deadlines de $[0,10)$ sont respectées (condition 1 semblerait "presque" acquise), mais la condition 2 échoue ($\beta_2(6)\ne\beta_2(10)$) — et effectivement le système finit par rater une deadline. Notons aussi que $U(\tau)=\frac{2}{4}+\frac{3}{4}=\frac{5}{4}\gt1$ ici : le système est de toute façon infaisable ; l'exemple sert justement à montrer qu'il faut bien les <b>deux</b> conditions pour le détecter, une seule ne suffirait pas.</p>
+<p class="step"><span class="lead">Corollary 63</span> Si $U(\tau)\le1$, alors $[0,O_{\max}+2P)$ est un intervalle de faisabilité à lui seul (la condition 1 de vérification suffit, la condition 2 sur la configuration devient automatique).</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>EDF — définition</h4>
+<p>Priorité au job actif de plus petite deadline absolue. FJP : priorité fixe par job, mais différente d'un job à l'autre de la même tâche.</p>
+<h4>Optimalité</h4>
+<p>Si un ensemble de jobs $J$ est faisable (Definition 51, notion plus large que la FTP-faisabilité), EDF le schedule avec succès (Theorem 52). Preuve : induction + échanges successifs, ou par l'absurde via un argument de charge sur la première deadline ratée.</p>
+<h4>Tests de schedulabilité — synthèse</h4>
+<table>
+<tr><th>Cas</th><th>Test</th></tr>
+<tr><td>Synchrone, implicit-deadline</td><td>$U(\tau)\le1$ nécessaire <b>et</b> suffisant</td></tr>
+<tr><td>Synchrone, deadline arbitraire</td><td>$[0,L)$, $L=\sum_i\lceil L/T_i\rceil C_i$ (premier point d'inactivité)</td></tr>
+<tr><td>Asynchrone, deadline arbitraire</td><td>$[0,O_{\max}+2P)$ + égalité de configuration en $O_{\max}{+}P$ et $O_{\max}{+}2P$ ; si $U(\tau)\le1$, la première condition suffit</td></tr>
+</table>
+<h4>Piège à retenir</h4>
+<p>Sous EDF, le <b>premier</b> job n'est plus garanti pire cas dès qu'on sort du synchrone + implicite (contrairement à RM/DM où Lemma 25 le garantissait toujours en deadline contrainte).</p>
+<h4>Configuration (asynchrone)</h4>
+<p>$\gamma_i$ = phase dans le cycle, $\alpha_i$ = nombre de jobs actifs, $\beta_i$ = progression du plus ancien job actif. Deux instants avec la même configuration ⇒ le futur se répète à l'identique depuis ces instants.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>FJP, EDF, $\text{edf}(t)$ (job choisi par EDF à l'instant $t$), $L$ (premier point d'inactivité, équivalent de $\lambda_n$ côté FTP), $P$ (hyper-période), $O_{\max}$ (plus grand offset).</p>
+</div>
+
+</body>
+</html>

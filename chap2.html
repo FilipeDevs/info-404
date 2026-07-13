@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 2 — Fiche de révision — Introduction aux systèmes temps réel</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.55; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.88rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .q{font-style:italic; color:var(--sub); font-size:.93rem; margin:.5rem 0; padding-left:.9rem; border-left:3px dotted var(--border);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  code{background:var(--shade); padding:.05rem .3rem; border-radius:3px; font-family:monospace; font-size:.9em;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 2 — Fiche de révision</h1>
+<p class="subtitle">Introduction aux systèmes temps réel — INFO-F404. Ce document remplace le syllabus : tout le contenu du chapitre y est, condensé et reformulé.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s21">Système temps réel : définition et piège classique</a></li>
+<li><a href="#s22">Hard / firm / soft real-time</a></li>
+<li><a href="#s23">CPS, embarqué, temps réel</a></li>
+<li><a href="#s24">Exemple : régulateur de vitesse adaptatif</a></li>
+<li><a href="#s25">Modèle formel</a> — job, tâche périodique, conventions, tâche vs job, sporadique, utilisation, familles de systèmes, ordonnanceur (FTP/FJP/DP), hypothèses, temps de réponse, EDF, conditions nécessaires/suffisantes</li>
+<li><a href="#s26">DAL, WCET, redondance</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s21">2.1 — Système temps réel</h2>
+
+<div class="concept">
+<p><span class="lead">Pourquoi</span>un programme peut être logiquement correct et pourtant inutile s'il répond trop tard (ex. calcul de déclenchement d'airbag qui arrive après le choc). Il fallait un cadre théorique où "correction" inclut le temps.</p>
+<div class="def">
+<span class="lead">Définition</span> Un système est dit <b>temps réel</b> <span class="eng">(real-time)</span> si sa correction dépend non seulement du résultat logique de ses calculs, mais aussi de l'instant auquel ce résultat est produit.
+</div>
+<p><span class="lead">Architecture</span> Un système temps réel pilote en général un <b>système physique</b> via une boucle : <b>capteurs</b> <span class="eng">(sensory system)</span> → <b>système de contrôle</b> (le logiciel) → <b>actionneurs</b> <span class="eng">(actuation system)</span>. Le contrôle doit suivre le rythme du monde physique qu'il observe : c'est de là que viennent les deadlines.</p>
+<div class="remark"><span class="lead">Piège</span> "Temps réel" $\ne$ "rapide". Ce qui compte, c'est la <b>prévisibilité</b> <span class="eng">(predictability)</span> : pouvoir prouver <i>a priori</i> que toutes les deadlines critiques seront tenues — pas juste aller vite.</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s22">2.2 — Hard / firm / soft real-time</h2>
+
+<div class="concept">
+<p><span class="lead">Pourquoi</span> rater une deadline n'a pas la même gravité partout (pacemaker vs streaming vidéo) : il faut une échelle de tolérance.</p>
+<table>
+<tr><th>Niveau</th><th>Tolérance</th><th>Exemple</th></tr>
+<tr><td><b>Hard</b></td><td>Aucune deadline ratée, jamais (conséquences santé/finance/écologie)</td><td>Airbag</td></tr>
+<tr><td><b>Firm</b></td><td>Idéalement aucune, mais quelques ratés tolérés → on définit une <span class="eng">Quality of Service (QoS)</span></td><td>Visioconférence (frame en retard = sautée, pas affichée en retard)</td></tr>
+<tr><td><b>Soft</b></td><td>Des deadlines peuvent être ratées, le résultat garde de la valeur</td><td>Prévision météo</td></tr>
+</table>
+<div class="remark"><span class="lead">Lien</span> Ce cours travaille exclusivement en <b>hard real-time</b> (c'est une hypothèse explicite, §2.5.9) : "faisable" veut dire "zéro deadline ratée, jamais", pas "rarement".</div>
+</div>
+
+<hr class="divider">
+<h2 id="s23">2.3 — CPS, systèmes embarqués, temps réel</h2>
+
+<div class="concept">
+<p><span class="lead">Définition</span> Un <b>Cyber-Physical System (CPS)</b> est un système où la partie informatique/communication (le "cyber") et la partie physique (capteurs, actionneurs) sont étroitement intégrées, à la conception comme à l'exécution. Le terme couvre un champ énorme (dispositif médical léger $\to$ réseau électrique national) et mélange plusieurs disciplines : réseaux de capteurs, contrôle, traitement du signal, systèmes embarqués, systèmes temps réel.</p>
+<p><span class="lead">Hiérarchie</span> Les <b>systèmes temps réel</b> et les <b>systèmes embarqués</b> sont chacun une sous-catégorie des CPS — pas des synonymes entre eux.</p>
+<div class="diagram">
+<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<rect x="10" y="10" width="380" height="180" rx="14" fill="none" stroke="#7a3b2e" stroke-width="1.4"/>
+<text x="22" y="30" font-size="12" fill="#7a3b2e" font-weight="bold">Cyber-Physical Systems</text>
+<rect x="35" y="55" width="150" height="115" rx="10" fill="none" stroke="#68655e" stroke-width="1.2"/>
+<text x="45" y="72" font-size="11" fill="#242322">Systèmes<br/>temps réel</text>
+<text x="45" y="72" font-size="11" fill="#242322">Systèmes</text>
+<text x="45" y="86" font-size="11" fill="#242322">temps réel</text>
+<rect x="215" y="55" width="150" height="115" rx="10" fill="none" stroke="#68655e" stroke-width="1.2"/>
+<text x="225" y="72" font-size="11" fill="#242322">Systèmes</text>
+<text x="225" y="86" font-size="11" fill="#242322">embarqués</text>
+</svg>
+<p class="caption">Les CPS forment l'ensemble le plus large ; temps réel et embarqué en sont deux sous-classes, pas forcément confondues.</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s24">2.4 — Exemple : régulateur de vitesse adaptatif (ACC)</h2>
+
+<div class="concept">
+<p><span class="lead">Contexte</span> Trois tâches périodiques pilotent l'ACC : $\tau_1$ rafraîchit le tableau de bord, $\tau_2$ ajuste la vitesse, $\tau_3$ coupe le régulateur si le conducteur freine (la plus critique).</p>
+<table>
+<tr><th>Tâche</th><th>$C_i$</th><th>$T_i = D_i$</th><th>Charge $U_i$</th></tr>
+<tr><td>$\tau_1$ (dashboard)</td><td>4</td><td>20</td><td>20%</td></tr>
+<tr><td>$\tau_2$ (vitesse)</td><td>2</td><td>10</td><td>20%</td></tr>
+<tr><td>$\tau_3$ (freinage)</td><td>3</td><td>5</td><td>60%</td></tr>
+</table>
+<p><span class="lead">Round-Robin échoue</span> — chaque tâche reçoit un tour égal, sans tenir compte des deadlines. Le job de $\tau_3$ relâché en $t=0$ n'a reçu qu'1 unité de CPU (en $t=2$) au moment de sa deadline $t=5$ : deadline ratée.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="40.0" y="184" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="75.0" y1="20" x2="75.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="75.0" y="184" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="110.0" y1="20" x2="110.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="110.0" y="184" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="145.0" y1="20" x2="145.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="145.0" y="184" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="180.0" y1="20" x2="180.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="180.0" y="184" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="215.0" y1="20" x2="215.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="215.0" y="184" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="250.0" y1="20" x2="250.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="250.0" y="184" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="285.0" y1="20" x2="285.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="285.0" y="184" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="320.0" y1="20" x2="320.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="320.0" y="184" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="355.0" y1="20" x2="355.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="355.0" y="184" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="390.0" y1="20" x2="390.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="390.0" y="184" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="425.0" y1="20" x2="425.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="425.0" y="184" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="460.0" y1="20" x2="460.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="460.0" y="184" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="495.0" y1="20" x2="495.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="495.0" y="184" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="530.0" y1="20" x2="530.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="530.0" y="184" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="565.0" y1="20" x2="565.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="565.0" y="184" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="600.0" y1="20" x2="600.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="600.0" y="184" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.0" y1="20" x2="635.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="635.0" y="184" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="670.0" y1="20" x2="670.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="670.0" y="184" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.0" y1="20" x2="705.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="705.0" y="184" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="740.0" y1="20" x2="740.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="740.0" y="184" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="34" width="35.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="57.5" y="54.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="145.0" y="34" width="35.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="162.5" y="54.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="250.0" y="34" width="35.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="267.5" y="54.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="320.0" y="34" width="35.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="337.5" y="54.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#7a3b2e"/>
+<path d="M740.0,68 L736.0,76 L744.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<text x="4" y="102.0" font-size="13" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="98.0" x2="740.0" y2="98.0" stroke="#ccc" stroke-width="1"/>
+<rect x="75.0" y="82" width="35.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="92.5" y="102.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="180.0" y="82" width="35.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="197.5" y="102.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="390.0" y="82" width="35.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="407.5" y="102.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="460.0" y="82" width="35.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="477.5" y="102.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,72 L36.0,64 L44.0,64 Z" fill="#3a5e56"/>
+<path d="M390.0,72 L386.0,64 L394.0,64 Z" fill="#3a5e56"/>
+<path d="M390.0,116 L386.0,124 L394.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M740.0,116 L736.0,124 L744.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<text x="4" y="150.0" font-size="13" fill="#222" font-weight="bold">τ3</text>
+<line x1="40" y1="146.0" x2="740.0" y2="146.0" stroke="#ccc" stroke-width="1"/>
+<rect x="110.0" y="130" width="35.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="127.5" y="150.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="215.0" y="130" width="35.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="232.5" y="150.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="285.0" y="130" width="35.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="302.5" y="150.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="355.0" y="130" width="35.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="372.5" y="150.0" font-size="10" fill="white" text-anchor="middle">1</text>
+<rect x="495.0" y="130" width="175.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="582.5" y="150.0" font-size="10" fill="white" text-anchor="middle">5</text>
+<path d="M40.0,120 L36.0,112 L44.0,112 Z" fill="#3a5ea6"/>
+<path d="M215.0,120 L211.0,112 L219.0,112 Z" fill="#3a5ea6"/>
+<path d="M390.0,120 L386.0,112 L394.0,112 Z" fill="#3a5ea6"/>
+<path d="M565.0,120 L561.0,112 L569.0,112 Z" fill="#3a5ea6"/>
+<path d="M215.0,164 L211.0,172 L219.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M390.0,164 L386.0,172 L394.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M565.0,164 L561.0,172 L569.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M740.0,164 L736.0,172 L744.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<circle cx="215.0" cy="146.0" r="9" fill="#b23b3b"/><text x="215.0" y="150.0" font-size="11" fill="white" text-anchor="middle" font-weight="bold">X</text>
+</svg>
+<p class="caption">Round-Robin (quantum = 1, ordre τ1→τ2→τ3) : le job 1 de τ3 rate sa deadline en $t=5$ (cercle rouge). Triangles pleins = relâchements, triangles vides = deadlines.</p>
+</div>
+<p><span class="lead">Rate Monotonic réussit</span> — priorité fixe selon la période : plus la période est courte, plus la priorité est haute ($\tau_3 \succ \tau_2 \succ \tau_1$ ici). Toutes les deadlines sont tenues, et l'exécution se répète à partir de $t=20$ (le PPCM des périodes).</p>
+<div class="diagram">
+<svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="40.0" y="184" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="75.0" y1="20" x2="75.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="75.0" y="184" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="110.0" y1="20" x2="110.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="110.0" y="184" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="145.0" y1="20" x2="145.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="145.0" y="184" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="180.0" y1="20" x2="180.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="180.0" y="184" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="215.0" y1="20" x2="215.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="215.0" y="184" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="250.0" y1="20" x2="250.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="250.0" y="184" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="285.0" y1="20" x2="285.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="285.0" y="184" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="320.0" y1="20" x2="320.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="320.0" y="184" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="355.0" y1="20" x2="355.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="355.0" y="184" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="390.0" y1="20" x2="390.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="390.0" y="184" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="425.0" y1="20" x2="425.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="425.0" y="184" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="460.0" y1="20" x2="460.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="460.0" y="184" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="495.0" y1="20" x2="495.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="495.0" y="184" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="530.0" y1="20" x2="530.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="530.0" y="184" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="565.0" y1="20" x2="565.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="565.0" y="184" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="600.0" y1="20" x2="600.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="600.0" y="184" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.0" y1="20" x2="635.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="635.0" y="184" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="670.0" y1="20" x2="670.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="670.0" y="184" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.0" y1="20" x2="705.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="705.0" y="184" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="740.0" y1="20" x2="740.0" y2="170" stroke="#ddd" stroke-width="1"/><text x="740.0" y="184" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="320.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="355.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="670.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="705.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#7a3b2e"/>
+<path d="M740.0,68 L736.0,76 L744.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<text x="4" y="102.0" font-size="13" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="98.0" x2="740.0" y2="98.0" stroke="#ccc" stroke-width="1"/>
+<rect x="145.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="180.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="495.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="530.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,72 L36.0,64 L44.0,64 Z" fill="#3a5e56"/>
+<path d="M390.0,72 L386.0,64 L394.0,64 Z" fill="#3a5e56"/>
+<path d="M390.0,116 L386.0,124 L394.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M740.0,116 L736.0,124 L744.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<text x="4" y="150.0" font-size="13" fill="#222" font-weight="bold">τ3</text>
+<line x1="40" y1="146.0" x2="740.0" y2="146.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="130" width="105.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="92.5" y="150.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="215.0" y="130" width="105.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="267.5" y="150.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="390.0" y="130" width="105.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="442.5" y="150.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="565.0" y="130" width="105.0" height="32" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="617.5" y="150.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,120 L36.0,112 L44.0,112 Z" fill="#3a5ea6"/>
+<path d="M215.0,120 L211.0,112 L219.0,112 Z" fill="#3a5ea6"/>
+<path d="M390.0,120 L386.0,112 L394.0,112 Z" fill="#3a5ea6"/>
+<path d="M565.0,120 L561.0,112 L569.0,112 Z" fill="#3a5ea6"/>
+<path d="M215.0,164 L211.0,172 L219.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M390.0,164 L386.0,172 L394.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M565.0,164 L561.0,172 L569.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+<path d="M740.0,164 L736.0,172 L744.0,172 Z" fill="none" stroke="#3a5ea6" stroke-width="1.3"/>
+</svg>
+<p class="caption">Rate Monotonic ($\tau_3 \succ \tau_2 \succ \tau_1$) : aucune deadline ratée, motif périodique à partir de $t=20$.</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s25">2.5 — Modèle formel</h2>
+
+<h3><span class="n">1.</span> Le job</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> il faut désigner une exécution concrète et unique, distincte de "l'activité en général".</p>
+<div class="def"><span class="lead">Définition</span> Un <b>job</b> est caractérisé par un triplet $\langle a, e, d\rangle$ : $a$ l'instant de relâchement <span class="eng">(release time)</span>, $e$ le temps d'exécution maximal, c.-à-d. le <b>WCET</b> <span class="eng">(Worst-Case Execution Time)</span>, $d$ la deadline absolue — le job doit recevoir ses $e$ unités de CPU dans l'intervalle $[a,d)$.</div>
+<p>Une <b>instance</b> temps réel est une collection (souvent infinie) de jobs. Un job est dit <b>actif</b> depuis son relâchement jusqu'à sa complétion.</p>
+</div>
+
+<h3><span class="n">2.</span> La tâche périodique</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> décrire chaque job séparément est ingérable ; la plupart des activités suivent un motif régulier qu'on décrit une seule fois.</p>
+<div class="def"><span class="lead">Définition</span> Une <b>tâche périodique</b> $\tau_i$ est caractérisée par $\langle O_i, C_i, D_i, T_i\rangle$ : $O_i$ l'<b>offset</b> (relâchement du tout premier job), $C_i$ le WCET, $D_i$ la <b>deadline relative</b> (délai entre relâchement et deadline d'un job), $T_i$ la <b>période</b> (écart exact entre deux relâchements consécutifs).</div>
+<div class="diagram">
+<svg viewBox="0 0 760 104" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="40.0" y="88" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="75.0" y1="20" x2="75.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="75.0" y="88" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="110.0" y1="20" x2="110.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="110.0" y="88" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="145.0" y1="20" x2="145.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="145.0" y="88" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="180.0" y1="20" x2="180.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="180.0" y="88" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="215.0" y1="20" x2="215.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="215.0" y="88" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="250.0" y1="20" x2="250.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="250.0" y="88" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="285.0" y1="20" x2="285.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="285.0" y="88" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="320.0" y1="20" x2="320.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="320.0" y="88" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="355.0" y1="20" x2="355.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="355.0" y="88" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="390.0" y1="20" x2="390.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="390.0" y="88" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="425.0" y1="20" x2="425.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="425.0" y="88" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="460.0" y1="20" x2="460.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="460.0" y="88" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="495.0" y1="20" x2="495.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="495.0" y="88" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="530.0" y1="20" x2="530.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="530.0" y="88" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="565.0" y1="20" x2="565.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="565.0" y="88" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="600.0" y1="20" x2="600.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="600.0" y="88" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.0" y1="20" x2="635.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="635.0" y="88" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="670.0" y1="20" x2="670.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="670.0" y="88" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.0" y1="20" x2="705.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="705.0" y="88" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="740.0" y1="20" x2="740.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="740.0" y="88" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="34" width="105.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="92.5" y="54.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="390.0" y="34" width="105.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="442.5" y="54.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#7a3b2e"/>
+<path d="M390.0,24 L386.0,16 L394.0,16 Z" fill="#7a3b2e"/>
+<path d="M215.0,68 L211.0,76 L219.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M565.0,68 L561.0,76 L569.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+</svg>
+<p class="caption">$\tau_1 = \langle O_1{=}0, C_1{=}3, D_1{=}5, T_1{=}10\rangle$. Triangle plein = relâchement, triangle vide = deadline relative ($D_1$ après chaque relâchement). Le job 2 démarre à $T_1=10$, sa deadline tombe à $10+5=15$.</p>
+</div>
+<div class="remark"><span class="lead">Convention de dessin</span> Le temps est discret, numéroté depuis 0. Chaque tâche a sa propre ligne ; un bloc occupant $[a,b]$ dure $b-a+1$ unités (le nombre est inscrit dedans). Une "bombe" (cercle rouge, comme dans le schéma Round-Robin ci-dessus) marque une deadline ratée. Cette convention suppose au plus un job actif par tâche à la fois — ce qui cesse d'être vrai en <i>arbitrary-deadline</i> (§ familles de systèmes).</div>
+</div>
+
+<h3><span class="n">3.</span> Tâche vs job</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> confondre les deux est l'erreur n°1 d'un débutant — question probable à l'oral.</p>
+<table>
+<tr><th>Tâche $\tau_i$</th><th>Job</th></tr>
+<tr><td>Concept <span class="eng">offline</span> (connu à la conception)</td><td>Concept <span class="eng">runtime</span> (n'existe qu'à l'exécution)</td></tr>
+<tr><td>Paramètres connus à l'avance ($D_i$)</td><td>Paramètres connus à l'exécution ($d$)</td></tr>
+<tr><td>Récurrente, génère un nombre infini de jobs</td><td>Non récurrente, exécutée une seule fois</td></tr>
+<tr><td>Nombre fixe $n$ de tâches</td><td>Nombre potentiellement infini de jobs</td></tr>
+</table>
+</div>
+
+<h3><span class="n">4.</span> Comment une tâche produit ses jobs</h3>
+<div class="concept">
+<div class="def"><span class="lead">Définition</span> On note $J_{i,k}$ le $k$-ième job de $\tau_i$. Il dure $C_i$, est relâché en $O_i + (k-1)T_i$, et a pour deadline absolue $O_i + (k-1)T_i + D_i$.</div>
+<p><span class="lead">Lecture</span> $O_i$ = point de départ commun ; $(k-1)T_i$ = nombre de périodes complètes déjà écoulées (0 pour le premier job) ; $+D_i$ = on ajoute le délai relatif pour obtenir la deadline absolue de ce job précis.</p>
+</div>
+
+<h3><span class="n">5.</span> La tâche sporadique</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> certaines activités sont déclenchées par des événements imprévisibles (capteur, bouton) : on ne connaît qu'un délai <i>minimum</i> entre deux occurrences, pas un délai exact.</p>
+<div class="def"><span class="lead">Définition</span> Une <b>tâche sporadique</b> a les mêmes paramètres qu'une tâche périodique, sauf que $T_i$ devient le <b>délai minimal entre deux arrivées</b> <span class="eng">(minimum inter-arrival time)</span> plutôt que l'écart exact : (relâchement $k{+}1$) $-$ (relâchement $k$) $\ge T_i$.</div>
+<div class="diagram">
+<svg viewBox="0 0 760 104" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="40.0" y="88" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="93.8" y1="20" x2="93.8" y2="74" stroke="#ddd" stroke-width="1"/><text x="93.8" y="88" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="147.7" y1="20" x2="147.7" y2="74" stroke="#ddd" stroke-width="1"/><text x="147.7" y="88" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="201.5" y1="20" x2="201.5" y2="74" stroke="#ddd" stroke-width="1"/><text x="201.5" y="88" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="255.4" y1="20" x2="255.4" y2="74" stroke="#ddd" stroke-width="1"/><text x="255.4" y="88" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="309.2" y1="20" x2="309.2" y2="74" stroke="#ddd" stroke-width="1"/><text x="309.2" y="88" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="363.1" y1="20" x2="363.1" y2="74" stroke="#ddd" stroke-width="1"/><text x="363.1" y="88" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="416.9" y1="20" x2="416.9" y2="74" stroke="#ddd" stroke-width="1"/><text x="416.9" y="88" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="470.8" y1="20" x2="470.8" y2="74" stroke="#ddd" stroke-width="1"/><text x="470.8" y="88" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="524.6" y1="20" x2="524.6" y2="74" stroke="#ddd" stroke-width="1"/><text x="524.6" y="88" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="578.5" y1="20" x2="578.5" y2="74" stroke="#ddd" stroke-width="1"/><text x="578.5" y="88" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="632.3" y1="20" x2="632.3" y2="74" stroke="#ddd" stroke-width="1"/><text x="632.3" y="88" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="686.2" y1="20" x2="686.2" y2="74" stroke="#ddd" stroke-width="1"/><text x="686.2" y="88" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="740.0" y1="20" x2="740.0" y2="74" stroke="#ddd" stroke-width="1"/><text x="740.0" y="88" font-size="9" fill="#888" text-anchor="middle">13</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τi</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="34" width="107.7" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="93.8" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="416.9" y="34" width="107.7" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="470.8" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#3a5e56"/>
+<path d="M416.9,24 L412.9,16 L420.9,16 Z" fill="#3a5e56"/>
+<path d="M255.4,68 L251.4,76 L259.4,76 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M632.3,68 L628.3,76 L636.3,76 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+</svg>
+<p class="caption">$C{=}2, D{=}4, T{=}4$ (minimum). Deux jobs consécutifs séparés ici de 7 unités ($\ge T$) : autorisé en sporadique, interdit en périodique strict.</p>
+</div>
+<p><span class="lead">Conséquence</span> Tâche périodique = problème <span class="eng">offline</span> (tout connu à l'avance). Tâche sporadique = problème <span class="eng">online</span> (la date exacte n'est connue qu'à l'exécution).</p>
+</div>
+
+<h3><span class="n">6.</span> Utilisation du CPU</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> avant même de chercher un ordonnanceur intelligent, il faut vérifier qu'on ne demande pas plus de CPU qu'il n'y en a physiquement.</p>
+<div class="def"><span class="lead">Définition</span>
+$$U(\tau_i) \overset{\text{def}}{=} \frac{C_i}{T_i} \qquad U(\tau) \overset{\text{def}}{=} \sum_{i=1}^n U(\tau_i) = \sum_{i=1}^n \frac{C_i}{T_i}$$
+$C_i/T_i$ = fraction de temps occupée par $\tau_i$ en moyenne sur le long terme ; on somme sur les $n$ tâches du système $\tau=\{\tau_1,\dots,\tau_n\}$.
+</div>
+<p><span class="lead">Exemple</span> ACC : $U(\tau)= 0{,}2+0{,}2+0{,}6=1$ (100%).</p>
+<div class="remark"><span class="lead">Piège</span> $U(\tau)$ n'est <b>pas</b> l'occupation exacte du CPU à un instant $t$ (qui est toujours 0% ou 100%) mais une <b>moyenne asymptotique</b> sur une durée arbitrairement longue — un simple indicateur de charge, muet sur l'ordre d'exécution.</div>
+</div>
+
+<h3><span class="n">7.</span> Familles de systèmes</h3>
+<div class="concept">
+<p><span class="lead">Selon les deadlines</span></p>
+<ul>
+<li><b>Implicit-deadline</b> : $D_i = T_i$, $\forall i$. Chaque job finit avant le relâchement du suivant.</li>
+<li><b>Constrained-deadline</b> : $D_i \le T_i$, $\forall i$.</li>
+<li><b>Arbitrary-deadline</b> (cas général) : aucune contrainte ; $D_i$ peut dépasser $T_i$, donc <b>plusieurs jobs de la même tâche peuvent être actifs en même temps</b> — la convention de dessin simple ne suffit plus.</li>
+</ul>
+<div class="diagram">
+<svg viewBox="0 0 380 170" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<rect x="10" y="10" width="360" height="150" rx="14" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<text x="20" y="28" font-size="11" fill="#7a3b2e">Arbitrary-deadline</text>
+<rect x="45" y="45" width="290" height="105" rx="12" fill="none" stroke="#68655e" stroke-width="1.1"/>
+<text x="55" y="62" font-size="11" fill="#242322">Constrained-deadline</text>
+<rect x="90" y="80" width="200" height="60" rx="10" fill="none" stroke="#3a5e56" stroke-width="1.1"/>
+<text x="105" y="115" font-size="11" fill="#242322">Implicit-deadline</text>
+</svg>
+<p class="caption">Emboîtement : implicit $\subset$ constrained $\subset$ arbitrary — un système implicit-deadline est automatiquement aussi constrained- et arbitrary-deadline.</p>
+</div>
+<p><span class="lead">Selon les offsets</span></p>
+<ul>
+<li><b>Synchrone</b> : $O_i = 0$, $\forall i$ (tous les premiers jobs partent en même temps).</li>
+<li><b>Asynchrone</b> (cas général) : aucune contrainte sur les $O_i$.</li>
+</ul>
+<div class="remark"><span class="lead">Lien</span> Ces deux axes structurent le plan du chapitre 3 : on prouve d'abord le cas simple (implicit + synchrone), puis on généralise étape par étape.</div>
+</div>
+
+<h3><span class="n">8.</span> Ordonnanceur : préemption, FTP / FJP / DP</h3>
+<div class="concept">
+<div class="def"><span class="lead">Définition</span> Un ordonnanceur <b>préemptif</b> peut interrompre de force un job en cours pour donner le CPU à un autre, puis le reprendre plus tard.</div>
+<p><span class="lead">Trois familles</span> selon le niveau où la priorité est fixée :</p>
+<ul>
+<li><b>FTP</b> <span class="eng">(Fixed Task Priority)</span> : priorité unique et fixe par tâche, décidée à la conception ; tous les jobs d'une tâche héritent de la même priorité (ex. Rate Monotonic).</li>
+<li><b>FJP</b> <span class="eng">(Fixed Job Priority)</span> : priorité fixée au niveau du job, à l'exécution ; deux jobs de la même tâche peuvent avoir des priorités différentes (ex. EDF).</li>
+<li><b>DP</b> <span class="eng">(Dynamic Priority)</span> : aucune restriction, la priorité d'un job peut même changer en cours d'exécution.</li>
+</ul>
+<p><span class="lead">Exemple FTP</span> — $\tau=\{\tau_1{=}(T_1{=}5,D_1{=}4,C_1{=}2),\ \tau_2{=}(T_2{=}4,D_2{=}4,C_2{=}2)\}$, $\tau_1$ priorité haute :</p>
+<div class="diagram">
+<svg viewBox="0 0 760 152" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="40.0" y="136" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="75.0" y1="20" x2="75.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="75.0" y="136" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="110.0" y1="20" x2="110.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="110.0" y="136" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="145.0" y1="20" x2="145.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="145.0" y="136" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="180.0" y1="20" x2="180.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="180.0" y="136" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="215.0" y1="20" x2="215.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="215.0" y="136" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="250.0" y1="20" x2="250.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="250.0" y="136" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="285.0" y1="20" x2="285.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="285.0" y="136" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="320.0" y1="20" x2="320.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="320.0" y="136" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="355.0" y1="20" x2="355.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="355.0" y="136" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="390.0" y1="20" x2="390.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="390.0" y="136" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="425.0" y1="20" x2="425.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="425.0" y="136" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="460.0" y1="20" x2="460.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="460.0" y="136" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="495.0" y1="20" x2="495.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="495.0" y="136" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="530.0" y1="20" x2="530.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="530.0" y="136" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="565.0" y1="20" x2="565.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="565.0" y="136" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="600.0" y1="20" x2="600.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="600.0" y="136" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.0" y1="20" x2="635.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="635.0" y="136" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="670.0" y1="20" x2="670.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="670.0" y="136" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.0" y1="20" x2="705.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="705.0" y="136" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="740.0" y1="20" x2="740.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="740.0" y="136" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="75.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="215.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="250.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="390.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="425.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="565.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="600.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#7a3b2e"/>
+<path d="M215.0,24 L211.0,16 L219.0,16 Z" fill="#7a3b2e"/>
+<path d="M390.0,24 L386.0,16 L394.0,16 Z" fill="#7a3b2e"/>
+<path d="M565.0,24 L561.0,16 L569.0,16 Z" fill="#7a3b2e"/>
+<path d="M180.0,68 L176.0,76 L184.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M355.0,68 L351.0,76 L359.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M530.0,68 L526.0,76 L534.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M705.0,68 L701.0,76 L709.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<text x="4" y="102.0" font-size="13" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="98.0" x2="740.0" y2="98.0" stroke="#ccc" stroke-width="1"/>
+<rect x="110.0" y="82" width="105.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="162.5" y="102.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="285.0" y="82" width="105.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="337.5" y="102.0" font-size="10" fill="white" text-anchor="middle">3</text>
+<rect x="460.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="495.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="635.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="670.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,72 L36.0,64 L44.0,64 Z" fill="#3a5e56"/>
+<path d="M180.0,72 L176.0,64 L184.0,64 Z" fill="#3a5e56"/>
+<path d="M320.0,72 L316.0,64 L324.0,64 Z" fill="#3a5e56"/>
+<path d="M460.0,72 L456.0,64 L464.0,64 Z" fill="#3a5e56"/>
+<path d="M600.0,72 L596.0,64 L604.0,64 Z" fill="#3a5e56"/>
+<path d="M180.0,116 L176.0,124 L184.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M320.0,116 L316.0,124 L324.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M460.0,116 L456.0,124 L464.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M600.0,116 L596.0,124 L604.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M740.0,116 L736.0,124 L744.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+</svg>
+<p class="caption">$\tau_1$ (priorité fixe haute) s'exécute dès son relâchement, sans jamais attendre. $\tau_2$ (priorité basse) est préemptée à chaque relâchement de $\tau_1$ (ex. en $t=5,\ 10,\ 15$) puis reprend où elle en était.</p>
+</div>
+</div>
+
+<h3><span class="n">9.</span> Hypothèses de travail (sauf mention contraire)</h3>
+<div class="concept">
+<ul>
+<li>Temps discret ; systèmes hard real-time ; tâches/jobs préemptibles.</li>
+<li>Délais de préemption et de changement de contexte négligés.</li>
+<li>Ordonnanceur <b><span class="eng">work-conserving</span></b> : le CPU n'est jamais inactif s'il existe un job actif en attente.</li>
+<li>Tâches indépendantes : seul le CPU est partagé, aucune contrainte de précédence.</li>
+</ul>
+</div>
+
+<h3><span class="n">10.</span> Temps de réponse d'un job</h3>
+<div class="concept">
+<div class="def"><span class="lead">Définition</span> $$R = \text{complétion} - \text{relâchement}$$ toujours $R \ge C_i$ ; l'égalité n'a lieu que si le job n'a jamais été préempté.</div>
+<p><span class="lead">Exemple</span> (sur le schéma FTP ci-dessus) : $J_{1,1}$ relâché en 0, complété en 2 $\Rightarrow R=2$. $J_{2,1}$ relâché en 0, complété en 4 (retardé par $\tau_1$) $\Rightarrow R=4$, alors que $C_2=2$ seulement.</p>
+</div>
+
+<h3><span class="n">11.</span> Earliest Deadline First (EDF) — aperçu</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi ici</span> montrer, dès ce chapitre, qu'il existe une famille FJP en plus de FTP.</p>
+<div class="def"><span class="lead">Définition</span> EDF est un ordonnanceur <b>FJP</b> : la priorité d'un job dépend de sa deadline absolue — plus elle est proche, plus la priorité est haute.</div>
+<p><span class="lead">Même système que ci-dessus</span> ($\tau_1{=}(C{=}2,D{=}4,T{=}5)$, $\tau_2{=}(C{=}2,D{=}4,T{=}4)$), ordonnancé avec EDF cette fois :</p>
+<div class="diagram">
+<svg viewBox="0 0 760 152" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="20" x2="40.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="40.0" y="136" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="75.0" y1="20" x2="75.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="75.0" y="136" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="110.0" y1="20" x2="110.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="110.0" y="136" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="145.0" y1="20" x2="145.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="145.0" y="136" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="180.0" y1="20" x2="180.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="180.0" y="136" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="215.0" y1="20" x2="215.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="215.0" y="136" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="250.0" y1="20" x2="250.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="250.0" y="136" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="285.0" y1="20" x2="285.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="285.0" y="136" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="320.0" y1="20" x2="320.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="320.0" y="136" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="355.0" y1="20" x2="355.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="355.0" y="136" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="390.0" y1="20" x2="390.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="390.0" y="136" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="425.0" y1="20" x2="425.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="425.0" y="136" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="460.0" y1="20" x2="460.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="460.0" y="136" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="495.0" y1="20" x2="495.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="495.0" y="136" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="530.0" y1="20" x2="530.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="530.0" y="136" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="565.0" y1="20" x2="565.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="565.0" y="136" font-size="9" fill="#888" text-anchor="middle">15</text>
+<line x1="600.0" y1="20" x2="600.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="600.0" y="136" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.0" y1="20" x2="635.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="635.0" y="136" font-size="9" fill="#888" text-anchor="middle">17</text>
+<line x1="670.0" y1="20" x2="670.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="670.0" y="136" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.0" y1="20" x2="705.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="705.0" y="136" font-size="9" fill="#888" text-anchor="middle">19</text>
+<line x1="740.0" y1="20" x2="740.0" y2="122" stroke="#ddd" stroke-width="1"/><text x="740.0" y="136" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="54.0" font-size="13" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="50.0" x2="740.0" y2="50.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="75.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="250.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="285.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="390.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="425.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="565.0" y="34" width="70.0" height="32" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="600.0" y="54.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,24 L36.0,16 L44.0,16 Z" fill="#7a3b2e"/>
+<path d="M215.0,24 L211.0,16 L219.0,16 Z" fill="#7a3b2e"/>
+<path d="M390.0,24 L386.0,16 L394.0,16 Z" fill="#7a3b2e"/>
+<path d="M565.0,24 L561.0,16 L569.0,16 Z" fill="#7a3b2e"/>
+<path d="M180.0,68 L176.0,76 L184.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M355.0,68 L351.0,76 L359.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M530.0,68 L526.0,76 L534.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<path d="M705.0,68 L701.0,76 L709.0,76 Z" fill="none" stroke="#7a3b2e" stroke-width="1.3"/>
+<text x="4" y="102.0" font-size="13" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="98.0" x2="740.0" y2="98.0" stroke="#ccc" stroke-width="1"/>
+<rect x="110.0" y="82" width="140.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="180.0" y="102.0" font-size="10" fill="white" text-anchor="middle">4</text>
+<rect x="320.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="355.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="460.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="495.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<rect x="635.0" y="82" width="70.0" height="32" fill="#3a5e56" opacity="0.82" rx="2"/><text x="670.0" y="102.0" font-size="10" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,72 L36.0,64 L44.0,64 Z" fill="#3a5e56"/>
+<path d="M180.0,72 L176.0,64 L184.0,64 Z" fill="#3a5e56"/>
+<path d="M320.0,72 L316.0,64 L324.0,64 Z" fill="#3a5e56"/>
+<path d="M460.0,72 L456.0,64 L464.0,64 Z" fill="#3a5e56"/>
+<path d="M600.0,72 L596.0,64 L604.0,64 Z" fill="#3a5e56"/>
+<path d="M180.0,116 L176.0,124 L184.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M320.0,116 L316.0,124 L324.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M460.0,116 L456.0,124 L464.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M600.0,116 L596.0,124 L604.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+<path d="M740.0,116 L736.0,124 L744.0,124 Z" fill="none" stroke="#3a5e56" stroke-width="1.3"/>
+</svg>
+<p class="caption">EDF : sur $[0,3]$ c'est $\tau_1$ qui a la deadline la plus proche donc la priorité ; sur $[4,7]$ c'est $\tau_2$. La priorité change de tâche dans le temps, mais reste fixe pour un job donné une fois qu'il est apparu.</p>
+</div>
+<div class="remark"><span class="lead">Nuance</span> C'est précisément pour ça qu'EDF est <b>FJP</b> et non <b>DP</b> : fixe par job, juste différent d'un job à l'autre — pas de changement en cours d'exécution d'un même job.</div>
+</div>
+
+<h3><span class="n">12.</span> Condition nécessaire / suffisante</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> tous les tests de schedulabilité du cours n'ont pas la même force logique : il faut savoir distinguer "obligatoire pour que ça marche" de "garantit que ça marche".</p>
+<div class="def">
+<span class="lead">Définitions</span>
+<ul>
+<li>$A$ <b>nécessaire</b> pour $B$ : $B$ vrai $\Rightarrow$ $A$ vrai (mais $A$ vrai n'implique pas $B$ vrai).</li>
+<li>$A$ <b>suffisant</b> pour $B$ : $A$ vrai $\Rightarrow$ $B$ vrai (mais $B$ vrai n'implique pas $A$ vrai).</li>
+<li>$A$ <b>nécessaire et suffisant</b> : $A \Leftrightarrow B$, équivalence totale.</li>
+</ul>
+</div>
+<div class="def"><span class="lead">Lemma 14</span> Pour un ensemble de tâches périodiques $\tau$, $U(\tau)\le 1$ est une condition <b>nécessaire</b> de schedulabilité.</div>
+<p><span class="lead">Preuve — idée</span> Comptabilité : sur une fenêtre longue $L$ (multiple des périodes), $\tau_i$ demande $\frac{L}{T_i}C_i$ unités de CPU. Total demandé $= L\cdot U(\tau)$. Or le CPU, ressource physique unique, ne peut fournir plus de $L$ unités sur cette fenêtre. Donc si $\tau$ est schedulable, $L\cdot U(\tau)\le L \Rightarrow U(\tau)\le 1$. Si la demande dépassait l'offre, un déficit — donc une deadline ratée — serait inévitable tôt ou tard.</p>
+<div class="remark"><span class="lead">Piège</span> Nécessaire $\ne$ suffisant : l'ACC en Round-Robin avait $U(\tau)=1$ et ratait pourtant des deadlines (mauvais ordre d'exécution, pas manque de CPU). Au chapitre 4, on verra qu'en EDF + implicit-deadline, $U(\tau)\le1$ devient nécessaire <b>et</b> suffisant — un résultat bien plus fort.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s26">2.6 — DAL, WCET, redondance</h2>
+
+<div class="concept">
+<p><span class="lead">Pourquoi</span> prouver la faisabilité sur le papier ne suffit pas dans l'industrie : il faut un cadre réglementaire fixant le niveau de rigueur exigé selon la gravité d'une panne.</p>
+<div class="def"><span class="lead">Design Assurance Level (DAL)</span> Classification (aéronautique notamment) du niveau de rigueur de conception/vérification exigé selon la gravité des conséquences d'une défaillance. Le niveau <b>DAL A</b> (le plus strict) exige une probabilité de panne $&lt;10^{-9}$ par heure de vol, soit une erreur attendue en moyenne tous les
+$$\frac{1}{10^{-9}\times 24\times 365}\approx 114\,155 \text{ ans}.$$</div>
+<p><span class="lead">WCET</span> Toute la théorie du chapitre repose sur $C_i$. S'il est sous-estimé, toutes les preuves de faisabilité construites dessus s'effondrent — même avec un algorithme d'ordonnancement parfait. Le WCET doit être une borne supérieure <i>sûre</i>, pas juste "le pire temps observé en test" ; son calcul détaillé est hors du cadre de ce cours.</p>
+<p><span class="lead">Redondance</span> Duplication de composants (capteurs, processeurs) pour survivre à une panne matérielle, indépendamment de l'ordonnancement. Insuffisante seule si un composant peut mentir ou se comporter de façon arbitraire (<b>panne byzantine</b>) : il faut alors des algorithmes de consensus tolérants aux fautes byzantines (repris en fin de cours).</p>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Objets</h4>
+<p>Job : $\langle a,e,d\rangle$ — Tâche périodique : $\langle O_i,C_i,D_i,T_i\rangle$ — $J_{i,k}$ : relâché en $O_i+(k-1)T_i$, deadline $O_i+(k-1)T_i+D_i$.</p>
+<h4>Formules</h4>
+<p>$U(\tau_i)=C_i/T_i \quad U(\tau)=\sum_i C_i/T_i \quad R=\text{complétion}-\text{relâchement} \quad U(\tau)\le1$ nécessaire (Lemma 14).</p>
+<h4>Classes de deadlines</h4>
+<p>Implicit $D_i{=}T_i$ $\subset$ Constrained $D_i\le T_i$ $\subset$ Arbitrary (aucune contrainte).</p>
+<h4>Offsets</h4>
+<p>Synchrone $O_i{=}0\ \forall i$ / Asynchrone (général).</p>
+<h4>Familles d'ordonnanceurs</h4>
+<p>FTP (priorité fixe par tâche, ex. RM) — FJP (priorité fixe par job, ex. EDF) — DP (aucune restriction).</p>
+<h4>Hard / Firm / Soft</h4>
+<p>Hard : zéro tolérance. Firm : tolérance rare + QoS. Soft : tolérance large.</p>
+<h4>Nécessaire / suffisant</h4>
+<p>$A$ nécessaire pour $B$ : $B\Rightarrow A$. $A$ suffisant pour $B$ : $A\Rightarrow B$. Équivalent : $A\Leftrightarrow B$.</p>
+<h4>Acronymes</h4>
+<p>WCET (Worst-Case Execution Time), RTOS, CPS (Cyber-Physical System), QoS (Quality of Service), FTP/FJP/DP, RM/DM/EDF, DAL.</p>
+</div>
+
+</body>
+</html>

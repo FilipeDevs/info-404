@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 3 — Fiche de révision — Fixed Task Priority (FTP)</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  h4.sub{font-size:.92rem; margin:1.1rem 0 .4rem; font-family:Helvetica,Arial,sans-serif; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.03em;}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  .formal .step{margin:.3rem 0;}
+  .q{font-style:italic; color:var(--sub); font-size:.93rem; margin:.5rem 0; padding-left:.9rem; border-left:3px dotted var(--border);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  code{background:var(--shade); padding:.05rem .3rem; border-radius:3px; font-family:monospace; font-size:.9em;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .twocol{display:flex; gap:1rem; flex-wrap:wrap;}
+  .twocol > div{flex:1; min-width:220px;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 3 — Fiche de révision</h1>
+<p class="subtitle">Fixed Task Priority (FTP) assignment — INFO-F404. Chaque preuve est d'abord racontée avec des chiffres concrets (🔍), puis rappelée dans une version courte "à citer à l'oral" (📝).</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s31">Introduction &amp; vocabulaire FTP</a></li>
+<li><a href="#s32">Preuve par induction (rappel de méthode)</a></li>
+<li><a href="#s33">Rate Monotonic (RM)</a> — instant critique, optimalité de RM, temps de réponse, utilisation schedulable</li>
+<li><a href="#s34">Deadline Monotonic (DM)</a></li>
+<li><a href="#s35">Deadlines arbitraires</a></li>
+<li><a href="#s36">Systèmes asynchrones</a></li>
+<li><a href="#s37">Algorithme d'Audsley</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s31">3.1 — Introduction &amp; vocabulaire FTP</h2>
+<div class="concept">
+<p><span class="lead">Contexte</span> Ce chapitre étudie les ordonnanceurs <b>FTP</b> <span class="eng">(Fixed Task Priority)</span> : chaque tâche reçoit une priorité fixe, décidée à la conception. On note $\tau_i \succ \tau_j$ pour "$\tau_i$ a une priorité plus haute que $\tau_j$". Sauf mention contraire, on numérote par priorité décroissante : $\tau_1\succ\tau_2\succ\cdots\succ\tau_n$.</p>
+<p><span class="lead">Trois questions du chapitre</span> Quelle règle de priorité choisir ? Comment vérifier par le calcul qu'un système est faisable ? Sur quel intervalle fini suffit-il de vérifier pour conclure pour toujours ?</p>
+</div>
+
+<hr class="divider">
+<h2 id="s32">3.2 — Preuve par induction (rappel de méthode)</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> presque toutes les preuves de ce chapitre s'appuient sur l'induction. On la revoit une fois pour toutes, tranquillement.</p>
+<div class="analogie"><span class="lead">Intuition</span> L'effet domino : si la première pièce tombe (cas de base), et que chaque pièce qui tombe fait toujours tomber la suivante (étape inductive), alors <i>toutes</i> les pièces tombent — aussi loin que la ligne s'étende. On ne vérifie jamais pièce par pièce ; on prouve juste que le mécanisme de propagation fonctionne, une fois.</div>
+<div class="def"><span class="lead">Définition</span> Soit $\mathbb{P}(n)$ une propriété. Si $\mathbb{P}(0)$ est vraie, et si pour tout $n$, $\mathbb{P}(n)\Rightarrow\mathbb{P}(n+1)$, alors $\mathbb{P}(n)$ est vraie pour tout $n\ge0$.</div>
+<p><span class="lead">Exemple (Theorem 17)</span> $\sum_{i=1}^n i = \frac{n(n+1)}{2}$.</p>
+<div class="formal">
+<p class="step"><span class="lead">Cas de base</span> $n=0$ : $\sum_{i=1}^0 i = 0 = \frac{0\cdot1}{2}$. ✓</p>
+<p class="step"><span class="lead">Étape inductive</span> On suppose $\sum_{i=1}^n i=\frac{n(n+1)}{2}$ (hypothèse) et on calcule :
+$$1+\cdots+n+(n{+}1)=\frac{n(n+1)}{2}+(n{+}1)=\frac{n^2+3n+2}{2}=\frac{(n+1)(n+2)}{2}. ✓$$</p>
+</div>
+<div class="remark"><span class="lead">Le schéma qu'on va revoir sans arrêt</span> Dans ce chapitre, l'induction propage une propriété tâche par tâche, en priorité décroissante : elle tient pour $\{\tau_1\}$ ; si elle tient pour $\{\tau_1,\dots,\tau_{i-1}\}$, elle tient encore en ajoutant la tâche suivante $\tau_i$.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s33">3.3 — Rate Monotonic (RM)</h2>
+<div class="concept">
+<p><span class="lead">Règle</span> Priorité selon la période : plus $T_i$ est petit, plus la priorité est haute. Complexité $\mathcal{O}(n\log n)$ (un tri).</p>
+<div class="def">
+<ul>
+<li>Une affectation de priorités est <b>faisable</b> si elle ordonnance $\tau$ sans jamais rater de deadline.</li>
+<li>$\tau$ est <b>FTP-faisable</b> s'il existe une affectation FTP faisable.</li>
+<li>Une affectation FTP est <b>FTP-optimale</b> si elle réussit sur tout $\tau$ FTP-faisable.</li>
+</ul>
+</div>
+</div>
+
+<h3><span class="n">A.</span> L'instant critique (Lemma 25)</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> vérifier <i>tous</i> les jobs pour toujours est impossible. On cherche le pire scénario possible pour ne vérifier que lui.</p>
+<div class="def"><span class="lead">Énoncé</span> Pour un système à deadline contrainte, le pire temps de réponse d'un job de $\tau_i$ survient quand ce job est relâché <b>en même temps</b> que les jobs de toutes les tâches plus prioritaires (cas synchrone).</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Deux tâches : $\tau_H$ (haute priorité, un seul job, $C_H=3$) et $\tau_L$ (celle qu'on étudie, $C_L=2$, $D_L=15$), $\tau_L$ relâchée en $t=0$. On fait varier la date de relâchement de $\tau_H$ et on regarde ce que ça change pour $\tau_L$.</p>
+<table>
+<tr><th>Relâchement de $\tau_H$</th><th>Ce qui se passe</th><th>Fin de $\tau_L$</th></tr>
+<tr><td>$t=0$ (en même temps que $\tau_L$)</td><td>$\tau_H$ passe d'abord (0→3), $\tau_L$ ensuite (3→5)</td><td>$5$</td></tr>
+<tr><td>$t=1$ (un peu plus tard)</td><td>$\tau_L$ démarre (0→1), $\tau_H$ arrive et préempte (1→4), $\tau_L$ finit son dernier bout (4→5)</td><td>$5$ — pareil !</td></tr>
+<tr><td>$t=3$ (encore plus tard)</td><td>$\tau_L$ a le temps de finir toute seule (0→2) <b>avant même que $\tau_H$ n'arrive</b></td><td>$2$ — bien mieux !</td></tr>
+</table>
+<p><span class="step-title">Ce qu'on observe :</span> retarder l'arrivée de $\tau_H$ ne peut <b>jamais</b> aider $\tau_L$ à finir plus tard qu'avant — au pire ça ne change rien (comme à $t=1$), au mieux ça l'aide énormément (comme à $t=3$, où l'interférence arrive trop tard pour gêner). Le pire cas pour $\tau_L$ est donc bien quand $\tau_H$ arrive <b>en même temps</b> qu'elle : $t=0$.</p>
+<p><span class="step-title">Pourquoi c'est toujours vrai, pas juste dans cet exemple :</span> $\tau_L$ ne peut terminer qu'après avoir reçu tout son travail ($C_L$) <i>et</i> tout le travail des tâches plus prioritaires qui se sont mises en travers de son chemin. Rapprocher l'arrivée de $\tau_H$ du début ne fait qu'<i>ajouter</i> des occasions pour elle de se mettre en travers plus tôt — jamais en retirer. Le cas "tout le monde arrive ensemble" est donc bien un pire cas (ou un cas à égalité), jamais moins bon qu'un cas décalé.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Soit $t_0$ le relâchement de $J_{i,k}$, $t_{-1}$ le dernier point d'inactivité avant ou en $t_0$, $t_R$ la fin de $J_{i,k}$. Le CPU est occupé sans interruption de $t_{-1}$ à $t_R$ (définition d'un point d'inactivité). Décaler vers la gauche (vers $t_{-1}$) les arrivées des tâches plus prioritaires ne peut qu'augmenter ou laisser égal le temps de réponse de $J_{i,k}$ — jamais le diminuer. Le maximum est donc atteint quand ces arrivées coïncident avec $t_{-1}$, c'est-à-dire le cas synchrone. Le même argument appliqué aux jobs suivants de $\tau_i$ (relâchés aussi tôt que possible) donne le pire cas absolu.</p>
+</div>
+<div class="remark"><span class="lead">Conséquence pratique</span> Vérifier un système sporadique revient à vérifier le système synchrone périodique correspondant — c'est toujours le pire cas possible.</div>
+</div>
+
+<h3><span class="n">B.</span> Conservation du travail (Lemma 27)</h3>
+<div class="concept">
+<div class="def"><span class="lead">Définition</span> Un ordonnanceur est <b><span class="eng">work-conserving</span></b> s'il ne laisse jamais le CPU inactif quand un job actif attend.</div>
+<div class="def"><span class="lead">Énoncé (Lemma 27)</span> Deux ordonnancements <span class="eng">work-conserving</span> différents du même système $\tau$ sont inactifs exactement aux mêmes instants.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Reprenons System 24 : $\tau_1{=}(C{=}2,T{=}5)$, $\tau_2{=}(C{=}3,T{=}10)$. On compare <b>deux</b> ordres de priorité complètement différents sur $[0,10)$ :</p>
+<table>
+<tr><th>Ordre</th><th>Ce qui tourne</th><th>Instants inactifs</th></tr>
+<tr><td>$\tau_1\succ\tau_2$</td><td>$\tau_1$: [0,2) et [5,7) — $\tau_2$: [2,5)</td><td>$\{7,8,9\}$</td></tr>
+<tr><td>$\tau_2\succ\tau_1$</td><td>$\tau_2$: [0,3) — $\tau_1$: [3,7)</td><td>$\{7,8,9\}$</td></tr>
+</table>
+<p><span class="step-title">Ce qu'on observe :</span> les deux ordonnanceurs exécutent les tâches dans un ordre totalement différent (regarde la colonne du milieu, aucun bloc ne coïncide !) — et pourtant, les instants où le CPU est inactif sont <b>identiques</b> : $\{7,8,9\}$ dans les deux cas.</p>
+<p><span class="step-title">Pourquoi ça doit être vrai :</span> tant qu'il y a du travail en attente, un ordonnanceur <span class="eng">work-conserving</span> ne s'arrête jamais — peu importe lequel des jobs en attente il choisit d'exécuter. Le CPU ne devient donc inactif qu'au moment précis où <i>tout</i> le travail déjà arrivé est épuisé. Cet instant ne dépend que de "combien de travail est arrivé jusqu'ici" (une propriété des tâches, pas de l'ordonnanceur) — pas de l'ordre dans lequel ce travail a été traité.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Par induction sur $t$. Cas de base : $t=0$ trivial. Étape : soit $t_1$ le dernier instant inactif de $S_1$ avant $n+1$. Si $S_1(n+1)$ est occupé : $S_1$ étant <span class="eng">work-conserving</span>, aucun instant inactif dans $(t_1,n+1]$ ; $S_2$ traite la même charge sur cet intervalle, donc lui aussi est occupé en $n+1$. Si $S_1(n+1)$ est inactif : tout le travail arrivé dans $(t_1,n+1]$ est fini dans $S_1$ ; $S_2$, traitant la même charge, l'a fini aussi. Dans les deux cas $S_1$ et $S_2$ concordent en $n+1$.</p>
+</div>
+<div class="remark"><span class="lead">Pourquoi ce lemme sert juste après</span> Il permet, dans la preuve d'optimalité de RM, d'affirmer que réordonner deux tâches ne change pas les "trous" disponibles pour les tâches en dessous — seul l'ordre interne au bloc occupé change.</div>
+</div>
+
+<h3><span class="n">C.</span> Optimalité de RM (Theorem 28)</h3>
+<div class="concept">
+<div class="def"><span class="lead">Énoncé</span> RM est FTP-optimal pour les systèmes synchrones à deadline implicite : s'il existe une affectation FTP faisable, RM l'est aussi.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p><span class="step-title">L'idée en une phrase :</span> pour transformer n'importe quelle affectation qui marche en RM, il suffit d'échanger des paires de tâches voisines mal ordonnées, l'une après l'autre — comme un tri à bulles. Il suffit de montrer qu'<b>un seul échange</b> ne casse jamais rien.</p>
+<p>Deux tâches, deadline implicite, relâchées ensemble à $t=0$ :</p>
+<ul>
+<li>$\tau_A$ : $C_A=3$, $T_A=D_A=12$ (période longue)</li>
+<li>$\tau_B$ : $C_B=2$, $T_B=D_B=5$ (période courte — RM voudrait $\tau_B$ en premier)</li>
+</ul>
+<p><span class="step-title">Avant l'échange</span> ($\tau_A\succ\tau_B$, mauvais ordre) :</p>
+<div class="diagram">
+<svg viewBox="0 0 520 134" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="121" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="78.3" y1="18" x2="78.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="78.3" y="121" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="116.7" y1="18" x2="116.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="116.7" y="121" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="155.0" y1="18" x2="155.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="155.0" y="121" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="193.3" y1="18" x2="193.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="193.3" y="121" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="231.7" y1="18" x2="231.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="231.7" y="121" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="270.0" y1="18" x2="270.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="270.0" y="121" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="308.3" y1="18" x2="308.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="308.3" y="121" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="346.7" y1="18" x2="346.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="346.7" y="121" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="385.0" y1="18" x2="385.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="385.0" y="121" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="423.3" y1="18" x2="423.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="423.3" y="121" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="461.7" y1="18" x2="461.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="461.7" y="121" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="500.0" y1="18" x2="500.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="500.0" y="121" font-size="9" fill="#888" text-anchor="middle">12</text>
+<text x="2" y="49.0" font-size="12" fill="#222" font-weight="bold">A</text>
+<line x1="40" y1="45.0" x2="500.0" y2="45.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="115.0" height="28" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="97.5" y="49.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M500.0,59 L496.0,67 L504.0,67 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="91.0" font-size="12" fill="#222" font-weight="bold">B</text>
+<line x1="40" y1="87.0" x2="500.0" y2="87.0" stroke="#ccc" stroke-width="1"/>
+<rect x="155.0" y="73" width="76.7" height="28" fill="#3a5e56" opacity="0.82" rx="2"/><text x="193.3" y="91.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,64 L36.0,57 L44.0,57 Z" fill="#3a5e56"/>
+<path d="M231.7,101 L227.7,109 L235.7,109 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">$\tau_A$ (priorité haute) : 0→3, réponse 3. $\tau_B$ attend, puis 3→5, réponse 5 = $D_B$ pile.</p>
+</div>
+<p>$\tau_A$, la plus prioritaire, n'est jamais gênée par personne : elle tourne dès qu'elle arrive et finit en $C_A=3$. $\tau_B$ attend que $\tau_A$ ait fini, puis tourne : elle finit en $t=5$, exactement sa deadline.</p>
+<p><span class="step-title">Après l'échange</span> ($\tau_B\succ\tau_A$ = RM) :</p>
+<div class="diagram">
+<svg viewBox="0 0 520 134" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="121" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="78.3" y1="18" x2="78.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="78.3" y="121" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="116.7" y1="18" x2="116.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="116.7" y="121" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="155.0" y1="18" x2="155.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="155.0" y="121" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="193.3" y1="18" x2="193.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="193.3" y="121" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="231.7" y1="18" x2="231.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="231.7" y="121" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="270.0" y1="18" x2="270.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="270.0" y="121" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="308.3" y1="18" x2="308.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="308.3" y="121" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="346.7" y1="18" x2="346.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="346.7" y="121" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="385.0" y1="18" x2="385.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="385.0" y="121" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="423.3" y1="18" x2="423.3" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="423.3" y="121" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="461.7" y1="18" x2="461.7" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="461.7" y="121" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="500.0" y1="18" x2="500.0" y2="108" stroke="#e3e0d8" stroke-width="1"/><text x="500.0" y="121" font-size="9" fill="#888" text-anchor="middle">12</text>
+<text x="2" y="49.0" font-size="12" fill="#222" font-weight="bold">B</text>
+<line x1="40" y1="45.0" x2="500.0" y2="45.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="76.7" height="28" fill="#3a5e56" opacity="0.82" rx="2"/><text x="78.3" y="49.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#3a5e56"/>
+<path d="M231.7,59 L227.7,67 L235.7,67 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<text x="2" y="91.0" font-size="12" fill="#222" font-weight="bold">A</text>
+<line x1="40" y1="87.0" x2="500.0" y2="87.0" stroke="#ccc" stroke-width="1"/>
+<rect x="116.7" y="73" width="115.0" height="28" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="174.2" y="91.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,64 L36.0,57 L44.0,57 Z" fill="#7a3b2e"/>
+<path d="M500.0,101 L496.0,109 L504.0,109 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+</svg>
+<p class="caption">$\tau_B$ passe d'abord (0→2), puis $\tau_A$ (2→5). $\tau_A$ finit en $t=5$ — largement dans les temps ($D_A=12$).</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> regarde bien — <b>avant</b> l'échange, $\tau_B$ (mise en dernier) finissait en $t=5$. <b>Après</b> l'échange, $\tau_A$ (maintenant mise en dernier) finit <i>exactement</i> au même instant, $t=5$ !</p>
+<p>Ce n'est pas un hasard : sur $[0,5)$ il y a toujours exactement $C_A+C_B=5$ unités de travail à faire, et personne d'autre ne vient perturber cette fenêtre. Le CPU est occupé sans interruption de 0 à 5 dans les deux versions — seul l'<i>ordre interne</i> change (A puis B, ou B puis A). Celui qui passe en dernier termine forcément à la fin du bloc, donc au même instant dans les deux cas.</p>
+<p>Or on savait déjà que ce point ($t=5$) respectait la deadline de $\tau_B$ ($D_B=5$). Et comme $\tau_A$ a une deadline plus longue ($D_A=12\ge D_B=5$, car $T_A\ge T_B$ et deadline implicite), ce même point respecte automatiquement aussi la deadline de $\tau_A$. C'est tout l'argument.</p>
+<p><span class="step-title">Et s'il y a d'autres tâches au-dessus ou en dessous ?</span> Les tâches encore plus prioritaires que les deux qu'on échange ne voient rien : leur priorité n'a pas bougé. Les tâches moins prioritaires ne voient que "CPU occupé ou libre" à chaque instant (pas qui l'occupe) — et on vient de montrer que ce motif occupé/libre reste identique, donc rien ne change pour elles non plus (c'est exactement le rôle du Lemma 27 vu juste avant).</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Soit $\tau_1\succ\cdots\succ\tau_n$ une affectation FTP faisable, et $\tau_i,\tau_{i+1}$ deux tâches adjacentes avec $T_i\ge T_{i+1}$ (mal ordonnées pour RM). On échange leurs priorités et on vérifie 4 groupes :</p>
+<ol>
+<li>Tâches $\tau_1,\dots,\tau_{i-1}$ : priorité inchangée, donc schedulabilité inchangée.</li>
+<li>$\tau_{i+1}$ : sa priorité a augmenté, elle profite maintenant aussi des créneaux libres laissés par $\tau_i$ — reste schedulable.</li>
+<li>$\tau_{i+2},\dots,\tau_n$ : par le Lemma 27, les instants d'inactivité laissés par $\{\tau_1,\dots,\tau_i,\tau_{i+1}\}$ sont inchangés (même charge totale) — planning inchangé.</li>
+<li>$\tau_i$ : par le Lemma 25, seul le premier job compte. Soit $r_{i+1}$ le temps de réponse du premier job de $\tau_{i+1}$ <i>avant</i> l'échange ($r_{i+1}\le D_{i+1}$ par faisabilité). Sur $[0,r_{i+1})$, le CPU libéré par les tâches supérieures sert d'abord $\tau_i$ puis $\tau_{i+1}$ (pas d'interruption par un second job de $\tau_i$ car $T_i\gt T_{i+1}=D_{i+1}\ge r_{i+1}$). Après l'échange, cette même allocation est inversée : $\tau_i$ termine à $r_{i+1}\le D_{i+1}=T_{i+1}\le T_i=D_i$ — deadline respectée.</li>
+</ol>
+<p class="step">Un tri à bulles atteint RM par une suite finie de tels échanges, chacun préservant la faisabilité. $\blacksquare$</p>
+</div>
+<div class="remark"><span class="lead">Portée</span> "FTP-optimal" veut dire que RM ordonnance <i>tout</i> système FTP-faisable — mais seulement pour synchrone + implicit-deadline. L'optimalité d'EDF (chapitre 4) est d'une autre nature : elle porte sur un ensemble de jobs quelconque.</div>
+</div>
+
+<h3><span class="n">D.</span> Temps de réponse du premier job</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> le Lemma 25 dit "le premier job (cas synchrone) donne le pire cas" — reste à savoir le <i>calculer</i>.</p>
+<div class="def"><span class="lead">Theorem 29</span> Un système synchrone à deadline contrainte est FTP-schedulable ssi $r_i^1\le D_i$ pour tout $i$, où
+$$r_i^1 = C_i + \sum_{j=1}^{i-1}\left\lceil\frac{r_i^1}{T_j}\right\rceil C_j$$
+</div>
+<p><span class="lead">Traduction</span> temps de réponse = mon propre temps d'exécution $C_i$ + l'interférence de chaque tâche plus prioritaire $\tau_j$ : $\lceil r_i^1/T_j\rceil$ jobs de $\tau_j$ apparaissent dans $[0,r_i^1)$, chacun coûtant $C_j$.</p>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi il faut itérer (et non calculer une fois)</div>
+<p>$r_i^1$ apparaît des deux côtés de l'équation : plus $\tau_i$ met de temps à finir, plus ça laisse le temps à d'autres jobs prioritaires d'arriver entretemps et de le retarder <i>encore</i> — comme une file d'attente qui s'allonge pendant que tu patientes déjà. On résout donc par itération : on part d'une estimation basse ($w_0=C_i$), on recalcule, et on répète jusqu'à ce que ça arrête de bouger.</p>
+<p><span class="step-title">Exemple (System 30)</span> : $\tau_1{=}(C{=}2,T{=}D{=}8)$, $\tau_2{=}(C{=}3,T{=}D{=}11)$, $\tau_3{=}(C{=}5,T{=}D{=}15)$, priorité $\tau_1\succ\tau_2\succ\tau_3$. On calcule $r_3^1$ :</p>
+<table>
+<tr><th>$k$</th><th>$w_k$</th><th>Calcul</th></tr>
+<tr><td>0</td><td>5</td><td>on part de $C_3$ tout seul, sans interférence</td></tr>
+<tr><td>1</td><td>10</td><td>$5+\lceil5/8\rceil{\cdot}2+\lceil5/11\rceil{\cdot}3 = 5+2+3$ — ah, en 5 unités il y a en fait déjà 1 job de $\tau_1$ et 1 de $\tau_2$ qui interfèrent</td></tr>
+<tr><td>2</td><td>12</td><td>$5+\lceil10/8\rceil{\cdot}2+\lceil10/11\rceil{\cdot}3 = 5+4+3$ — en 10 unités, $\tau_1$ a maintenant eu le temps de se relâcher 2 fois</td></tr>
+<tr><td>3</td><td>15</td><td>$5+\lceil12/8\rceil{\cdot}2+\lceil12/11\rceil{\cdot}3 = 5+4+6$ — et maintenant $\tau_2$ aussi se relâche une 2e fois</td></tr>
+<tr><td>4</td><td>15</td><td>$5+\lceil15/8\rceil{\cdot}2+\lceil15/11\rceil{\cdot}3 = 5+4+6$ — plus rien ne bouge, c'est stable</td></tr>
+</table>
+<p>$r_3^1=15\le D_3=15$ : tout juste schedulable.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 182" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="169" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="86.7" y1="18" x2="86.7" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="86.7" y="169" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="133.3" y1="18" x2="133.3" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="133.3" y="169" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="180.0" y1="18" x2="180.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="180.0" y="169" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="226.7" y1="18" x2="226.7" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="226.7" y="169" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="273.3" y1="18" x2="273.3" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="273.3" y="169" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="320.0" y1="18" x2="320.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="320.0" y="169" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="366.7" y1="18" x2="366.7" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="366.7" y="169" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="413.3" y1="18" x2="413.3" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="413.3" y="169" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="460.0" y1="18" x2="460.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="460.0" y="169" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="506.7" y1="18" x2="506.7" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="506.7" y="169" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="553.3" y1="18" x2="553.3" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="553.3" y="169" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="600.0" y1="18" x2="600.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="600.0" y="169" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="646.7" y1="18" x2="646.7" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="646.7" y="169" font-size="9" fill="#888" text-anchor="middle">13</text>
+<line x1="693.3" y1="18" x2="693.3" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="693.3" y="169" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="740.0" y1="18" x2="740.0" y2="156" stroke="#e3e0d8" stroke-width="1"/><text x="740.0" y="169" font-size="9" fill="#888" text-anchor="middle">15</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="740.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="93.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="86.7" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<rect x="413.3" y="31" width="93.3" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="460.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M413.3,22 L409.3,15 L417.3,15 Z" fill="#7a3b2e"/>
+<path d="M413.3,61 L409.3,69 L417.3,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="740.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="133.3" y="75" width="140.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="203.3" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<rect x="553.3" y="75" width="140.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="623.3" y="94.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M553.3,66 L549.3,59 L557.3,59 Z" fill="#3a5e56"/>
+<path d="M553.3,105 L549.3,113 L557.3,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<text x="2" y="138.0" font-size="12" fill="#222" font-weight="bold">τ3</text>
+<line x1="40" y1="134.0" x2="740.0" y2="134.0" stroke="#ccc" stroke-width="1"/>
+<rect x="273.3" y="119" width="140.0" height="30" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="343.3" y="138.0" font-size="9.5" fill="white" text-anchor="middle">3</text>
+<rect x="506.7" y="119" width="46.7" height="30" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="530.0" y="138.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="693.3" y="119" width="46.7" height="30" fill="#3a5ea6" opacity="0.82" rx="2"/><text x="716.7" y="138.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,110 L36.0,103 L44.0,103 Z" fill="#3a5ea6"/>
+<path d="M740.0,149 L736.0,157 L744.0,157 Z" fill="none" stroke="#3a5ea6" stroke-width="1.2"/>
+</svg>
+<p class="caption">$\tau_3$ est préemptée par les deux jobs de $\tau_1$ et par le 2e job de $\tau_2$, avant de finir pile en $t{=}15$.</p>
+</div>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Itération à point fixe (Equation 3.2)</span>
+$$w_0=C_i \qquad w_{k+1}=C_i+\sum_{j=1}^{i-1}\left\lceil\frac{w_k}{T_j}\right\rceil C_j$$
+Arrêt si $w_{k+1}=w_k$ (valeur exacte) ou $w_k\gt D_i$ (infaisable, inutile de continuer).</p>
+</div>
+<div class="def"><span class="lead">Definition 31 &amp; Corollary 32</span> Un <b>intervalle de faisabilité</b> est un intervalle fini où "aucune deadline ratée dedans" $\Rightarrow$ "aucune deadline jamais ratée". Pour un système synchrone à deadline contrainte, $[0,\max_i D_i)$ en est un — conséquence directe du Theorem 29.</div>
+</div>
+
+<h3><span class="n">E.</span> Utilisation schedulable de RM</h3>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> résoudre le point fixe pour chaque tâche est exact mais coûteux ; on veut un test plus rapide, quitte à être moins précis.</p>
+<div class="def"><span class="lead">Theorem 33 (Liu &amp; Layland)</span> $n$ tâches synchrones implicit-deadline sont schedulables par RM si $U(\tau)\le n(2^{1/n}-1)$ (preuve hors programme).</div>
+<div class="def"><span class="lead">Corollary 34</span> Quand $n\to\infty$, la borne tend vers $\ln2\approx0{,}69$.</div>
+<table>
+<tr><th>Utilisation</th><th>Conclusion</th></tr>
+<tr><td>$U(\tau)\le0{,}69$</td><td>schedulable, certain</td></tr>
+<tr><td>$0{,}69\lt U(\tau)\le1$</td><td>peut-être — refaire le test exact</td></tr>
+<tr><td>$U(\tau)\gt1$</td><td>jamais schedulable</td></tr>
+</table>
+<div class="remark"><span class="lead">Piège</span> Test <b>suffisant</b>, pas nécessaire : $U(\tau)=0{,}9$ peut très bien être schedulable, la borne ne le garantit juste pas automatiquement.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s34">3.4 — Deadline Monotonic (DM)</h2>
+<div class="concept">
+<p><span class="lead">Règle</span> Pour les systèmes synchrones à deadline <b>contrainte</b> : plus $D_i$ est petit, plus la priorité est haute. RM = cas particulier $D_i=T_i$.</p>
+<div class="def"><span class="lead">Theorem 35</span> DM est FTP-optimal pour les systèmes synchrones à deadline contrainte.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Deux tâches, deadline <b>contrainte</b> cette fois ($D_i\ne T_i$), relâchées ensemble à $t=0$ :</p>
+<ul>
+<li>$\tau_X$ : $C_X=2$, $T_X=6$, $D_X=5$</li>
+<li>$\tau_Y$ : $C_Y=2$, $T_Y=10$, $D_Y=4$</li>
+</ul>
+<p>Regarde bien les périodes et les deadlines : $\tau_X$ a la période la plus <b>courte</b> ($6\lt10$, donc RM la mettrait en premier), mais $\tau_Y$ a la deadline la plus <b>courte</b> ($4\lt5$, donc DM la met en premier). RM et DM ne sont <b>pas</b> d'accord sur cet exemple — parfait pour vérifier que c'est bien la deadline qui compte, pas la période.</p>
+<p><span class="step-title">Ordre RM, $\tau_X\succ\tau_Y$ (mauvais pour DM) :</span> $\tau_X$ prioritaire tourne 0→2, termine en 2 ($\le D_X=5$, bon). $\tau_Y$ attend, tourne 2→4, termine en $t=4$ — exactement $D_Y=4$, tout juste bon.</p>
+<p><span class="step-title">Ordre DM, $\tau_Y\succ\tau_X$ :</span> $\tau_Y$ prioritaire tourne 0→2, termine en 2 ($\le D_Y=4$, bon). $\tau_X$ attend, tourne 2→4, termine en $t=4$ — et $D_X=5\ge4$, donc encore bon, avec même un peu de marge.</p>
+<p><span class="step-title">Le même "aha" que d'habitude :</span> dans les deux ordres, le total de travail sur $[0,4)$ est identique ($C_X+C_Y=4$), donc celui qui passe en dernier termine toujours à la fin de ce bloc, en $t=4$ — peu importe qui c'est. Avant l'échange, ce point ($t=4$) respectait $D_Y=4$ (la deadline la plus courte). Comme $D_X\ge D_Y$, ce même point respecte automatiquement aussi $D_X$. C'est exactement pour ça qu'il faut trier par <b>deadline</b> croissante (DM) et non par période : c'est $D$, pas $T$, qui borne le temps disponible avant qu'il faille avoir fini.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Si $D_i\ge D_{i+1}$ pour deux tâches adjacentes mal ordonnées, on peut les échanger sans perdre la faisabilité (mêmes 4 cas que Theorem 28, avec $T_i$ remplacé par $D_i$ dans l'argument final). DM s'obtient donc par tri à bulles sur les $D_i$, et reste faisable.</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s35">3.5 — Deadlines arbitraires</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi ce cas est différent</span> Dès que $D_i$ peut dépasser $T_i$, <b>ni RM ni DM ne sont optimaux</b>.</p>
+<table>
+<tr><th>Tâche</th><th>$C_i$</th><th>$T_i$</th><th>$D_i$</th></tr>
+<tr><td>$\tau_1$</td><td>52</td><td>100</td><td>110</td></tr>
+<tr><td>$\tau_2$</td><td>52</td><td>140</td><td>154</td></tr>
+</table>
+<p>RM et DM donnent la même priorité : $\tau_1\succ\tau_2$.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="267.5" y1="18" x2="267.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="267.5" y="125" font-size="9" fill="#888" text-anchor="middle">52</text>
+<line x1="477.5" y1="18" x2="477.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="477.5" y="125" font-size="9" fill="#888" text-anchor="middle">100</text>
+<line x1="521.2" y1="18" x2="521.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="521.2" y="125" font-size="9" fill="#888" text-anchor="middle">110</text>
+<line x1="652.5" y1="18" x2="652.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="652.5" y="125" font-size="9" fill="#888" text-anchor="middle">140</text>
+<line x1="705.0" y1="18" x2="705.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="705.0" y="125" font-size="9" fill="#888" text-anchor="middle">152</text>
+<line x1="713.8" y1="18" x2="713.8" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="713.8" y="125" font-size="9" fill="#888" text-anchor="middle">154</text>
+<line x1="740.0" y1="18" x2="740.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="740.0" y="125" font-size="9" fill="#888" text-anchor="middle">160</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="740.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="227.5" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="153.8" y="50.0" font-size="9.5" fill="white" text-anchor="middle">52</text>
+<rect x="477.5" y="31" width="227.5" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="591.2" y="50.0" font-size="9.5" fill="white" text-anchor="middle">52</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M477.5,22 L473.5,15 L481.5,15 Z" fill="#7a3b2e"/>
+<path d="M521.2,61 L517.2,69 L525.2,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="740.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="267.5" y="75" width="210.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="372.5" y="94.0" font-size="9.5" fill="white" text-anchor="middle">48</text>
+<rect x="705.0" y="75" width="35.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="722.5" y="94.0" font-size="9.5" fill="white" text-anchor="middle">8</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M652.5,66 L648.5,59 L656.5,59 Z" fill="#3a5e56"/>
+<path d="M713.8,105 L709.8,113 L717.8,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+<circle cx="713.8" cy="90.0" r="8" fill="#b23b3b"/><text x="713.8" y="93.5" font-size="10" fill="white" text-anchor="middle" font-weight="bold">X</text>
+</svg>
+<p class="caption">$\tau_1\succ\tau_2$ (RM/DM) : $\tau_2$ n'a reçu que 48/52 unités quand sa deadline arrive en $t{=}154$ — raté.</p>
+</div>
+<p>Avec la priorité <b>inversée</b> $\tau_2\succ\tau_1$, tout se passe bien :</p>
+<div class="diagram">
+<svg viewBox="0 0 760 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="180.0" y1="18" x2="180.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="180.0" y="125" font-size="9" fill="#888" text-anchor="middle">52</text>
+<line x1="309.2" y1="18" x2="309.2" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="309.2" y="125" font-size="9" fill="#888" text-anchor="middle">100</text>
+<line x1="320.0" y1="18" x2="320.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="320.0" y="125" font-size="9" fill="#888" text-anchor="middle">104</text>
+<line x1="416.9" y1="18" x2="416.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="416.9" y="125" font-size="9" fill="#888" text-anchor="middle">140</text>
+<line x1="556.9" y1="18" x2="556.9" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="556.9" y="125" font-size="9" fill="#888" text-anchor="middle">192</text>
+<line x1="578.5" y1="18" x2="578.5" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="578.5" y="125" font-size="9" fill="#888" text-anchor="middle">200</text>
+<line x1="600.0" y1="18" x2="600.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="600.0" y="125" font-size="9" fill="#888" text-anchor="middle">208</text>
+<line x1="740.0" y1="18" x2="740.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="740.0" y="125" font-size="9" fill="#888" text-anchor="middle">260</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="740.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="180.0" y="31" width="236.9" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="298.5" y="50.0" font-size="9.5" fill="white" text-anchor="middle">88</text>
+<rect x="556.9" y="31" width="183.1" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="648.5" y="50.0" font-size="9.5" fill="white" text-anchor="middle">68</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M309.2,22 L305.2,15 L313.2,15 Z" fill="#7a3b2e"/>
+<path d="M578.5,22 L574.5,15 L582.5,15 Z" fill="#7a3b2e"/>
+<path d="M336.2,61 L332.2,69 L340.2,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<path d="M605.4,61 L601.4,69 L609.4,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="740.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="75" width="140.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="110.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">52</text>
+<rect x="416.9" y="75" width="140.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="486.9" y="94.0" font-size="9.5" fill="white" text-anchor="middle">52</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M416.9,66 L412.9,59 L420.9,59 Z" fill="#3a5e56"/>
+<path d="M454.6,105 L450.6,113 L458.6,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">Le bloc $[52,140)$ de $\tau_1$ contient <b>deux jobs</b> : le premier finit en $t{=}104$ (repère), le second démarre aussitôt et finit en $t{=}208$ — deux jobs de $\tau_1$ actifs en même temps sur $[100,104)$.</p>
+</div>
+<div class="remark"><span class="lead">Le phénomène clé</span> Comme $D_i$ peut dépasser $T_i$, plusieurs jobs de la <i>même</i> tâche peuvent être actifs simultanément → <b><span class="eng">FIFO</span> au niveau tâche</b>. Conséquence : le <b>premier</b> job n'est plus forcément le pire cas (ici, réponse 104 puis 108 pour les jobs successifs de $\tau_1$) — il faut vérifier plusieurs jobs, d'où l'importance renouvelée de l'intervalle de faisabilité.</div>
+</div>
+
+<h3><span class="n">A.</span> Intervalle de faisabilité (deadlines arbitraires)</h3>
+<div class="concept">
+<div class="def"><span class="lead">Définitions</span> Une <b>période d'activité élémentaire</b> <span class="eng">(busy period)</span> est un intervalle $[a,b)$ où $a,b$ sont des points d'inactivité et $(a,b)$ n'en contient aucun. Une <b>période de niveau $i$</b> est une période d'activité élémentaire pour $\{\tau_1,\dots,\tau_i\}$ où $\tau_i$ exécute au moins un job.</div>
+<div class="analogie"><span class="lead">Intuition</span> Comme une file ininterrompue à un guichet : elle s'ouvre au premier client, se ferme dès que le guichet redevient vide. Le "niveau $i$" restreint la file aux $i$ tâches les plus prioritaires.</div>
+<div class="def"><span class="lead">Theorem 39</span> Le plus grand temps de réponse pour $\tau_i$ survient dans la première période de niveau $i$, $[0,\lambda_i)$, cas synchrone.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Deux tâches : $\tau_L$ (celle qui nous intéresse, $C_L=4$, relâchée en $t=0$) et $\tau_H$ (plus prioritaire, $C_H=3$). On fait varier la date de relâchement de $\tau_H$, et à chaque fois on regarde où se termine la période d'activité entière (le moment où $\tau_L$ finit enfin par tourner et achever son job) :</p>
+<table>
+<tr><th>Relâchement de $\tau_H$</th><th>Ce qui se passe</th><th>Fin de la période d'activité</th></tr>
+<tr><td>$t=0$ (ensemble)</td><td>$\tau_H$ d'abord (0→3), puis $\tau_L$ (3→7)</td><td>$7$</td></tr>
+<tr><td>$t=1$</td><td>$\tau_L$ démarre (0→1), préemptée, $\tau_H$ (1→4), $\tau_L$ finit (4→7)</td><td>$7$ — pareil</td></tr>
+<tr><td>$t=3$</td><td>$\tau_L$ tourne (0→3), préemptée, $\tau_H$ (3→6), $\tau_L$ finit (6→7)</td><td>$7$ — toujours pareil</td></tr>
+<tr><td>$t=4$</td><td>$\tau_L$ a le temps de finir <b>toute seule</b> (0→4) avant même l'arrivée de $\tau_H$ !</td><td>$4$ — beaucoup plus court</td></tr>
+<tr><td>$t=6$</td><td>Même chose : $\tau_L$ est déjà partie depuis longtemps quand $\tau_H$ arrive</td><td>$4$ — toujours aussi court</td></tr>
+</table>
+<p><span class="step-title">Ce qu'on observe :</span> tant que $\tau_H$ arrive assez tôt pour encore interrompre $\tau_L$ (delais 0, 1, 3 — tous avant que $\tau_L$, livrée à elle-même, n'ait fini), la période d'activité dure $7$ à chaque fois, jamais plus. Dès que $\tau_H$ arrive trop tard pour interrompre quoi que ce soit (délai $\ge4$, le temps que $\tau_L$ termine seule), la période d'activité devient beaucoup plus courte : $4$.</p>
+<p><span class="step-title">Pourquoi c'est toujours vrai :</span> la période d'activité ne peut se refermer (devenir inactive) que lorsque tout le travail déjà arrivé est épuisé. Rapprocher l'arrivée de $\tau_H$ vers $t=0$ ne fait qu'ajouter des occasions pour elle de retarder $\tau_L$ — jamais en retirer. Le cas "tout arrive ensemble" est donc bien celui qui produit la plus longue période d'activité possible (ou une période à égalité, comme aux délais 1 et 3) — jamais une plus courte.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle</span> Soit $[a,b)$ une période de niveau $i$, $a+\Delta_j$ le premier relâchement de $\tau_j$ après $a$. Si $\Delta_i\gt0$, diminuer $\Delta_i$ augmente le temps de réponse (le job de $\tau_i$ termine au même instant mais démarre plus tard, relativement). Si $\Delta_j\gt0$ ($j\lt i$), diminuer $\Delta_j$ augmente ou laisse égale la demande, donc allonge ou laisse égale la période. Le pire cas est $\Delta_1=\cdots=\Delta_i=0$.</p>
+</div>
+<div class="def"><span class="lead">Theorem 40</span> $[0,\lambda_n)$ est un intervalle de faisabilité pour un système synchrone à deadline arbitraire, où $\lambda_n$ est la plus petite solution de
+$$\lambda_n=\sum_{i=1}^n\left\lceil\frac{\lambda_n}{T_i}\right\rceil C_i$$
+(même itération à point fixe que pour $r_i^1$).</div>
+<div class="remark"><span class="lead">Lien</span> Cette même construction réapparaît au chapitre 4 sous le nom $L$ pour EDF — strictement la même idée.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s36">3.6 — Systèmes asynchrones</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> jusqu'ici on supposait $O_i=0$ pour toutes les tâches. En pratique ce n'est pas toujours vrai.</p>
+<div class="analogie"><span class="lead">Intuition — périodicité</span> N'importe quel ordonnanceur déterministe de tâches périodiques finit par produire un motif qui se répète — comme une horloge à engrenages qui, après une phase de mise en route, retombe indéfiniment sur les mêmes positions relatives. La question n'est pas "est-ce périodique ?" (ça l'est toujours) mais "à partir de quand, et avec quelle période ?".</div>
+</div>
+
+<h3><span class="n">A.</span> Deux bornes emboîtées</h3>
+<div class="concept">
+<div class="def"><span class="lead">Theorem 44 (Leung &amp; Merrill)</span> Si le planning est faisable jusqu'à $O_{\max}+2P$, il est faisable et périodique à partir de $O_{\max}+P$, de période $P=\text{lcm}(T_1,\dots,T_n)$.</div>
+<div class="def"><span class="lead">Theorem 45 — borne plus fine</span> Pour $\tau_1\succ\cdots\succ\tau_n$ :
+$$S_1=O_1 \qquad S_i=O_i+\left\lceil\frac{(S_{i-1}-O_i)^+}{T_i}\right\rceil T_i \ (i\gt1)$$
+Si faisable jusqu'à $S_n+P_n$, alors faisable et périodique à partir de $S_n$.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec l'exemple des $S_i$</div>
+<p>$\tau_1{=}(O{=}10,C{=}2,T{=}10)$, $\tau_2{=}(O{=}0,C{=}1,T{=}5)$, $\tau_3{=}(O{=}1,C{=}1,T{=}3)$, priorité $\tau_1\succ\tau_2\succ\tau_3$.</p>
+<p><span class="step-title">Étape 1 — juste $\tau_1$ toute seule :</span> elle est évidemment périodique dès son premier relâchement, $S_1=O_1=10$, de période $T_1=10$. Rien d'autre ne peut la perturber, elle est seule sur le CPU.</p>
+<p><span class="step-title">Étape 2 — on ajoute $\tau_2$ (moins prioritaire) :</span> $\tau_2$ ne perturbe jamais $\tau_1$ (elle est en dessous). Mais $\tau_1$ perturbe $\tau_2$ tant que $\tau_1$ n'est pas encore "casée" dans son propre rythme périodique — donc $\tau_2$ ne devient elle-même périodique qu'à partir du moment où $\tau_1$ l'est déjà, c'est-à-dire pas avant $S_1=10$. $S_2$ est le premier relâchement de $\tau_2$ à partir de $t=10$ : comme $\tau_2$ se relâche toutes les 5 unités depuis $t=0$ (à $0,5,10,15,\dots$), $t=10$ tombe justement pile sur un relâchement. Donc $S_2=10$.</p>
+<p><span class="step-title">Étape 3 — on ajoute $\tau_3$ :</span> même logique, $\tau_3$ doit attendre que $\{\tau_1,\tau_2\}$ soit déjà casée, donc pas avant $S_2=10$. $\tau_3$ se relâche à $1,4,7,10,\dots$ (toutes les 3 unités depuis $O_3=1$) : $t=10$ tombe aussi pile dessus. Donc $S_3=10$.</p>
+<table>
+<tr><th>$i$</th><th>Calcul</th><th>$S_i$</th></tr>
+<tr><td>1</td><td>$O_1$</td><td>10</td></tr>
+<tr><td>2</td><td>$0+\lceil(10-0)/5\rceil{\cdot}5 = 0+2{\cdot}5$</td><td>10</td></tr>
+<tr><td>3</td><td>$1+\lceil(10-1)/3\rceil{\cdot}3 = 1+3{\cdot}3$</td><td>10</td></tr>
+</table>
+<p>Les trois horloges s'alignent ici par chance dès $t=10$. Avec $P=\text{lcm}(10,5,3)=30$, l'intervalle de faisabilité est $[0,10+30)=[0,40)$ : vérifier ces 40 premières unités suffit pour conclure pour toujours.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle (induction sur $i$, priorité décroissante)</span> Cas de base : le planning de $\tau_1$ seule est périodique de période $T_1=S_1$ dès $O_1$. Étape : si $\{\tau_1,\dots,\tau_{i-1}\}$ est périodique à partir de $S_{i-1}$ (période $P_{i-1}$), alors comme $\tau_i$ est la moins prioritaire du groupe $\{\tau_1,\dots,\tau_i\}$, ses relâchements ne perturbent jamais le planning de $\{\tau_1,\dots,\tau_{i-1}\}$. $S_i$ est le premier relâchement de $\tau_i$ à ou après $S_{i-1}$ ; en combinant les deux périodicités, $\{\tau_1,\dots,\tau_i\}$ devient périodique à partir de $S_i$, de période $\text{lcm}(P_{i-1},T_i)=P_i$.</p>
+</div>
+<div class="def"><span class="lead">Corollary 46</span> $[0,S_n+P)$ est un intervalle de faisabilité pour les systèmes asynchrones à deadline contrainte sous FTP — deux fois plus court que la borne du Theorem 44.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s37">3.7 — Algorithme d'Audsley</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> pour les systèmes asynchrones à deadline contrainte, aucune règle simple ("trier par $T$" ou par $D$") n'est FTP-optimale. Tester les $n!$ permutations serait trop coûteux. Audsley résout le problème en $\mathcal{O}(n^2)$ tests.</p>
+<div class="analogie"><span class="lead">Intuition</span> Un tournoi à l'envers : au lieu de chercher qui doit passer en premier, on cherche à chaque étape qui peut <b>sans risque être mis en dernier</b> (priorité la plus basse) sans compromettre sa propre deadline — on le met de côté, et on répète la question sur ce qui reste. On ne revient jamais sur une décision.</div>
+<div class="def"><span class="lead">Definition 49</span> $\tau_i$ est <b><span class="eng">lowest-priority viable</span></b> si, en lui donnant la priorité la plus basse (les autres tâches devenant plus prioritaires, leurs propres deadlines traitées comme "molles"), $\tau_i$ respecte quand même sa deadline.</div>
+<div class="def"><span class="lead">Theorem 50</span> Si $\tau_i$ est <span class="eng">lowest-priority viable</span>, une affectation FTP faisable existe pour $\tau$ ssi il en existe une pour $\tau\setminus\{\tau_i\}$.</div>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple (3 tâches)</div>
+<p>Système synchrone, deadline contrainte : $\tau_1{=}(C{=}2,T{=}6,D{=}5)$, $\tau_2{=}(C{=}2,T{=}8,D{=}6)$, $\tau_3{=}(C{=}3,T{=}14,D{=}14)$.</p>
+<p><span class="step-title">Tour 1 — qui peut aller tout en bas ?</span> On teste chaque tâche, une par une, <i>comme si</i> elle avait la priorité la plus basse — donc gênée par les deux autres, peu importe leur ordre entre elles (peu importe qui, parmi les tâches au-dessus, passe avant l'autre : toutes les deux peuvent de toute façon interrompre notre candidat). Pour chaque candidat, son temps de réponse se calcule comme d'habitude : son propre temps d'exécution, plus l'interférence de chaque autre tâche $\tau_j$ (le nombre de fois où $\tau_j$ se relâche avant que notre candidat ait fini, $\lceil r/T_j\rceil$, multiplié par son coût $C_j$) — sauf qu'ici, <i>toutes</i> les autres tâches comptent comme interférence, puisque le candidat est censé être le moins prioritaire de tous :</p>
+<table>
+<tr><th>Candidat en dernier</th><th>Calcul du temps de réponse</th><th>Deadline</th><th>Viable ?</th></tr>
+<tr><td>$\tau_1$</td><td>$2+\lceil r/8\rceil{\cdot}2+\lceil r/14\rceil{\cdot}3 \to r=7$</td><td>$D_1=5$</td><td>$7\gt5$ — non</td></tr>
+<tr><td>$\tau_2$</td><td>$2+\lceil r/6\rceil{\cdot}2+\lceil r/14\rceil{\cdot}3 \to r=9$</td><td>$D_2=6$</td><td>$9\gt6$ — non</td></tr>
+<tr><td>$\tau_3$</td><td>$3+\lceil r/6\rceil{\cdot}2+\lceil r/8\rceil{\cdot}2 \to r=11$</td><td>$D_3=14$</td><td>$11\le14$ — <b>oui !</b></td></tr>
+</table>
+<p>Seule $\tau_3$ passe le test. On lui donne la <b>priorité la plus basse</b> du système entier, et on la met de côté.</p>
+<p><span class="step-title">Tour 2 — parmi $\{\tau_1,\tau_2\}$, qui peut aller juste au-dessus de $\tau_3$ ?</span> Même test, mais maintenant chaque candidat n'est gêné que par l'autre tâche restante :</p>
+<table>
+<tr><th>Candidat</th><th>Calcul</th><th>Deadline</th><th>Viable ?</th></tr>
+<tr><td>$\tau_1$ (gênée par $\tau_2$)</td><td>$2+\lceil r/8\rceil{\cdot}2 \to r=4$</td><td>$D_1=5$</td><td>$4\le5$ — oui</td></tr>
+<tr><td>$\tau_2$ (gênée par $\tau_1$)</td><td>$2+\lceil r/6\rceil{\cdot}2 \to r=4$</td><td>$D_2=6$</td><td>$4\le6$ — oui aussi</td></tr>
+</table>
+<p>Les deux passent ! Quand ça arrive, on peut choisir n'importe laquelle — le Theorem 50 garantit que ça ne change rien à la faisabilité finale. Prenons $\tau_1$ : elle reçoit la 2e priorité la plus basse.</p>
+<p><span class="step-title">Tour 3 — il ne reste que $\tau_2$ :</span> plus personne pour la contester, elle reçoit automatiquement la priorité la plus haute du système.</p>
+<p><span class="step-title">Résultat final :</span> $\tau_2\succ\tau_1\succ\tau_3$. On peut vérifier que ça marche vraiment : $\tau_2$ (priorité la plus haute) termine trivialement en $C_2=2\le D_2=6$ ; $\tau_1$ retrouve exactement son calcul du Tour 2 ($r=4\le5$) ; $\tau_3$ retrouve exactement son calcul du Tour 1 ($r=11\le14$) — tout concorde.</p>
+</div>
+
+<div class="formal">
+<p class="step"><span class="lead">Version formelle (Theorem 50)</span> Soit $p$ une affectation faisable où $\tau_i$ n'est pas en dernier. On construit $p'$ : $\tau_i$ passe en toute dernière position, les tâches en dessous d'elle remontent chacune d'un cran. Les tâches au-dessus de $\tau_i$ dans $p$ ne sont pas affectées. Les tâches promues restent schedulables (elles héritent des créneaux qu'elles utilisaient déjà, plus ceux libérés par $\tau_i$). $\tau_i$, reléguée en dernier, reste schedulable précisément parce qu'elle est <span class="eng">lowest-priority viable</span> — c'est exactement ce que cette propriété garantit par définition.</p>
+</div>
+<div class="def"><span class="lead">Algorithme</span> Tant qu'il reste des tâches : chercher une tâche <span class="eng">lowest-priority viable</span> parmi celles qui restent ; si aucune n'existe → système infaisable ; sinon, lui donner la priorité la plus basse restante, la retirer, recommencer. $\mathcal{O}(n^2)$ dans le pire cas (contre $\mathcal{O}(n!)$ en testant toutes les permutations).</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Priorités &amp; optimalité</h4>
+<p>RM : priorité $\propto 1/T_i$ (implicit-deadline, synchrone). DM : priorité $\propto 1/D_i$ (constrained-deadline, synchrone). Les deux sont FTP-optimaux dans leur cadre (preuve par échange de priorités adjacentes, façon tri à bulles — "celui qui passe en dernier termine toujours au même instant, peu importe qui c'est").</p>
+<h4>Instant critique</h4>
+<p>Pire cas = toutes les tâches plus prioritaires relâchées en même temps que le job étudié (Lemma 25). Même idée pour la longueur d'une période d'activité (Theorem 39).</p>
+<h4>Temps de réponse (RM/DM, premier job)</h4>
+<p>$$r_i^1 = C_i + \sum_{j\in hp(i)} \left\lceil\frac{r_i^1}{T_j}\right\rceil C_j \quad\text{schedulable ssi } r_i^1\le D_i$$
+Point fixe : $w_0=C_i$, $w_{k+1}=C_i+\sum_{j\in hp(i)}\lceil w_k/T_j\rceil C_j$, arrêt si $w_{k+1}{=}w_k$ ou $w_k{\gt}D_i$.</p>
+<h4>Intervalles de faisabilité</h4>
+<table>
+<tr><th>Cas</th><th>Intervalle</th></tr>
+<tr><td>Synchrone, deadline contrainte, FTP</td><td>$[0,D_{\max})$</td></tr>
+<tr><td>Synchrone, deadline arbitraire, FTP</td><td>$[0,\lambda_n)$, $\lambda_n=\sum_i\lceil\lambda_n/T_i\rceil C_i$</td></tr>
+<tr><td>Asynchrone, deadline contrainte, FTP</td><td>$[0,S_n+P)$ (mieux) ou $[O_{\max},O_{\max}+2P)$</td></tr>
+</table>
+<h4>Utilisation schedulable de RM</h4>
+<p>Suffisant : $U(\tau)\le n(2^{1/n}-1) \xrightarrow{n\to\infty} \ln2\approx0{,}69$.</p>
+<h4>Deadlines arbitraires</h4>
+<p>RM/DM non optimaux ; plusieurs jobs d'une même tâche peuvent être actifs → FIFO au niveau tâche ; le premier job n'est plus nécessairement le pire cas.</p>
+<h4>Audsley</h4>
+<p>$\tau_i$ <span class="eng">lowest-priority viable</span> : mise en dernier, autres deadlines "molles", $\tau_i$ respecte quand même sa deadline $\Rightarrow$ peut être retirée sans perte de généralité. Test = même formule de temps de réponse, en sommant l'interférence de <i>toutes</i> les tâches restantes. $\mathcal{O}(n^2)$.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>FTP, RM, DM, $\succ$ (priorité), $hp(i)$ (tâches plus prioritaires que $i$), $\lambda$ / $L$ (premier point d'inactivité), $P$ (hyper-période), $S_i$ (instants d'alignement asynchrones).</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 5 — Fiche de révision — Dynamic Priority (DP) / LLF</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 5 — Fiche de révision</h1>
+<p class="subtitle">Dynamic Priority (DP) assignment — INFO-F404. Le plus court chapitre du cours : une seule idée (la laxité), un seul ordonnanceur (LLF), et une conclusion pratique importante. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s50">Introduction : la classe DP</a></li>
+<li><a href="#s51">La laxité</a></li>
+<li><a href="#s52">Least Laxity First (LLF)</a></li>
+<li><a href="#s53">Optimalité de LLF</a></li>
+<li><a href="#s54">LLF contre EDF : le thrashing</a></li>
+<li><a href="#s55">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s50">5.0 — Introduction : la classe DP</h2>
+<div class="concept">
+<p><span class="lead">Contexte</span> On termine le tour des familles d'ordonnanceurs uniprocesseur par la plus générale : <b>Dynamic Priority (DP)</b>. Aucune restriction n'est imposée — un job peut même changer de priorité <b>pendant</b> sa propre exécution (contrairement à FJP où la priorité d'un job, une fois fixée, ne bouge plus). Le représentant le plus connu de cette classe est <b>LLF</b> <span class="eng">(Least Laxity First)</span>.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s51">5.1 — La laxité</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> EDF regarde seulement la deadline d'un job pour décider qui est prioritaire — il ne tient pas compte de combien de travail il reste réellement à faire. LLF va plus loin : il calcule, à chaque instant, une vraie "marge de manœuvre" pour chaque job.</p>
+<div class="def"><span class="lead">Definition 64</span> Pour un job $J=(a,e,d)$, soit $\epsilon_J(t)$ le temps de CPU déjà consommé par $J$ depuis son relâchement. La <b>laxité</b> à l'instant $t$ est :
+$$\ell_J(t) \overset{\text{def}}{=} d - t - \big(e-\epsilon_J(t)\big)$$
+</div>
+<p><span class="lead">Traduction</span> $d-t$ = combien de temps il reste avant la deadline. $e-\epsilon_J(t)$ = combien de travail il reste réellement à faire. La laxité est la différence entre les deux : le "temps de battement" — combien de temps $J$ pourrait encore rester sans tourner tout en finissant pile à sa deadline.</p>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec un exemple</div>
+<p>Deux tâches, relâchées ensemble à $t=0$ : $\tau_1{=}(C{=}4,D{=}8,T{=}10)$, $\tau_2{=}(C{=}5,D{=}9,T{=}10)$.</p>
+<p><span class="step-title">Laxité initiale, $t=0$ :</span> personne n'a encore tourné, donc $\epsilon=0$ pour les deux.
+$$\ell_{\tau_1}(0) = 8-0-(4-0) = 4 \qquad \ell_{\tau_2}(0) = 9-0-(5-0) = 4$$
+Égalité — les deux jobs ont exactement la même marge de manœuvre au départ.</p>
+<p><span class="step-title">Que se passe-t-il à $t=1$, selon qui a tourné ?</span> Supposons qu'on ait fait tourner $\tau_1$ pendant $[0,1)$ (il fallait bien trancher l'égalité). Recalculons à $t=1$ :</p>
+$$\ell_{\tau_1}(1) = 8-1-(4-1) = 4 \qquad \ell_{\tau_2}(1) = 9-1-(5-0) = 3$$
+<p><span class="step-title">Ce qu'on observe :</span> la laxité de $\tau_1$ (celui qui a tourné) <b>n'a pas bougé</b> — il a "gagné" une unité de travail fait, mais a aussi "perdu" une unité de délai ; les deux s'annulent. La laxité de $\tau_2$ (celui qui a attendu), elle, a <b>diminué</b> d'une unité — il n'a rien avancé, mais l'horloge, elle, a continué de tourner. $\tau_2$ est donc maintenant strictement plus urgent.</p>
+</div>
+<div class="remark"><span class="lead">Règle générale à retenir</span> Faire tourner un job garde sa laxité <b>constante</b>. Laisser un job en attente fait <b>baisser</b> sa laxité d'une unité à chaque unité de temps qui passe. C'est ce mécanisme, purement mécanique, qui va expliquer tout le reste du chapitre.</div>
+<p><span class="lead">Interprétation</span> $\ell_J(t)\gt0$ : le job peut encore attendre, au maximum $\ell_J(t)$ unités. $\ell_J(t)=0$ : il doit tourner <i>immédiatement et sans interruption</i> jusqu'à sa deadline, sinon c'est raté. $\ell_J(t)\lt0$ : la deadline est déjà irrémédiablement ratée.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s52">5.2 — Least Laxity First (LLF)</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 65</span> À chaque instant, LLF donne le CPU au job actif de plus <b>petite</b> laxité. Les égalités sont départagées de façon déterministe (une règle fixe, décidée à l'avance).</div>
+<div class="remark"><span class="lead">Différence avec EDF</span> EDF regarde uniquement $d$ (fixe pour un job donné, ne change jamais). LLF regarde $\ell_J(t)$, qui évolue à chaque instant en fonction de ce qui tourne ou pas — la priorité d'un job peut donc changer même pendant que <i>d'autres</i> jobs tournent (juste parce que le temps avance). C'est ce qui fait de LLF un ordonnanceur vraiment dynamique, au sens le plus fort.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s53">5.3 — Optimalité de LLF</h2>
+<div class="concept">
+<div class="def"><span class="lead">Theorem 66</span> Si un ensemble de jobs $J$ est faisable, alors LLF ordonnance $J$ avec succès.</div>
+<div class="remark"><span class="lead">Note honnête</span> Le support de cours énonce ce théorème sans en détailler la preuve (contrairement à EDF, Theorem 52). L'intuition générale est proche de celle d'EDF — toujours privilégier le job le plus "à la limite" — mais comme la priorité LLF change en permanence (même pour deux jobs dont ni l'un ni l'autre n'a tourné entretemps), un argument d'échange rigoureux est plus délicat à écrire que pour EDF. Retiens l'énoncé et son analogie avec EDF plutôt qu'une preuve précise.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s54">5.4 — LLF contre EDF : le thrashing</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi</span> LLF et EDF sont tous deux optimaux — mais "optimal" ne dit rien sur le <i>coût pratique</i> de l'ordonnancement. C'est là que LLF révèle un défaut sérieux.</p>
+
+<div class="story">
+<div class="story-title">🔍 Comprendre avec System 67</div>
+<p>Reprenons exactement le système de tout à l'heure : $\tau_1{=}(C{=}4,D{=}8,T{=}10)$, $\tau_2{=}(C{=}5,D{=}9,T{=}10)$, synchrones.</p>
+<p><span class="step-title">Sous EDF :</span> $\tau_1$ a la deadline la plus proche (8 contre 9) — donc la priorité la plus haute, <i>tout le temps</i>, tant qu'il n'a pas fini. Il tourne donc entièrement d'une traite.</p>
+<div class="diagram">
+<svg viewBox="0 0 480 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="82.0" y1="18" x2="82.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="82.0" y="125" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="124.0" y1="18" x2="124.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="124.0" y="125" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="166.0" y1="18" x2="166.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="166.0" y="125" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="208.0" y1="18" x2="208.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="208.0" y="125" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="250.0" y1="18" x2="250.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="250.0" y="125" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="292.0" y1="18" x2="292.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="292.0" y="125" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="334.0" y1="18" x2="334.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="334.0" y="125" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="376.0" y1="18" x2="376.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="376.0" y="125" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="418.0" y1="18" x2="418.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="418.0" y="125" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="460.0" y1="18" x2="460.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="460.0" y="125" font-size="9" fill="#888" text-anchor="middle">10</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="460.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="168.0" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="124.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">4</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M376.0,61 L372.0,69 L380.0,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="460.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="208.0" y="75" width="210.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="313.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">5</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M418.0,105 L414.0,113 L422.0,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">EDF : $\tau_1$ tourne 0→4 sans interruption, puis $\tau_2$ tourne 4→9. <b>Zéro préemption.</b></p>
+</div>
+<p><span class="step-title">Sous LLF :</span> on a déjà vu qu'à $t=0$ les deux ont la même laxité (4 et 4) — égalité, on tranche arbitrairement pour $\tau_1$. Mais dès $t=1$, $\tau_2$ (qui a attendu) devient strictement plus urgent (laxité 3 contre 4) et prend le relais. Puis à $t=2$, nouvelle égalité (les deux à 3), on retranche pour $\tau_1$... et ainsi de suite.</p>
+<table>
+<tr><th>$t$</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr>
+<tr><td>$\ell_{\tau_1}$</td><td>4</td><td>4</td><td>3</td><td>3</td><td>2</td><td>2</td><td>1</td><td>—</td><td>—</td></tr>
+<tr><td>$\ell_{\tau_2}$</td><td>4</td><td>3</td><td>3</td><td>2</td><td>2</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>qui tourne</td><td>$\tau_1$</td><td>$\tau_2$</td><td>$\tau_1$</td><td>$\tau_2$</td><td>$\tau_1$</td><td>$\tau_2$</td><td>$\tau_1$</td><td>$\tau_2$</td><td>$\tau_2$</td></tr>
+</table>
+<div class="diagram">
+<svg viewBox="0 0 480 138" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="40.0" y1="18" x2="40.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="40.0" y="125" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="82.0" y1="18" x2="82.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="82.0" y="125" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="124.0" y1="18" x2="124.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="124.0" y="125" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="166.0" y1="18" x2="166.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="166.0" y="125" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="208.0" y1="18" x2="208.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="208.0" y="125" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="250.0" y1="18" x2="250.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="250.0" y="125" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="292.0" y1="18" x2="292.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="292.0" y="125" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="334.0" y1="18" x2="334.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="334.0" y="125" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="376.0" y1="18" x2="376.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="376.0" y="125" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="418.0" y1="18" x2="418.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="418.0" y="125" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="460.0" y1="18" x2="460.0" y2="112" stroke="#e3e0d8" stroke-width="1"/><text x="460.0" y="125" font-size="9" fill="#888" text-anchor="middle">10</text>
+<text x="2" y="50.0" font-size="12" fill="#222" font-weight="bold">τ1</text>
+<line x1="40" y1="46.0" x2="460.0" y2="46.0" stroke="#ccc" stroke-width="1"/>
+<rect x="40.0" y="31" width="42.0" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="61.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="124.0" y="31" width="42.0" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="145.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="208.0" y="31" width="42.0" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="229.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="292.0" y="31" width="42.0" height="30" fill="#7a3b2e" opacity="0.82" rx="2"/><text x="313.0" y="50.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<path d="M40.0,22 L36.0,15 L44.0,15 Z" fill="#7a3b2e"/>
+<path d="M376.0,61 L372.0,69 L380.0,69 Z" fill="none" stroke="#7a3b2e" stroke-width="1.2"/>
+<text x="2" y="94.0" font-size="12" fill="#222" font-weight="bold">τ2</text>
+<line x1="40" y1="90.0" x2="460.0" y2="90.0" stroke="#ccc" stroke-width="1"/>
+<rect x="82.0" y="75" width="42.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="103.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="166.0" y="75" width="42.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="187.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="250.0" y="75" width="42.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="271.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">1</text>
+<rect x="334.0" y="75" width="84.0" height="30" fill="#3a5e56" opacity="0.82" rx="2"/><text x="376.0" y="94.0" font-size="9.5" fill="white" text-anchor="middle">2</text>
+<path d="M40.0,66 L36.0,59 L44.0,59 Z" fill="#3a5e56"/>
+<path d="M418.0,105 L414.0,113 L422.0,113 Z" fill="none" stroke="#3a5e56" stroke-width="1.2"/>
+</svg>
+<p class="caption">LLF : les deux tâches alternent presque à chaque unité de temps. <b>6 préemptions</b> en seulement 10 unités — pour arriver exactement au même résultat final (aucune deadline ratée) qu'EDF !</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> les deux ordonnanceurs sont optimaux — ils réussissent tous les deux à ordonnancer ce système sans rater de deadline. Mais EDF le fait avec 0 changement de contexte, alors que LLF s'agite en permanence pour arriver exactement au même résultat. Tout ce remue-ménage ne sert à rien : c'est du gaspillage pur.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça peut devenir vraiment grave : le thrashing</div>
+<p>Le phénomène qu'on vient de voir peut s'aggraver et devenir un vrai problème pratique, appelé <b><span class="eng">thrashing</span></b> : énormément de changements de contexte pour un progrès minime.</p>
+<p><span class="step-title">Le mécanisme, en toute généralité (pas juste sur cet exemple) :</span> imagine deux jobs actifs $J_1$ et $J_2$ avec exactement la même laxité minimale à l'instant $t$. LLF doit trancher — disons qu'il choisit $J_1$. À l'instant $t+1$ :</p>
+<ul>
+<li>$J_1$ a tourné une unité : son travail restant a diminué de 1, <b>et</b> le temps a avancé de 1 — les deux s'annulent, sa laxité $\ell_{J_1}(t+1)=\ell_{J_1}(t)$ ne bouge pas.</li>
+<li>$J_2$ a attendu : son travail restant est inchangé, mais le temps a quand même avancé de 1 — sa laxité $\ell_{J_2}(t+1)=\ell_{J_2}(t)-1$ a diminué.</li>
+</ul>
+<p>$J_2$ devient donc strictement plus urgent que $J_1$ — LLF <b>doit</b> préempter et passer à $J_2$. Mais à l'instant suivant, c'est exactement le même mécanisme qui se reproduit, en miroir : $J_2$ vient de tourner (laxité stable), $J_1$ vient d'attendre (laxité en baisse) — $J_1$ redevient plus urgent. Le cycle recommence, potentiellement à <i>chaque</i> unité de temps.</p>
+<div class="remark"><span class="lead">Ce que ça coûte en vrai</span> Chaque préemption a un coût réel (sauvegarder/restaurer le contexte du processeur) que ce cours néglige par hypothèse — mais qui existe bel et bien en pratique. Un ordonnanceur qui préempte à chaque tick pour ne finalement rien changer au résultat final est donc, en pratique, nettement pire qu'EDF.</div>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s55">5.5 — Conclusion pratique</h2>
+<div class="concept">
+<p>Pour l'ordonnancement uniprocesseur de tâches temps réel périodiques, la classe DP <b>n'apporte aucun avantage</b> par rapport à FJP (EDF) : même optimalité, mais beaucoup plus de préemptions. Puisque EDF (une classe plus simple, FJP) est déjà optimal, il n'y a aucune raison de payer le prix de LLF ici.</p>
+<div class="remark"><span class="lead">Alors pourquoi étudier LLF ?</span> La classe DP garde un intérêt réel dans d'autres contextes — par exemple quand l'utilisation efficace des ressources compte plus que des contraintes de temps très strictes. Ce n'est pas un détour inutile, juste un outil dont ce cours montre qu'il n'est pas le bon choix pour <i>ce</i> problème précis.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Laxité</h4>
+<p>$$\ell_J(t) = d - t - (e-\epsilon_J(t))$$
+Faire tourner le job → laxité constante. Le laisser attendre → laxité diminue de 1 par unité de temps.</p>
+<h4>LLF</h4>
+<p>Priorité dynamique : à chaque instant, exécute le job actif de plus petite laxité (départage déterministe des égalités). Optimal (Theorem 66, énoncé sans preuve détaillée dans le cours) mais génère beaucoup plus de préemptions qu'EDF pour un résultat identique.</p>
+<h4>Thrashing</h4>
+<p>Deux jobs à laxité égale et minimale → alternance quasi systématique à chaque unité de temps, car faire tourner l'un ne change pas sa laxité tandis que l'autre voit la sienne baisser.</p>
+<h4>Verdict pratique</h4>
+<p>DP (LLF) = même pouvoir que FJP (EDF) sur ce problème, mais moins efficace (préemptions inutiles) → EDF reste le choix par défaut pour l'ordonnancement uniprocesseur périodique.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>DP (Dynamic Priority), LLF (Least Laxity First), $\ell_J(t)$ (laxité de $J$ à l'instant $t$), $\epsilon_J(t)$ (CPU déjà consommé par $J$).</p>
+</div>
+
+</body>
+</html>
