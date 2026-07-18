@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questions &amp; Réponses — Partie 4 : Concurrency</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+    --qbg:#eef1f5; --qline:#3a5674;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.6rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.2rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border); font-family:Helvetica,Arial,sans-serif;}
+  h3{font-size:1.0rem; color:var(--ink); margin:1.6rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  p{margin:.5rem 0;}
+  .qcard{border:1px solid var(--border); border-radius:10px; margin:1.4rem 0 2.4rem; overflow:hidden;}
+  .qhead{background:var(--qbg); border-left:5px solid var(--qline); padding:.8rem 1.1rem;}
+  .qnum{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--qline); margin-bottom:.3rem; display:block;}
+  .qtext{font-family:Helvetica,Arial,sans-serif; font-style:italic; color:#26344a; font-size:.97rem;}
+  .answer{padding:1rem 1.1rem;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .step-title{font-weight:700; color:#3a5e56;}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.85rem;}
+  th,td{border:1px solid var(--border); padding:.35rem .5rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .badge{display:inline-block; font-family:Helvetica,Arial,sans-serif; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:.15rem .5rem; border-radius:10px; margin-left:.4rem;}
+  .badge-bad{background:#f7dede; color:#8a2e2e;}
+  .badge-good{background:#dcefe4; color:#2e6b45;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.7rem .9rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.55;}
+  pre code{background:none; padding:0; color:inherit;}
+</style>
+</head>
+<body>
+
+<h1>Questions &amp; Réponses — Partie 4</h1>
+<p class="subtitle">Concurrency — INFO-F-404. Chaque réponse est autonome : aucune notion n'est supposée déjà connue ou expliquée ailleurs.</p>
+
+<div class="concept">
+<p><span class="lead">Vocabulaire de base (à garder sous le coude)</span></p>
+<ul>
+<li><b>Entrelacement</b> <span class="eng">(interleaving)</span> : deux processus concurrents ne progressent pas forcément "en même temps" pas-à-pas — à chaque instant, un seul exécute une instruction, l'autre reste figé. On ne sait pas à l'avance dans quel ordre ni à quel rythme ça s'entrelace.</li>
+<li><b>Section critique</b> : un segment de code où un seul processus à la fois doit se trouver (accès à une ressource partagée).</li>
+<li><b>Préemption</b> : interrompre un processus en cours pour en laisser passer un autre plus prioritaire ; il reprend plus tard là où il s'était arrêté.</li>
+<li><b>Sémaphore</b> : $S=(V,L)$, un compteur $V$ et une liste d'attente $L$, avec deux opérations atomiques <code>wait</code>/<code>signal</code>.</li>
+<li><b>Nœud</b> : un ordinateur physique (potentiellement multi-cœur, déjà synchronisé en interne) ; entre nœuds différents, aucune mémoire partagée — uniquement des messages.</li>
+</ul>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 37</span>
+<span class="qtext">Solution to the producer-consumer problem, bounded buffers.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Décrire une solution complète au problème du producteur-consommateur avec un tampon de taille <b>finie</b> $N$, en utilisant des sémaphores.</p>
+</div>
+
+<h3>Mise en place</h3>
+<div class="concept">
+<p><span class="lead">Le problème</span> Un <b>producteur</b> génère des données et les dépose dans un tampon partagé ; un <b>consommateur</b> les retire et les utilise. Avec un tampon de taille $N$ finie (le cas réaliste), il faut empêcher : le producteur d'écrire quand le tampon est <b>plein</b>, et le consommateur de lire quand le tampon est <b>vide</b>. En plus, l'accès au tampon lui-même doit être protégé (un seul processus à la fois le manipule).</p>
+</div>
+
+<h3>La solution : trois sémaphores</h3>
+<div class="concept">
+<pre><code>file bornée (taille N) de données buffer ← file vide
+sémaphore notEmpty ← (0, ∅)   // nombre d'éléments présents dans le tampon
+sémaphore notFull  ← (N, ∅)   // nombre de places encore libres
+sémaphore mutex    ← (1, ∅)   // exclusion mutuelle sur l'accès au tampon
+
+producteur :                        consommateur :
+loop forever                         loop forever
+ p1: d ← produire                     q1: wait(notEmpty)
+ p2: wait(notFull)                    q2: wait(mutex)
+ p3: wait(mutex)                      q3: d ← retirer(buffer)
+ p4: ajouter(d, buffer)               q4: signal(mutex)
+ p5: signal(mutex)                    q5: signal(notFull)
+ p6: signal(notEmpty)                 q6: consommer(d)</code></pre>
+<p><span class="lead">Comment le lire</span> <code>notFull</code> compte les places <b>libres</b> (démarre à $N$, toutes libres) ; <code>notEmpty</code> compte les éléments <b>déjà présents</b> (démarre à $0$). Le producteur attend une place libre ($p_2$), <b>puis</b> prend le verrou d'exclusion mutuelle ($p_3$) avant de toucher au tampon, le relâche ($p_5$), et signale enfin qu'un élément est disponible ($p_6$). Le consommateur fait le miroir : attend un élément ($q_1$), prend le verrou ($q_2$), retire l'élément, relâche le verrou ($q_4$), signale qu'une place s'est libérée ($q_5$).</p>
+</div>
+
+<h3>Pourquoi l'ordre des <code>wait</code> compte</h3>
+<div class="concept">
+<p><span class="lead">Une question piège classique : et si on inversait $p_2$ et $p_3$ (<code>wait(mutex)</code> avant <code>wait(notFull)</code>) ?</span> Ce serait un <b>interblocage</b> potentiel : imagine le tampon plein. Le producteur prend <code>mutex</code> ($p_3$ en premier), puis se bloque sur <code>wait(notFull)</code> ($p_2$) — <b>tout en tenant encore <code>mutex</code></b>. Le consommateur, qui a pourtant besoin de <code>mutex</code> pour retirer un élément et libérer une place (ce qui permettrait justement au producteur de continuer), ne peut jamais l'obtenir. Les deux s'attendent mutuellement pour toujours.</p>
+<div class="remark"><span class="lead">La règle à retenir</span> Toujours attendre sur les sémaphores de <b>synchronisation</b> (<code>notFull</code>, <code>notEmpty</code>) <b>avant</b> de prendre le sémaphore d'<b>exclusion mutuelle</b> (<code>mutex</code>) — jamais l'inverse. Ainsi, un processus ne bloque jamais en tenant <code>mutex</code> sur une condition que seul l'autre camp peut résoudre.</div>
+</div>
+
+<h3>Pourquoi cette solution fonctionne</h3>
+<div class="concept">
+<p><span class="lead">Exclusion mutuelle</span> <code>mutex</code> garantit qu'un seul processus modifie le tampon (et les indices d'écriture/lecture) à la fois.</p>
+<p><span class="lead">Pas de dépassement (overflow/underflow)</span> <code>notFull</code> empêche le producteur d'écrire dans un tampon plein ; <code>notEmpty</code> empêche le consommateur de lire dans un tampon vide.</p>
+<p><span class="lead">Pas d'interblocage</span> Grâce à l'ordre <code>wait(synchronisation)</code> avant <code>wait(mutex)</code> (voir ci-dessus), aucun processus ne bloque jamais en tenant <code>mutex</code>.</p>
+<div class="def"><span class="lead">Invariant à vérifier</span> À chaque tour de boucle : $\text{notEmpty} + \text{notFull} = N$ — la somme des places occupées et libres est toujours égale à la taille totale du tampon.</div>
+<div class="remark"><span class="lead">Nuance sur la famine</span> L'absence de famine (chaque demande finit par être servie) n'est garantie que si les sémaphores eux-mêmes sont <b>équitables</b> — c'est-à-dire que leur liste d'attente $L$ est traitée en FIFO (premier arrivé, premier réveillé), et non comme un ensemble non ordonné. Ce n'est pas garanti par la définition la plus basique du sémaphore (chapitre 13), mais c'est une hypothèse raisonnable pour la plupart des implémentations réelles.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 38</span>
+<span class="qtext">Describe the Bakery algorithm.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Décrire l'algorithme de la Boulangerie (Lamport) : l'idée, le pseudo-code, et pourquoi il garantit un ordre total et sans ambiguïté entre les processus.</p>
+</div>
+
+<h3>L'idée</h3>
+<div class="concept">
+<p>Comme dans une vraie boulangerie : chaque client (processus) qui veut entrer en section critique tire un ticket numéroté. Le client avec le <b>plus petit numéro</b> est servi en premier. Une fois servi, il "jette son ticket" (le remet à $0$), libérant la place pour de nouveaux arrivants.</p>
+</div>
+
+<h3>Pseudo-code (N processus)</h3>
+<div class="concept">
+<pre><code>variable partagée : entier tableau number[1..N] ← [0, …, 0]
+
+Processus i (en boucle) :
+ p1: section non-critique
+ p2: number[i] ← 1 + max(number)
+ p3: pour chaque autre processus j
+ p4:   await (number[j] = 0) ou (number[i] ≪ number[j])
+ p5: section critique
+ p6: number[i] ← 0</code></pre>
+<p><span class="lead">Comment le lire</span> $p_2$ : le processus $i$ prend un ticket strictement plus grand que le plus grand ticket actuellement distribué. $p_3$–$p_4$ : pour <b>chacun</b> des autres processus $j$, $i$ attend que $j$ soit hors-course ($\text{number}[j]=0$) <b>ou</b> que son propre ticket passe strictement avant celui de $j$. $i$ n'entre qu'une fois <b>toutes</b> ces conditions vérifiées.</p>
+</div>
+
+<h3>La relation d'ordre $\ll$</h3>
+<div class="concept">
+<div class="def">
+$$\text{number}[i] \ll \text{number}[j] \iff \big(\text{number}[i]\lt\text{number}[j]\big) \text{ ou } \big(\text{number}[i]=\text{number}[j] \text{ et } i\lt j\big)$$
+</div>
+<p><span class="lead">Traduction</span> $i$ passe avant $j$ si son ticket est plus petit — ou, en cas d'<b>égalité</b> de tickets, si son identifiant est plus petit. Cette clause de départage donne un <b>ordre total strict</b> : pour deux tickets quelconques, il existe toujours un gagnant clair, jamais d'ambiguïté (voir Question 39 pour la preuve que les égalités sont bel et bien possibles, et comment $\ll$ les résout).</p>
+</div>
+
+<h3>Garanties et limite pratique</h3>
+<div class="concept">
+<p>L'algorithme garantit exclusion mutuelle, absence d'interblocage, de live-lock et de famine — sous l'hypothèse que <code>number[i] ← 1+max(number)</code> est atomique. En pratique, calculer <code>max(number)</code> demande de parcourir tout le tableau (pas atomique) ; une version corrigée ajoute un drapeau <code>choosing[i]</code> pour signaler "je suis en train de choisir mon ticket, ne me lis pas encore", éliminant tout chevauchement en écriture (le chevauchement en lecture restant est prouvé inoffensif par Lamport).</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 39</span>
+<span class="qtext">Two questions related to the Bakery algorithm: – Construct a scenario showing that the ticket numbers can be unbounded or provide an argument showing this is not possible. – Construct a scenario showing that the ticket numbers can be identical or provide an argument showing this is not possible.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Deux questions indépendantes sur les tickets de l'algorithme de la Boulangerie : peuvent-ils grandir sans limite ? Peuvent-ils être identiques entre deux processus ? Dans les deux cas, il faut soit construire un scénario concret le démontrant, soit argumenter que c'est impossible.</p>
+</div>
+
+<h3>Partie 1 — Les tickets peuvent-ils être non bornés ?</h3>
+<div class="concept">
+<p><span class="lead">Réponse : oui, c'est possible</span> — rien dans l'algorithme ne remet jamais les tickets à une échelle bornée ; <code>number[i] ← 1+max(number)</code> ne fait que <b>compter vers le haut</b>, indéfiniment, tant qu'il y a de la contention continue.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Construction du scénario</span> Deux processus $p,q$, tous deux exécutant leur boucle indéfiniment (<code>loop forever</code>). On orchestre volontairement les entrelacements pour qu'il y ait <b>toujours</b> au moins un ticket actif (non nul) au moment où l'autre processus calcule le sien — ce qui force le maximum à grimper à chaque tour.</p>
+<table>
+<tr><th>Tour</th><th>Qui agit</th><th>Calcul</th><th>number[p]</th><th>number[q]</th></tr>
+<tr><td>1</td><td>$p$</td><td>$1+\max(0,0)=1$</td><td>$1$</td><td>$0$</td></tr>
+<tr><td>2</td><td>$q$</td><td>$1+\max(1,0)=2$ (le ticket de $p$ est encore actif)</td><td>$1$</td><td>$2$</td></tr>
+<tr><td>—</td><td>$p$ entre en SC (ticket $1\lt2$), sort, <code>number[p]←0</code></td><td></td><td>$0$</td><td>$2$</td></tr>
+<tr><td>3</td><td>$p$</td><td>$1+\max(0,2)=3$ ($q$ toujours actif)</td><td>$3$</td><td>$2$</td></tr>
+<tr><td>—</td><td>$q$ entre en SC, sort, <code>number[q]←0</code></td><td></td><td>$3$</td><td>$0$</td></tr>
+<tr><td>4</td><td>$q$</td><td>$1+\max(3,0)=4$ ($p$ toujours actif)</td><td>$3$</td><td>$4$</td></tr>
+<tr><td>—</td><td>$p$ entre en SC, sort, <code>number[p]←0</code></td><td></td><td>$0$</td><td>$4$</td></tr>
+<tr><td>5</td><td>$p$</td><td>$1+\max(0,4)=5$</td><td>$5$</td><td>$4$</td></tr>
+<tr><td>...</td><td>...</td><td>la suite continue : $6,7,8,\dots$</td><td>...</td><td>...</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> à chaque tour, le nouveau ticket vaut $1+$ (le maximum courant), qui est <b>strictement supérieur</b> à tous les tickets précédents. Tant que ce motif d'alternance continue (ce qui est parfaitement permis : rien n'oblige les processus à jamais s'arrêter, <code>loop forever</code> le permet explicitement), la suite des tickets $1,2,3,4,5,\dots$ continue de croître <b>indéfiniment</b>. Pour n'importe quelle borne $B$ qu'on voudrait fixer à l'avance, il suffit de laisser ce motif se répéter suffisamment de tours pour que le ticket courant dépasse $B$. Les tickets sont donc bel et bien <b>non bornés</b> sur une exécution suffisamment longue.</p>
+<div class="remark"><span class="lead">Conséquence pratique</span> Une implémentation réelle doit soit utiliser des entiers à précision arbitraire (coûteux), soit accepter un risque de dépassement de capacité (<i>overflow</i>) après un temps suffisamment long, soit utiliser une variante bornée de l'algorithme. C'est une limite pratique connue de la Boulangerie, pas juste un détail théorique.</div>
+</div>
+
+<h3>Partie 2 — Les tickets peuvent-ils être identiques ?</h3>
+<div class="concept">
+<p><span class="lead">Réponse : oui, c'est possible</span> — et c'est précisément pour ce cas que la relation $\ll$ inclut une clause de départage par identifiant (Question 38).</p>
+<p><span class="lead">Comment une égalité peut arriver</span> Si deux processus exécutent $p_2$ (<code>number[i]←1+max(number)</code>) de façon concurrente — l'un lisant le tableau juste avant que l'autre n'y écrive sa propre valeur — ils peuvent tous les deux calculer le <b>même</b> maximum, et donc obtenir le <b>même</b> ticket.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Construction du scénario</span> Trois processus $A$ (id $1$), $B$ (id $2$), $C$ (id $3$). $A$ demande d'abord un ticket, seul : <code>number[A] ← 1+max(0,0,0) = 1</code>. Ensuite, $B$ et $C$ demandent leur ticket <i>de façon concurrente</i> — tous deux lisent le tableau <code>[1,0,0]</code> avant qu'aucun des deux n'ait écrit sa propre valeur, donc tous deux calculent <code>1+max(1,0,0) = 2</code>.</p>
+<p>État final : <code>number = [1, 2, 2]</code> — $B$ et $C$ ont exactement le même ticket !</p>
+<table>
+<tr><th>Comparaison</th><th>Calcul de $\ll$</th><th>Résultat</th></tr>
+<tr><td>$B$ (ticket 2, id 2) vs $C$ (ticket 2, id 3)</td><td>tickets égaux, mais $2\lt3$</td><td>$B\ll C$ : $B$ passe avant $C$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> malgré l'égalité stricte des tickets, l'algorithme reste parfaitement déterministe grâce à la clause de départage par identifiant — $B$ (id plus petit) passera avant $C$, sans aucune ambiguïté ni blocage mutuel. (Voir chapitre 12 / Question 38 pour la vérification complète des conditions <code>await</code> confirmant cet ordre.)</p>
+</div>
+
+<div class="remark"><span class="lead">En résumé</span> Les deux réponses sont "oui, c'est possible" — mais dans les deux cas, l'algorithme reste correct : les tickets non bornés ne cassent rien tant que l'arithmétique ne déborde pas, et les tickets identiques sont proprement départagés par $\ll$.</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 40</span>
+<span class="qtext">Describe the Ricart–Agrawala algorithm (distributed critical sections).</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Décrire l'algorithme de Ricart-Agrawala, qui résout le problème de la section critique dans un système <b>distribué</b> (plusieurs nœuds, sans mémoire partagée).</p>
+</div>
+
+<h3>Pourquoi la Boulangerie ne suffit plus</h3>
+<div class="concept">
+<p>Le problème de la section critique reste le même en distribué (par exemple, mettre à jour une base de données partagée ou un compteur global) — mais la solution de la Boulangerie (chapitre 12) ne fonctionne <b>plus telle quelle</b> : elle comparait directement des tickets stockés dans un tableau <b>partagé</b>. Sans mémoire partagée, aucun nœud ne peut simplement "lire" le ticket d'un autre — il doit lui être <b>envoyé</b> explicitement, via <code>send</code>/<code>receive</code>.</p>
+</div>
+
+<h3>Pseudo-code</h3>
+<div class="concept">
+<pre><code>entier myNum ← 0
+ensemble d'identifiants deferred ← ensemble vide
+
+main :                                    receive :
+ p1: section non-critique                   entier source, reqNum
+ p2: myNum ← chooseNumber                   p10: receive(request, source, reqNum)
+ p3: pour chaque autre nœud N                p11: si reqNum &lt; myNum
+ p4:   send(request, N, myID, myNum)         p12:   send(reply, source, myID)
+ p5: attendre les réponses de tous            p13: sinon
+ p6: section critique                              ajouter source à deferred
+ p7: pour chaque nœud N dans deferred
+ p8:   retirer N de deferred
+ p9:   send(reply, N, myID)</code></pre>
+<p><span class="lead">Comment le lire</span> Chaque nœud fait tourner <b>deux</b> processus concurrents : <code>main</code> (le pré/post-protocole habituel) et <code>receive</code> (qui réagit aux messages entrants). Pour entrer en section critique, un nœud choisit un ticket ($p_2$), envoie une <b>requête</b> à <b>tous</b> les autres ($p_3$–$p_4$), et attend une <b>réponse</b> de chacun d'eux avant d'entrer ($p_5$) — sans réponse de tout le monde, pas d'entrée.</p>
+<p>Quand un nœud reçoit une requête ($p_{10}$, avec le ticket <code>reqNum</code> du demandeur) : si <code>reqNum &lt; myNum</code> (le <b>demandeur</b> a priorité sur moi), je réponds <b>immédiatement</b> ($p_{12}$). Sinon (<b>c'est moi</b> qui ai priorité), je <b>reporte</b> ma réponse ($p_{13}$, en ajoutant le demandeur à <code>deferred</code>) — je ne répondrai qu'une fois sorti de ma propre section critique ($p_7$–$p_9$).</p>
+</div>
+
+<div class="concept">
+<div class="def"><span class="lead"><code>deferred</code>, en une phrase</span> Une liste d'attente : "les nœuds à qui je dois une réponse, mais seulement plus tard". Il n'existe <b>aucun mécanisme de refus explicite</b> — la seule chose qu'un nœud plus prioritaire peut faire, c'est <b>ne pas répondre tout de suite</b>. Comme le demandeur reste bloqué tant qu'il n'a pas reçu <b>toutes</b> les réponses, ce silence <i>est</i> la façon dont la priorité s'exprime.</div>
+<p><span class="lead">Exemple rapide :</span> $A$ (ticket $5$) et $B$ (ticket $8$) demandent en même temps. $B$ reçoit la requête de $A$ : $5\lt8$ → $B$ répond tout de suite. $A$ reçoit la requête de $B$ : $8\lt5$ ? Non → $A$ reporte (ajoute $B$ à <code>deferred</code>). $A$ a déjà la réponse de $B$ → $A$ entre, sort, puis répond enfin à $B$ (qui attendait) → $B$ entre à son tour. Ordre respecté : $A$ avant $B$, comme le veut le ticket le plus petit.</p>
+</div>
+
+<h3>La relation $\ll$ et les tickets</h3>
+<div class="concept">
+<p>Même idée qu'au chapitre 12 : $a \ll b \iff (a\lt b)$ ou $(a=b$ et $\text{id}_a\lt\text{id}_b)$, où $\text{id}_i$ est l'identifiant du nœud (par exemple son adresse IP). Deux nœuds peuvent parfaitement choisir le même ticket — l'algorithme reste déterministe grâce à ce départage. Pour rester équitables, les tickets doivent être <b>monotones</b> : chaque nœud retient le plus grand numéro vu circuler dans tout le système, et choisit toujours strictement plus grand pour sa prochaine demande.</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 41</span>
+<span class="qtext">Starvation definition. Illustrate the phenomenon using one of Dekker's attempts.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Définir la famine, puis l'illustrer avec l'une des tentatives de protocole menant à l'algorithme de Dekker (chapitre 11).</p>
+</div>
+
+<h3>Définition</h3>
+<div class="concept">
+<div class="def"><span class="lead">Famine</span> <span class="eng">(starvation)</span> Un processus attend indéfiniment (potentiellement pour toujours) l'autorisation d'entrer en section critique, alors que d'autres processus continuent, eux, à progresser normalement. Contrairement à un interblocage, il n'y a pas de cycle d'attente mutuelle symétrique : un seul processus est bloqué, pendant que le reste du système vit normalement.</div>
+</div>
+
+<h3>Illustration : la première tentative (variable <code>turn</code>)</h3>
+<div class="concept">
+<pre><code>variable partagée : turn ← 1
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: await turn = 1               q2: await turn = 2
+ p3: section critique             q3: section critique
+ p4: turn ← 2                     q4: turn ← 1</code></pre>
+<p><span class="lead">L'idée du protocole</span> Une seule variable partagée <code>turn</code> indique à qui "c'est le tour". Chaque processus attend que <code>turn</code> prenne la valeur qui lui correspond.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Le scénario de famine</span> Rappel : on ne fait <b>aucune</b> hypothèse sur la vitesse de progression d'un processus dans sa section non-critique — en théorie, $p$ pourrait y rester indéfiniment.</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>turn</th></tr>
+<tr><td>$t_0$</td><td>—</td><td>état de départ</td><td>$1$</td></tr>
+<tr><td>$t_1$</td><td>$q$</td><td>$q_1$ : termine, passe à $q_2$</td><td>$1$</td></tr>
+<tr><td>$t_2$</td><td>$q$</td><td>$q_2$ : teste "turn=2 ?" → faux → <b>se bloque ici</b></td><td>$1$</td></tr>
+<tr><td>$t_3,t_4,\dots$</td><td>$p$</td><td>$p_1$ : continue indéfiniment, ne passe jamais à $p_2$</td><td>$1$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> $q$ attend que <code>turn</code> devienne $2$ — mais la <b>seule</b> instruction capable de produire cet événement est $p_4$, atteignable seulement après $p_2$ et $p_3$, que $p$ n'a lui-même aucune obligation de jamais atteindre. Il existe donc une exécution valide où $q$ n'entre <b>jamais</b> en section critique, alors que $p$ continue tranquillement sa vie dans sa section non-critique : c'est la famine.</p>
+<div class="remark"><span class="lead">Propriété formelle violée</span> L'<b>attente bornée</b> <span class="eng">(bounded waiting)</span> : il devrait exister un nombre maximum $B$ de fois où d'autres processus peuvent "passer devant" un processus en attente. Ici, $p$ peut passer devant une infinité de fois (en ne quittant jamais sa section non-critique) — aucune borne $B$ n'existe.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 42</span>
+<span class="qtext">Live-lock definition. Illustrate the phenomenon using one of Dekker's attempts.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Définir le live-lock, puis l'illustrer avec l'une des tentatives de protocole menant à l'algorithme de Dekker.</p>
+</div>
+
+<h3>Définition</h3>
+<div class="concept">
+<div class="def"><span class="lead">Live-lock</span> Deux (ou plusieurs) processus répètent continuellement la même interaction en réaction aux changements de l'autre, sans qu'aucun ne progresse jamais réellement vers sa section critique. À la différence d'un interblocage (où les processus sont <b>bloqués</b>, à l'arrêt), dans un live-lock les processus sont activement <b>en cours d'exécution</b> — ils "tournent en rond" ensemble, sans jamais rien accomplir d'utile.</div>
+</div>
+
+<h3>Illustration : la quatrième tentative (drapeaux + boucle)</h3>
+<div class="concept">
+<pre><code>variables partagées : wantp ← false, wantq ← false
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: wantp ← true                 q2: wantq ← true
+ p3: while wantq                  q3: while wantp
+ p4:   wantp ← false              q4:   wantq ← false
+ p5:   wantp ← true                q5:   wantq ← true
+ p6: section critique             q6: section critique
+ p7: wantp ← false                q7: wantq ← false</code></pre>
+<p><span class="lead">L'idée du protocole</span> Chaque processus signale son intention ($p_2$), puis, s'il voit que l'autre veut aussi entrer, <b>recule temporairement</b> (annule son drapeau) avant de retenter sa chance — pour éviter l'interblocage de la tentative précédente (où l'attente était passive et bloquante).</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Le scénario de live-lock</span> Si $p$ et $q$ signalent leur intention presque en même temps, puis alternent leurs pas au coup par coup :</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>wantp</th><th>wantq</th></tr>
+<tr><td>$t_0$</td><td>—</td><td>les deux viennent de signaler leur intention</td><td>true</td><td>true</td></tr>
+<tr><td>$t_1$</td><td>$p$</td><td>$p_3$ : "wantq=true ?" → vrai → entre dans la boucle</td><td>true</td><td>true</td></tr>
+<tr><td>$t_2$</td><td>$q$</td><td>$q_3$ : "wantp=true ?" → vrai → entre dans la boucle aussi</td><td>true</td><td>true</td></tr>
+<tr><td>$t_3$</td><td>$p$</td><td>$p_4$ : recule → <code>wantp←false</code></td><td><b>false</b></td><td>true</td></tr>
+<tr><td>$t_4$</td><td>$q$</td><td>$q_4$ : recule → <code>wantq←false</code></td><td>false</td><td><b>false</b></td></tr>
+<tr><td>$t_5$</td><td>$p$</td><td>$p_5$ : retente → <code>wantp←true</code></td><td><b>true</b></td><td>false</td></tr>
+<tr><td>$t_6$</td><td>$q$</td><td>$q_5$ : retente → <code>wantq←true</code></td><td>true</td><td><b>true</b></td></tr>
+<tr><td>$t_7$</td><td>$p$</td><td>$p_3$ (revérifie) : "wantq=true ?" → vrai → <b>reboucle</b></td><td>true</td><td>true</td></tr>
+</table>
+<p>On est revenu exactement à l'état de $t_1$ : le cycle $t_1\to t_7$ peut recommencer <b>indéfiniment</b>, à l'identique.</p>
+<div class="diagram">
+<svg viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrowc" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b23b3b"/></marker></defs>
+<rect x="185.0" y="44.0" width="150" height="62" fill="#f7ece9" stroke="#999" rx="8"/>
+<text x="260.0" y="62.0" font-size="10.5" fill="#222" text-anchor="middle">p teste wantq (boucle)</text>
+<text x="260.0" y="78.0" font-size="10.5" fill="#222" text-anchor="middle">q teste wantp (boucle)</text>
+<text x="260.0" y="94.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=true, wantq=true</text>
+<rect x="341.9" y="158.0" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="416.9" y="176.0" font-size="10.5" fill="#222" text-anchor="middle">p recule (wantp←false)</text>
+<text x="416.9" y="192.0" font-size="10.5" fill="#222" text-anchor="middle">q recule (wantq←false)</text>
+<text x="416.9" y="208.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=true, wantq=true</text>
+<rect x="282.0" y="342.5" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="357.0" y="360.5" font-size="10.5" fill="#222" text-anchor="middle">p recule (wantp←false)</text>
+<text x="357.0" y="376.5" font-size="10.5" fill="#222" text-anchor="middle">q retente (wantq←true)</text>
+<text x="357.0" y="392.5" font-size="10.5" fill="#222" text-anchor="middle">wantp=true, wantq=false</text>
+<rect x="88.0" y="342.5" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="163.0" y="360.5" font-size="10.5" fill="#222" text-anchor="middle">p retente (wantp←true)</text>
+<text x="163.0" y="376.5" font-size="10.5" fill="#222" text-anchor="middle">q retente (wantq←true)</text>
+<text x="163.0" y="392.5" font-size="10.5" fill="#222" text-anchor="middle">wantp=false, wantq=false</text>
+<rect x="28.1" y="158.0" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="103.1" y="176.0" font-size="10.5" fill="#222" text-anchor="middle">p retente (wantp←true)</text>
+<text x="103.1" y="192.0" font-size="10.5" fill="#222" text-anchor="middle">q reteste wantp (boucle)</text>
+<text x="103.1" y="208.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=false, wantq=true</text>
+<line x1="322.3" y1="94.4" x2="348.2" y2="164.9" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="393.1" y1="220.4" x2="383.3" y2="334.5" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="280.0" y1="373.5" x2="248.0" y2="373.5" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="139.2" y1="342.1" x2="129.3" y2="228.0" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="165.4" y1="169.6" x2="191.2" y2="99.1" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<text x="260" y="234" font-size="12" fill="#b23b3b" text-anchor="middle" font-weight="bold">cycle</text>
+<text x="260" y="254" font-size="12" fill="#b23b3b" text-anchor="middle" font-weight="bold">infini</text>
+</svg>
+<p class="caption">Cinq états, cinq flèches, et on revient exactement au point de départ : un cycle fermé qui ne s'arrête jamais.</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> à chaque tour, $p$ et $q$ <b>exécutent</b> des instructions (aucun des deux n'est bloqué en attente passive) — mais ce travail ne fait que les ramener au point de départ. Aucun des deux ne progresse jamais jusqu'à sa section critique : c'est un live-lock, pas un interblocage.</p>
+<div class="remark"><span class="lead">Pourquoi ce n'est pas un interblocage</span> Un interblocage fige le système : plus aucune instruction ne s'exécute nulle part (les deux processus sont dans l'état <i>blocked</i>). Ici, des instructions s'exécutent en permanence (état <i>running</i>) — c'est juste qu'elles ne font "rien d'utile".</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 43</span>
+<span class="qtext">Describe the Byzantine Generals algorithm.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Décrire l'algorithme des généraux byzantins (2 tours), qui résout le problème du consensus en présence de pannes (franches ou byzantines).</p>
+</div>
+
+<h3>Le problème (rappel)</h3>
+<div class="concept">
+<p>Plusieurs généraux (nœuds) doivent s'accorder sur un plan commun (Attaque "A" ou Retraite "R"), en s'envoyant des messages. Certains généraux peuvent être des traîtres : ils tombent en panne franche (arrêtent d'émettre) ou envoient des messages arbitraires/incohérents (panne byzantine). On veut que tous les généraux <b>loyaux</b> se mettent d'accord, malgré ça.</p>
+<div class="remark"><span class="lead">Pourquoi un seul tour ne suffit pas</span> Avec un algorithme à un seul tour (chacun diffuse son plan, puis vote majoritaire), une simple panne franche en cours de diffusion suffit à casser le consensus : si un général tombe en panne après avoir informé certains généraux mais pas d'autres, ceux qui n'ont pas reçu l'information directement n'ont <b>aucun moyen</b> de la retrouver — chaque plan n'a qu'une seule source, donc aucune erreur ou absence n'est détectable.</div>
+</div>
+
+<h3>Pseudo-code (2 tours)</h3>
+<div class="concept">
+<pre><code>planType finalPlan
+planType tableau[généraux] plan, majorityPlan
+planType tableau[généraux, généraux] reportedPlan
+
+p1:  plan[myID] ← choisirAttaqueOuRetraite
+p2:  pour chaque autre général G                          // 1er tour
+p3:    send(G, myID, plan[myID])
+p4:  pour chaque autre général G
+p5:    receive(G, plan[G])
+p6:  pour chaque autre général G                           // 2ème tour
+p7:    pour chaque autre général G' (différent de G)
+p8:      send(G', myID, G, plan[G])
+p9:  pour chaque autre général G
+p10:   pour chaque autre général G' (différent de G)
+p11:     receive(G, G', reportedPlan[G, G'])
+p12: pour chaque autre général G                            // 1er vote
+p13:   majorityPlan[G] ← majorité(plan[G] ∪ reportedPlan[*, G])
+p14: majorityPlan[myID] ← plan[myID]                        // 2ème vote
+p15: finalPlan ← majorité(majorityPlan)</code></pre>
+<p><span class="lead">Comment le lire</span> <b>1er tour</b> ($p_2$–$p_5$) : chacun diffuse directement son plan à tous les autres, exactement comme l'algorithme à un tour. <b>2ème tour</b> ($p_6$–$p_{11}$) : chaque général <b>rediffuse</b> à tout le monde ce qu'il a reçu de chaque autre — ça remplit la matrice <code>reportedPlan[][]</code>, où chaque plan est désormais corroboré par plusieurs sources indépendantes. <b>1er vote</b> ($p_{12}$–$p_{13}$) : pour chaque général $G$, on calcule une majorité <i>locale</i> entre ce que $G$ a dit directement et ce que les autres rapportent avoir reçu de $G$ — ça détecte et corrige les incohérences. <b>2ème vote</b> ($p_{15}$) : un vote majoritaire final sur l'ensemble des plans "nettoyés".</p>
+</div>
+
+<h3>Exemple : la panne de Basil, corrigée</h3>
+<div class="concept">
+<p>Trois généraux : Basil, Leo, Zoe. Basil tombe en panne après avoir informé Leo ($A$) mais avant d'informer Zoe.</p>
+<table>
+<tr><th></th><th>Vue de Leo</th><th>Vue de Zoe</th></tr>
+<tr><td>Plan de Basil</td><td>direct $=A$, rapporté par Zoe $=A$ → majorité $A$</td><td>direct $=$ absent, rapporté par Leo $=A$ → seule valeur $A$</td></tr>
+<tr><td>Plan de Leo</td><td>$R$ (soi-même)</td><td>$R$ (reçu directement)</td></tr>
+<tr><td>Plan de Zoe</td><td>$A$ (reçu directement)</td><td>$A$ (soi-même)</td></tr>
+<tr><td><b>Majorité finale</b></td><td>$(A,R,A) \to$ <b>$A$</b></td><td>$(A,R,A) \to$ <b>$A$</b></td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> Leo <b>et</b> Zoe décident tous les deux $A$ — consensus atteint, malgré la panne de Basil ! Le relais de Leo au second tour a comblé exactement le trou d'information que Zoe avait sur Basil. C'est cette redondance qui rend l'algorithme robuste, là où l'algorithme à un seul tour échouait sur ce même scénario (Leo aurait décidé $A$, Zoe aurait décidé $R$ par défaut faute d'information sur Basil — pas de consensus).</p>
+</div>
+
+<div class="concept">
+<div class="remark"><span class="lead">Combien de traîtres peut-on tolérer ?</span> Un résultat classique (Lamport, Shostak, Pease) établit qu'il faut $n \geqslant 3f+1$ nœuds au total pour tolérer $f$ nœuds byzantins — intuition : un nœud loyal a besoin d'au moins $2f+1$ messages fiables pour qu'une majorité ne puisse pas être faussée par les $f$ traîtres, et comme au plus $n-f$ nœuds sont loyaux, il faut $n-f\geqslant2f+1$, soit $n\geqslant3f+1$.</div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 14 — Fiche de révision — Distributed Algorithms</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.85rem;}
+  th,td{border:1px solid var(--border); padding:.35rem .5rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.7rem .9rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.55;}
+  pre code{background:none; padding:0; color:inherit;}
+  .badge{display:inline-block; font-family:Helvetica,Arial,sans-serif; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:.15rem .5rem; border-radius:10px; margin-left:.4rem;}
+  .badge-bad{background:#f7dede; color:#8a2e2e;}
+  .badge-good{background:#dcefe4; color:#2e6b45;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 14 — Fiche de révision</h1>
+<p class="subtitle">Distributed Algorithms — INFO-F-404. Dernier chapitre de la Partie V. On quitte la mémoire partagée : les processus ne peuvent plus lire les mêmes variables, ils ne peuvent que s'envoyer des messages. Deux problèmes : la section critique distribuée, et le consensus en présence de pannes (généraux byzantins). 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s140">Motivation : plus de mémoire partagée</a></li>
+<li><a href="#s141">Section critique distribuée : Ricart-Agrawala</a></li>
+<li><a href="#s142">Le problème du consensus</a></li>
+<li><a href="#s143">Le problème des généraux byzantins</a></li>
+<li><a href="#s144">L'algorithme à un tour (et pourquoi il échoue)</a></li>
+<li><a href="#s145">L'algorithme des généraux byzantins (2 tours)</a></li>
+<li><a href="#s146">Combien de traîtres peut-on tolérer ?</a></li>
+<li><a href="#s147">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s140">14.0 — Motivation : plus de mémoire partagée</h2>
+<div class="concept">
+<p><span class="lead">Le changement de décor</span> Tous les chapitres précédents (11 à 13) supposaient une <b>mémoire partagée</b> : tous les processus pouvaient lire et écrire les mêmes variables (<code>turn</code>, <code>want</code>, <code>number</code>, un sémaphore...). Ce chapitre étudie des <b>systèmes distribués</b> : plusieurs machines physiques distinctes (grappes de serveurs, grilles de calcul...), qui ne partagent <b>aucune</b> mémoire commune. La seule façon de communiquer est l'échange de <b>messages</b> sur un réseau.</p>
+<div class="def"><span class="lead">Definition 106 — Nœud</span> <span class="eng">(node)</span> Un nœud modélise un objet physique (un ordinateur), qu'il ait un seul ou plusieurs processeurs. À l'intérieur d'un même nœud, on suppose que les processus se synchronisent normalement (comme dans les chapitres précédents). La synchronisation <b>entre</b> nœuds différents se fait uniquement par échange de messages, via deux primitives : <code>send(type, destinataire, [paramètres])</code> et <code>receive(type, [paramètres])</code>.</div>
+<p><span class="lead">Pourquoi l'algorithme de la Boulangerie (chapitre 12) ne suffit plus</span> Le problème de la section critique reste le même en distribué — mais la solution du chapitre 12 ne fonctionne <b>plus telle quelle</b> : elle comparait directement des numéros de ticket stockés dans un tableau <b>partagé</b>. Sans mémoire partagée, aucun nœud ne peut simplement "lire" le ticket d'un autre — il doit lui être <b>envoyé</b> explicitement.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s141">14.1 — Section critique distribuée : Ricart-Agrawala</h2>
+<div class="concept">
+<p><span class="lead">D'abord, une confusion à éviter</span> Un nœud peut très bien contenir plusieurs processeurs internes qui se synchronisent déjà très bien entre eux (c'est tout ce que les chapitres 10 à 13 ont appris à faire) — ça, ce n'est <b>pas</b> le problème ici. Le point de ce chapitre, c'est qu'un <b>groupe</b> de nœuds distincts a parfois besoin d'accéder à une <b>même ressource logique</b>, partagée au niveau du système entier : mettre à jour une base de données commune, ou incrémenter un compteur global unique. Ce n'est donc pas le nœud "tout seul" qui a besoin d'un nouvel algorithme — c'est l'ensemble des nœuds qui se retrouve avec exactement le même problème de section critique qu'au chapitre 11/12 (un seul à la fois sur la ressource), mais <b>sans mémoire partagée</b> pour le résoudre avec un simple tableau de tickets.</p>
+<div class="analogie"><span class="lead">Analogie</span> Imagine 5 agences bancaires (= 5 nœuds), chacune avec plusieurs guichetiers qui se coordonnent très bien en interne. Mais toutes les agences doivent parfois écrire dans le <b>même registre central</b>, quelque part sur le réseau. Si deux agences y écrivent en même temps, c'est le même problème qu'au chapitre 11 — sauf qu'aucune agence n'a de mémoire partagée avec les autres pour poser un simple drapeau que tout le monde peut lire instantanément. La seule option : s'envoyer des messages ("je veux écrire", "vas-y", "j'ai fini").</div>
+<p><span class="lead">L'idée de Ricart-Agrawala</span> On généralise l'idée du ticket (Boulangerie), mais entièrement via l'échange de messages : "la Boulangerie, où lire le ticket de l'autre dans un tableau partagé est remplacé par lui envoyer un message et attendre sa réponse". Chaque nœud fait tourner deux processus concurrents (<code>main</code> pour le pré/post-protocole, <code>receive</code> pour réagir aux messages entrants) :</p>
+<pre><code>entier myNum ← 0
+ensemble d'identifiants deferred ← ensemble vide
+
+main :                                    receive :
+ p1: section non-critique                   entier source, reqNum
+ p2: myNum ← chooseNumber                   p10: receive(request, source, reqNum)
+ p3: pour chaque autre nœud N                p11: si reqNum &lt; myNum
+ p4:   send(request, N, myID, myNum)         p12:   send(reply, source, myID)
+ p5: attendre les réponses de tous            p13: sinon
+ p6: section critique                              ajouter source à deferred
+ p7: pour chaque nœud N dans deferred
+ p8:   retirer N de deferred
+ p9:   send(reply, N, myID)</code></pre>
+<p><span class="lead">Comment le lire</span> Pour entrer en section critique, un nœud choisit un numéro de ticket ($p_2$) et envoie une <b>requête</b> à <b>tous</b> les autres nœuds ($p_3$–$p_4$). Il attend d'avoir reçu une <b>réponse</b> de chacun d'eux avant d'entrer ($p_5$) — c'est le point clé à garder en tête : sans réponse de <b>tout le monde</b>, on n'entre pas.</p>
+<p>De son côté, quand un nœud reçoit la requête d'un autre ($p_{10}$, avec le ticket <code>reqNum</code> du demandeur) : si <code>reqNum &lt; myNum</code> — c'est-à-dire si <b>le demandeur</b> a un ticket plus petit que le mien, donc <b>priorité sur moi</b> — je réponds <b>immédiatement</b> ($p_{12}$) : je le laisse passer devant, puisque de toute façon je devrai attendre mon tour derrière lui via mes propres requêtes. Sinon (mon ticket à moi est plus petit, donc <b>c'est moi</b> qui ai priorité sur le demandeur), je <b>reporte</b> ma réponse ($p_{13}$) plutôt que de répondre tout de suite.</p>
+<div class="def"><span class="lead"><code>deferred</code>, c'est quoi ?</span> Simplement une liste d'attente : "les nœuds à qui je dois une réponse, mais seulement plus tard". Il n'existe <b>aucun mécanisme de refus explicite</b> dans ce protocole — je ne peux pas dire "non" à quelqu'un. La seule chose que je peux faire, c'est <b>ne pas répondre tout de suite</b>. Comme le demandeur reste bloqué ($p_5$) tant qu'il n'a pas reçu <b>ma</b> réponse, le simple fait de le faire patienter en silence <i>est</i> la façon dont ma priorité s'exprime. Une fois sorti de ma propre section critique ($p_7$–$p_9$), j'envoie enfin les réponses que j'avais mises de côté.</div>
+
+<div class="story">
+<div class="story-title">🔍 Exemple complet : deux nœuds qui demandent en même temps</div>
+<p>Nœud $A$ (ticket $5$) et nœud $B$ (ticket $8$) veulent tous les deux entrer en section critique, à peu près en même temps.</p>
+<table>
+<tr><th>Étape</th><th>Ce qui se passe</th></tr>
+<tr><td>1</td><td>$A$ envoie sa requête (ticket $5$) à $B$. En parallèle, $B$ envoie sa requête (ticket $8$) à $A$.</td></tr>
+<tr><td>2</td><td>$B$ reçoit la requête de $A$ : <code>reqNum=5</code>, <code>myNum=8</code>. $5\lt8$ ? Oui → $A$ a priorité sur $B$ → $B$ répond <b>immédiatement</b> à $A$.</td></tr>
+<tr><td>3</td><td>$A$ reçoit la requête de $B$ : <code>reqNum=8</code>, <code>myNum=5</code>. $8\lt5$ ? Non → $B$ n'a <b>pas</b> priorité sur $A$ → $A$ <b>reporte</b> : il ajoute $B$ à son <code>deferred</code>, et ne répond pas encore.</td></tr>
+<tr><td>4</td><td>$A$ a maintenant reçu la réponse de $B$ (étape 2) — c'était son seul autre nœud à attendre → $A$ entre en section critique.</td></tr>
+<tr><td>5</td><td>$A$ termine sa section critique, exécute son post-protocole ($p_7$–$p_9$) : pour chaque nœud dans <code>deferred</code> (ici $B$), il envoie enfin sa réponse.</td></tr>
+<tr><td>6</td><td>$B$, bloqué depuis l'étape 1 en attente de la réponse de $A$, la reçoit enfin → $B$ entre à son tour en section critique.</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> $B$ n'a jamais reçu de message disant explicitement "attends" ou "non" — il a juste... rien reçu de $A$ pendant un moment. C'est ce silence, combiné au fait que $B$ ne peut pas entrer sans <b>toutes</b> les réponses, qui force l'ordre $A$ avant $B$. <code>deferred</code> est simplement la mémoire de $A$ pour ne pas oublier de répondre à $B$ une fois qu'il a fini.</p>
+</div>
+<div class="def"><span class="lead">La relation $\ll$ (même idée qu'au chapitre 12)</span>
+$$a \ll b \iff (a \lt b) \text{ ou } (a=b \text{ et } \text{id}_a \lt \text{id}_b)$$
+où $\text{id}_i$ est l'identifiant du nœud (par exemple son adresse IP) propriétaire du ticket $i$. Comme au chapitre 12, deux nœuds peuvent parfaitement choisir le <b>même</b> numéro de ticket — l'algorithme reste déterministe et correct grâce au départage par $\text{id}$.</div>
+<p><span class="lead">D'où viennent les tickets ?</span> Pour que ce système reste équitable, les numéros doivent être <b>monotones</b> : chaque nœud garde en mémoire le plus grand numéro de ticket qu'il a vu circuler dans tout le système (via les requêtes reçues), et choisit toujours un numéro strictement supérieur pour sa prochaine demande.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s142">14.2 — Le problème du consensus</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 107 — Consensus</span> Le problème du consensus survient lorsque plusieurs nœuds doivent se mettre d'accord sur une valeur commune.</div>
+<p><span class="lead">Un exemple concret : les systèmes critiques</span> Dans l'avionique (ou l'automobile), les systèmes de commande de vol utilisent souvent plusieurs capteurs et calculateurs <b>redondants</b> (par exemple pour la température ou la pression, avant de piloter automatiquement une manette des gaz). Un comparateur (vote majoritaire) doit alors décider d'une valeur fiable unique à partir de plusieurs sources — sauf que ces sources peuvent parfois se contredire.</p>
+<p><span class="lead">Deux types de pannes possibles</span></p>
+<ul>
+<li><b>Panne franche</b> <span class="eng">(crash failure)</span> : un nœud arrête simplement d'envoyer des messages. Facile à détecter (via un délai d'attente / <i>timeout</i>).</li>
+<li><b>Panne byzantine</b> <span class="eng">(Byzantine failure)</span> : un nœud envoie des messages erronés ou arbitraires — potentiellement <b>différents</b> à chaque destinataire, de façon délibérément trompeuse. Bien plus difficile à détecter qu'une simple panne franche.</li>
+</ul>
+<p>Sans erreurs, le comparateur aurait une tâche facile : appliquer un vote majoritaire, de façon déterministe. C'est justement pour raisonner sur ce qui se passe <i>avec</i> erreurs qu'on utilise l'analogie suivante.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s143">14.3 — Le problème des généraux byzantins</h2>
+<div class="concept">
+<p><span class="lead">L'analogie</span> Plusieurs divisions de l'armée byzantine assiègent une ville ennemie, chacune commandée par son propre général. Les généraux ne communiquent qu'en s'envoyant des messagers. Après avoir observé l'ennemi, tous les généraux doivent se mettre d'accord sur un plan commun : attaquer ("A") ou battre en retraite ("R"). Certains généraux peuvent être des <b>traîtres</b>, qui essaient d'empêcher les généraux loyaux de trouver un consensus.</p>
+<p><span class="lead">Ce qu'on attend d'un bon algorithme de décision</span></p>
+<ul>
+<li>Tous les généraux <b>loyaux</b> doivent se mettre d'accord sur un <b>même</b> plan d'action (les traîtres, eux, feront ce qu'ils veulent).</li>
+<li>Un <b>petit nombre</b> de traîtres ne doit <b>pas</b> pouvoir forcer les généraux loyaux à choisir le mauvais plan.</li>
+</ul>
+<p><span class="lead">Traduction vers les systèmes distribués</span> Les généraux sont une analogie pour les <b>nœuds</b>, les messagers pour les <b>canaux de communication</b>. Un général traître qui s'arrête de parler = une panne franche. Un général traître qui envoie des messages différents à chacun = une panne byzantine.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s144">14.4 — L'algorithme à un tour (et pourquoi il échoue)</h2>
+<div class="concept">
+<p><span class="lead">L'idée la plus simple</span> Chaque général envoie son plan à tous les autres, puis calcule la <b>majorité</b> des plans reçus (en cas d'égalité, on choisit "R" par convention).</p>
+<pre><code>planType finalPlan
+planType tableau[généraux] plan
+
+p1: plan[myID] ← choisirAttaqueOuRetraite
+p2: pour chaque autre général G
+p3:   send(G, myID, plan[myID])
+p4: pour chaque autre général G
+p5:   receive(G, plan[G])
+p6: finalPlan ← majorité(plan)</code></pre>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça échoue : une simple panne franche suffit à casser le consensus <span class="badge badge-bad">Pas de consensus</span></div>
+<p>Trois généraux : Basil, Leo, Zoe. Basil est un traître — mais ici, il suffit même d'une panne franche toute simple pour tout faire échouer : Basil <b>tombe en panne</b> après avoir envoyé son plan ($A$) à Leo, mais <b>avant</b> d'avoir pu l'envoyer à Zoe.</p>
+<table>
+<tr><th></th><th>Vue de Leo</th><th>Vue de Zoe</th></tr>
+<tr><td>Plan de Basil</td><td>$A$ (reçu avant la panne)</td><td>— (jamais reçu, Basil est tombé en panne avant)</td></tr>
+<tr><td>Plan de Leo (le sien)</td><td>$R$</td><td>$R$ (reçu de Leo, qui lui n'est pas tombé en panne)</td></tr>
+<tr><td>Plan de Zoe (le sien)</td><td>$A$ (reçu de Zoe)</td><td>$A$</td></tr>
+<tr><td><b>Majorité calculée</b></td><td>$A$ (2 votes $A$ contre 1 $R$)</td><td>égalité $R,A$ → <b>$R$</b> par convention</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> Leo décide $A$, Zoe décide $R$ — <b>aucun consensus</b> entre les deux généraux pourtant loyaux ! Le simple fait que Basil ait pu s'arrêter <i>au milieu</i> de sa diffusion (un cas de panne totalement banal, pas même besoin de malveillance byzantine) suffit à faire échouer l'algorithme à un tour. Le problème : chaque général n'a <b>qu'une seule source d'information</b> pour le plan de chaque autre — si cette unique source est incomplète ou incohérente, rien ne permet de le détecter ni de le corriger.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s145">14.5 — L'algorithme des généraux byzantins (2 tours)</h2>
+<div class="concept">
+<p><span class="lead">L'idée pour corriger le défaut</span> Le problème du tour unique, c'est qu'une information reçue une seule fois ne peut pas être vérifiée. La solution : ajouter un <b>second tour</b> où chaque général <b>relaie</b> à tout le monde ce qu'il a reçu des autres. Ainsi, même si un général tombe en panne avant d'avoir informé tout le monde directement, les autres généraux peuvent combler ce trou en se transmettant l'information entre eux.</p>
+<pre><code>planType finalPlan
+planType tableau[généraux] plan, majorityPlan
+planType tableau[généraux, généraux] reportedPlan
+
+p1:  plan[myID] ← choisirAttaqueOuRetraite
+p2:  pour chaque autre général G                          // 1er tour
+p3:    send(G, myID, plan[myID])
+p4:  pour chaque autre général G
+p5:    receive(G, plan[G])
+p6:  pour chaque autre général G                           // 2ème tour
+p7:    pour chaque autre général G' (différent de G)
+p8:      send(G', myID, G, plan[G])
+p9:  pour chaque autre général G
+p10:   pour chaque autre général G' (différent de G)
+p11:     receive(G, G', reportedPlan[G, G'])
+p12: pour chaque autre général G                            // 1er vote
+p13:   majorityPlan[G] ← majorité(plan[G] ∪ reportedPlan[*, G])
+p14: majorityPlan[myID] ← plan[myID]                        // 2ème vote
+p15: finalPlan ← majorité(majorityPlan)</code></pre>
+<p><span class="lead">Comment le lire</span> Premier tour : identique à l'algorithme précédent (chacun diffuse son plan). Deuxième tour ($p_6$–$p_8$) : chaque général <b>rediffuse</b> à tout le monde ce qu'il a reçu de chaque autre général — c'est ce qui remplit la matrice <code>reportedPlan[][]</code>. Ensuite ($p_{12}$–$p_{13}$), pour <b>chaque</b> général $G$, on calcule une majorité <i>locale</i> entre ce que $G$ a dit directement et ce que les autres ont rapporté avoir reçu de $G$ — ça permet de détecter et corriger les incohérences (un général qui aurait dit une chose à l'un et autre chose à l'autre serait démasqué par cette étape). Enfin ($p_{15}$), un <b>second</b> vote majoritaire, cette fois sur l'ensemble des plans "nettoyés" de tous les généraux, donne la décision finale.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Le même scénario, mais avec l'algorithme à 2 tours <span class="badge badge-good">Consensus atteint</span></div>
+<p>Même situation qu'en 14.4 : Basil tombe en panne après avoir informé Leo ($A$) mais avant d'informer Zoe.</p>
+<p><span class="step-title">Ce que voit Leo :</span></p>
+<table>
+<tr><th>Général</th><th>Plan direct (1er tour)</th><th>Rapporté par Zoe (2ème tour)</th><th>Majorité locale</th></tr>
+<tr><td>Basil</td><td>$A$</td><td>$A$</td><td>$A$</td></tr>
+<tr><td>Leo (soi-même)</td><td>$R$</td><td>—</td><td>$R$</td></tr>
+<tr><td>Zoe</td><td>$A$</td><td>—</td><td>$A$</td></tr>
+</table>
+<p>Majorité finale pour Leo : $(A,R,A)$ → <b>$A$</b>.</p>
+<p><span class="step-title">Ce que voit Zoe :</span></p>
+<table>
+<tr><th>Général</th><th>Plan direct (1er tour)</th><th>Rapporté par Leo (2ème tour)</th><th>Majorité locale</th></tr>
+<tr><td>Basil</td><td>— (jamais reçu)</td><td>$A$</td><td>$A$ (seule valeur disponible)</td></tr>
+<tr><td>Leo</td><td>$R$</td><td>—</td><td>$R$</td></tr>
+<tr><td>Zoe (soi-même)</td><td>$A$</td><td>—</td><td>$A$</td></tr>
+</table>
+<p>Majorité finale pour Zoe : $(A,R,A)$ → <b>$A$</b>.</p>
+<p><span class="step-title">Le "aha" :</span> Leo <b>et</b> Zoe décident tous les deux $A$ — consensus atteint, malgré la panne de Basil ! La différence avec 14.4 : Zoe n'avait <b>aucune</b> information directe sur le plan de Basil, mais le relais de Leo au second tour a comblé exactement ce trou. C'est précisément cette redondance (chaque plan est corroboré par plusieurs sources indépendantes) qui rend l'algorithme robuste aux pannes — et pas seulement aux pannes franches, mais aussi aux comportements byzantins délibérément trompeurs.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s146">14.6 — Combien de traîtres peut-on tolérer ?</h2>
+<div class="concept">
+<p><span class="lead">La question que pose le cours</span> Le handbook termine ce chapitre en posant explicitement la question, sans y répondre en détail : quelle condition, sur le nombre de traîtres par rapport au nombre total de généraux, est nécessaire pour espérer un consensus ?</p>
+<div class="formal">
+<span class="lead">📝 Résultat classique (Lamport, Shostak, Pease)</span>
+<p>Pour tolérer $f$ nœuds byzantins (traîtres), il faut au moins :
+$$n \gt 3f \qquad \text{soit} \qquad n \geqslant 3f+1$$
+nœuds au total.</p>
+</div>
+<p><span class="lead">L'intuition</span> Pour prendre une décision fiable, un nœud loyal doit recevoir suffisamment de messages <b>corrects</b> pour que la majorité ne puisse pas être faussée par les $f$ traîtres : il faut au moins $2f+1$ messages fiables pour garantir une majorité incontestable. Comme au plus $n-f$ nœuds sont loyaux, il faut $n-f \geqslant 2f+1$, soit $n \geqslant 3f+1$. En dessous de ce seuil, les traîtres peuvent en théorie présenter deux versions contradictoires du système à deux sous-groupes de généraux loyaux différents, sans qu'aucun des deux groupes ne puisse démasquer le mensonge.</p>
+<div class="remark"><span class="lead">Nuance</span> Ce résultat quantitatif dépasse le contenu strictement présenté dans les figures du cours (qui se concentrent sur le mécanisme à 2 tours avec un exemple à 3 généraux), mais il répond directement à la question ouverte posée par le cours, et c'est un résultat suffisamment central en systèmes distribués pour être connu.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s147">14.7 — Conclusion pratique</h2>
+<div class="concept">
+<p>Sans mémoire partagée, tout doit passer par des messages explicites : Ricart-Agrawala généralise l'idée du ticket de la Boulangerie à ce cadre, en remplaçant la lecture directe d'un tableau partagé par des requêtes et des réponses. Le problème du consensus, illustré par l'analogie des généraux byzantins, montre qu'un seul tour d'échange d'information est fragile face à la moindre panne (même une simple panne franche suffit à casser le consensus) — un second tour de relais, où chaque nœud rapporte ce qu'il a reçu des autres, permet de détecter et corriger les incohérences.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "pourquoi un seul tour ne suffit-il pas ?" — parce que chaque général n'a qu'<b>une seule source</b> pour l'information de chaque autre ; si cette source unique échoue ou ment, rien ne permet de le détecter. Le second tour introduit de la <b>redondance</b> : chaque plan est corroboré par plusieurs sources indépendantes, ce qui permet de démasquer (ou au moins neutraliser) les incohérences.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Nœuds et messages</h4>
+<p><b>Nœud</b> (Def. 106) : objet physique (ordinateur), synchronisation interne classique, mais communication <b>entre</b> nœuds uniquement par <code>send</code>/<code>receive</code>. Aucune mémoire partagée entre nœuds.</p>
+<h4>Ricart-Agrawala (section critique distribuée)</h4>
+<p>Chaque nœud choisit un ticket, l'envoie à tous via <code>request</code>, attend une <code>reply</code> de chacun avant d'entrer. À la réception d'une requête : répondre immédiatement si son propre ticket est plus petit (priorité), sinon reporter la réponse (<code>deferred</code>) jusqu'à sa propre sortie de section critique. Relation $\ll$ identique au chapitre 12 (départage par identifiant de nœud en cas d'égalité de ticket).</p>
+<h4>Consensus (Def. 107)</h4>
+<p>Plusieurs nœuds doivent s'accorder sur une valeur commune. <b>Panne franche</b> (crash) : un nœud arrête d'émettre — détectable par timeout. <b>Panne byzantine</b> : un nœud émet des messages arbitraires/incohérents — bien plus difficile à détecter.</p>
+<h4>Généraux byzantins</h4>
+<p>Analogie : généraux (nœuds) décidant Attaque/Retraite via messagers (canaux). Exigences : accord entre loyaux + un petit nombre de traîtres ne doit pas fausser la décision.</p>
+<h4>Algorithme à un tour</h4>
+<p>Diffusion simple + vote majoritaire (égalité → "R"). <b>Ne garantit pas le consensus</b> : une simple panne franche en cours de diffusion peut faire diverger les décisions des nœuds loyaux (chaque nœud n'a qu'une seule source par plan).</p>
+<h4>Algorithme des généraux byzantins (2 tours)</h4>
+<p>1er tour : diffusion directe des plans. 2ème tour : chaque nœud relaie ce qu'il a reçu des autres (matrice <code>reportedPlan</code>). Vote majoritaire local par général, puis vote majoritaire final. La redondance introduite au 2ème tour corrige les incohérences dues aux pannes (franches ou byzantines).</p>
+<h4>Borne de tolérance aux pannes</h4>
+<p>$$n \geqslant 3f+1$$
+pour tolérer $f$ nœuds byzantins parmi $n$ — un résultat classique répondant à la question ouverte du cours.</p>
+</div>
+
+</body>
+</html>
