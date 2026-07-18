@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 12 — Fiche de révision — Critical Sections with N Processes</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.85rem;}
+  th,td{border:1px solid var(--border); padding:.35rem .5rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.7rem .9rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.55;}
+  pre code{background:none; padding:0; color:inherit;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 12 — Fiche de révision</h1>
+<p class="subtitle">Critical Sections with N Processes — INFO-F-404. Le chapitre 11 a résolu le problème pour 2 processus (Dekker) ; ici, Lamport généralise à un nombre <i>quelconque</i> de processus avec l'algorithme de la Boulangerie. Un chapitre court, mais dense sur la notation. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s120">Motivation</a></li>
+<li><a href="#s121">L'idée : un système de tickets</a></li>
+<li><a href="#s122">Version à 2 processus</a></li>
+<li><a href="#s123">Généralisation à N processus</a></li>
+<li><a href="#s124">Exemple : que se passe-t-il en cas d'égalité ?</a></li>
+<li><a href="#s125">Le problème de l'affectation non-atomique</a></li>
+<li><a href="#s126">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s120">12.0 — Motivation</h2>
+<div class="concept">
+<p><span class="lead">Où on en était</span> Le chapitre 11 a montré Dekker : une solution correcte au problème des sections critiques, mais seulement pour <b>2</b> processus (elle utilise des variables comme <code>wantp</code>/<code>wantq</code> et <code>turn</code>, taillées sur mesure pour exactement deux participants). Que faire si $N$ processus, pas seulement $2$, doivent se partager la même section critique ?</p>
+<p><span class="lead">La solution</span> Lamport propose l'<b>algorithme de la Boulangerie</b> <span class="eng">(Bakery algorithm)</span>, qui généralise l'idée à un nombre <i>arbitraire</i> de processus, tout en garantissant toujours l'exclusion mutuelle, l'absence d'interblocage, l'absence de live-lock, et l'absence de famine (les quatre propriétés qu'on a vu échouer une par une au chapitre 11).</p>
+</div>
+
+<hr class="divider">
+<h2 id="s121">12.1 — L'idée : un système de tickets</h2>
+<div class="concept">
+<div class="analogie"><span class="lead">Analogie (qui donne son nom à l'algorithme)</span> Comme dans une vraie boulangerie : en entrant, chaque client tire un ticket numéroté. Le client avec le <b>plus petit numéro</b> est servi en premier. Une fois servi, il jette son ticket et un nouveau client peut en tirer un.</div>
+<p><span class="lead">Traduction en algorithme</span> Chaque processus qui veut entrer en section critique se voit attribuer un numéro (plus grand que tous les numéros actuellement pris par les autres). Il attend ensuite que tous les processus ayant un numéro plus petit que lui (donc "devant lui dans la file") aient fini, puis entre à son tour. En sortant, il remet son numéro à $0$ (équivalent de "jeter son ticket").</p>
+</div>
+
+<hr class="divider">
+<h2 id="s122">12.2 — Version à 2 processus</h2>
+<div class="concept">
+<p>Avant de généraliser, voici à quoi ressemble l'idée avec seulement $2$ processus $p$ et $q$, chacun ayant sa propre variable de ticket ($n_p$, $n_q$) :</p>
+<pre><code>variables partagées : np ← 0, nq ← 0
+
+p:                                  q:
+loop forever                        loop forever
+ p1: section non-critique             q1: section non-critique
+ p2: np ← nq + 1                      q2: nq ← np + 1
+ p3: await nq = 0 or np ≤ nq          q3: await np = 0 or nq &lt; np
+ p4: section critique                 q4: section critique
+ p5: np ← 0                           q5: nq ← 0</code></pre>
+<p><span class="lead">Comment le lire</span> À $p_2$, $p$ prend un ticket <b>strictement plus grand</b> que celui de $q$ à cet instant ($n_p \leftarrow n_q+1$). À $p_3$, $p$ attend soit que $q$ n'ait pas de ticket du tout ($n_q=0$, $q$ n'est pas dans la course), soit que son propre ticket soit inférieur ou égal à celui de $q$. Remarque déjà intéressante : les conditions de $p$ et de $q$ ne sont <b>pas symétriques</b> ($p_3$ utilise $\leqslant$, $q_3$ utilise $\lt$ strict) — c'est exactement ce qui va départager les égalités de tickets, comme on va le voir en détail dans la version générale.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s123">12.3 — Généralisation à N processus</h2>
+<div class="concept">
+<p><span class="lead">La structure de données</span> Un tableau partagé <code>number[1..N]</code>, initialisé à $0$ partout : <code>number[i]</code> est le ticket du processus $i$ ($0$ = "je ne suis pas dans la course").</p>
+<pre><code>variable partagée : entier tableau number[1..N] ← [0, …, 0]
+
+Processus i (en boucle) :
+ p1: section non-critique
+ p2: number[i] ← 1 + max(number)
+ p3: pour chaque autre processus j
+ p4:   await (number[j] = 0) ou (number[i] ≪ number[j])
+ p5: section critique
+ p6: number[i] ← 0</code></pre>
+<p><span class="lead">Traduction terme par terme</span></p>
+<ul>
+<li><code>i</code> : l'identifiant du processus courant — on peut le voir comme un numéro de processus fixe (par exemple le PID sous Unix), <b>distinct</b> pour chaque processus.</li>
+<li>$p_2$ : <code>number[i] ← 1 + max(number)</code> — le processus $i$ prend un ticket strictement plus grand que le plus grand ticket actuellement distribué (tous processus confondus).</li>
+<li>$p_3$–$p_4$ : pour <b>chacun</b> des $N-1$ autres processus $j$, $i$ attend que $j$ soit hors-course ($\text{number}[j]=0$) <b>ou</b> que le ticket de $i$ passe strictement avant celui de $j$ selon la relation $\ll$ (définie ci-dessous). $i$ n'entre en section critique qu'une fois <b>toutes</b> ces conditions satisfaites simultanément.</li>
+</ul>
+</div>
+
+<div class="concept">
+<div class="def"><span class="lead">La relation $\ll$ (« passe strictement avant »)</span>
+$$\text{number}[i] \ll \text{number}[j] \quad\overset{\text{def}}{\Longleftrightarrow}\quad \big(\text{number}[i] \lt \text{number}[j]\big) \ \text{ou}\ \big(\text{number}[i] = \text{number}[j] \text{ et } i \lt j\big)$$
+</div>
+<p><span class="lead">Traduction en langage courant</span> $i$ passe strictement avant $j$ si son ticket est plus petit — <b>ou</b>, en cas d'égalité de tickets (oui, ça peut arriver, voir 12.4), si son identifiant $i$ est plus petit. Cette deuxième clause est essentielle : sans elle, deux processus avec le même ticket pourraient <i>tous les deux</i> se croire prioritaires, ou <i>tous les deux</i> attendre l'autre indéfiniment. Avec l'identifiant comme critère de départage, on obtient un <b>ordre total strict</b> : pour deux tickets quelconques (égaux ou non), il y a toujours exactement un gagnant clair, jamais d'ambiguïté ni d'égalité parfaite.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s124">12.4 — Exemple : que se passe-t-il en cas d'égalité ?</h2>
+<div class="concept">
+<p><span class="lead">Comment une égalité peut arriver</span> Si deux processus exécutent $p_2$ (<code>number[i] ← 1+max(number)</code>) de façon concurrente — l'un lisant le tableau juste avant que l'autre n'y écrive sa propre valeur — ils peuvent tous les deux calculer le <b>même</b> maximum, et donc obtenir le <b>même</b> ticket. C'est précisément pour ce cas que la relation $\ll$ inclut le départage par $i$.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Trois processus, deux tickets identiques — la relation $\ll$ à l'œuvre</div>
+<p>Trois processus $A$ (id $1$), $B$ (id $2$), $C$ (id $3$). $A$ demande d'abord un ticket, seul : <code>number[1] ← 1+max(0,0,0) = 1</code>. Ensuite, $B$ et $C$ demandent leur ticket <i>de façon concurrente</i> — tous deux lisent le tableau <code>[1,0,0]</code> avant qu'aucun des deux n'ait écrit sa propre valeur, donc tous deux calculent <code>1+max(1,0,0) = 2</code>.</p>
+<p>État final des tickets : <code>number = [1, 2, 2]</code> — $B$ et $C$ ont exactement le même ticket, $2$ !</p>
+<p><span class="step-title">Qui passe en premier ? Appliquons $\ll$ à chaque paire :</span></p>
+<table>
+<tr><th>Comparaison</th><th>Calcul</th><th>Résultat</th></tr>
+<tr><td>$A$ (ticket 1) vs $B$ (ticket 2)</td><td>$1 \lt 2$</td><td>$A \ll B$</td></tr>
+<tr><td>$A$ (ticket 1) vs $C$ (ticket 2)</td><td>$1 \lt 2$</td><td>$A \ll C$</td></tr>
+<tr><td>$B$ (ticket 2, id 2) vs $C$ (ticket 2, id 3)</td><td>tickets égaux, mais $2 \lt 3$</td><td>$B \ll C$</td></tr>
+</table>
+<p>$A$ passe avant tout le monde (ticket le plus petit). Entre $B$ et $C$ (tickets à égalité), l'identifiant tranche : $B \ll C$, donc $B$ passe avant $C$.</p>
+<p><span class="step-title">Vérifions que l'algorithme respecte bien cet ordre</span> — on teste la condition d'attente de $p_4$ pour chacun :</p>
+<table>
+<tr><th>Processus</th><th>Condition pour $j=A$</th><th>Condition pour $j=B$</th><th>Condition pour $j=C$</th><th>Peut entrer ?</th></tr>
+<tr><td>$A$</td><td>—</td><td>$\text{number}[A]{=}1 \ll \text{number}[B]{=}2$ ✓</td><td>$1 \ll 2$ ✓</td><td><b>Oui, immédiatement</b></td></tr>
+<tr><td>$B$</td><td>$\text{number}[A]{=}1 \neq 0$, et $2\ll1$ ? Non ✗</td><td>—</td><td>$\text{number}[C]{=}2\ll\text{number}[B]{=}2$ ? id $2\lt3$ → oui ✓</td><td><b>Bloqué</b>, attend $A$</td></tr>
+<tr><td>$C$</td><td>$\text{number}[A]{=}1\neq0$, et $2\ll1$ ? Non ✗</td><td>$\text{number}[B]{=}2\neq0$, et $2\ll2$ ? id $3\lt2$ ? Non ✗</td><td>—</td><td><b>Bloqué</b>, attend $A$ <i>et</i> $B$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> $B$ n'est bloqué que par $A$ (sa comparaison avec $C$ est déjà favorable grâce à $\ll$) ; $C$ est bloqué par $A$ <b>et</b> par $B$. Résultat : $A$ entre en premier, puis dès que $A$ sort ($\text{number}[A]\leftarrow0$), $B$ peut entrer (sa seule condition bloquante est levée) ; dès que $B$ sort à son tour, $C$ peut enfin entrer. L'ordre d'entrée est $A,B,C$ — exactement l'ordre prédit par $\ll$, malgré l'égalité de tickets entre $B$ et $C$. Aucune ambiguïté, aucun blocage permanent : la relation $\ll$ a fait son travail.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s125">12.5 — Le problème de l'affectation non-atomique</h2>
+<div class="concept">
+<p><span class="lead">Une hypothèse un peu trop généreuse</span> L'algorithme de la section 12.3 suppose que <code>number[i] ← 1 + max(number)</code> s'exécute comme <b>une seule</b> instruction atomique. En pratique, c'est irréaliste : calculer <code>max(number)</code> demande de parcourir tout le tableau (une boucle), ce qui prend plusieurs cycles processeur — un autre processus peut très bien s'intercaler <i>au milieu</i> de ce calcul.</p>
+<p><span class="lead">Pourquoi c'est un problème réel</span> Si $i$ est en train de lire le tableau pour calculer son maximum, et que $j$ écrit sa propre valeur <code>number[j]</code> <i>pendant</i> cette lecture, $i$ pourrait se retrouver avec une valeur de <code>max</code> incohérente (ni tout à fait l'ancienne, ni tout à fait la nouvelle) — un chevauchement en écriture <span class="eng">(overlap in writing)</span> qui pourrait, dans le pire cas, faire perdre la propriété d'ordre total qu'on vient d'établir en 12.4.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">La correction</span> On ajoute un second tableau partagé, <code>choosing[1..N]</code> (booléens, tous initialisés à faux), qui signale explicitement "je suis <i>en train</i> de choisir mon ticket, ne me lis pas encore" :</p>
+<pre><code>variables partagées : booléen tableau choosing[1..N] ← [faux,…,faux]
+                       entier tableau number[1..N] ← [0,…,0]
+
+Processus i (en boucle) :
+ p1: section non-critique
+ p2: choosing[i] ← vrai
+ p3: number[i] ← 1 + max(number)
+ p4: choosing[i] ← faux
+ p5: pour chaque autre processus j
+ p6:   await choosing[j] = faux
+ p7:   await (number[j] = 0) ou (number[i] ≪ number[j])
+ p8: section critique
+ p9: number[i] ← 0</code></pre>
+<p><span class="lead">Comment ça règle le problème</span> Avant de comparer son propre ticket à celui d'un autre processus $j$, $i$ attend d'abord que $j$ ait <b>fini</b> de choisir son ticket ($p_6$ : <code>choosing[j] = faux</code>). Ça élimine tout chevauchement en <b>écriture</b> (deux processus n'écrivent jamais leur ticket en même temps de façon incohérente) — mais il peut encore rester un chevauchement en <b>lecture</b> (plusieurs processus qui lisent le tableau en même temps pendant que d'autres choisissent). Lamport a démontré que ce chevauchement en lecture, lui, ne pose <b>pas</b> de problème pour la correction de l'algorithme.</p>
+<div class="remark"><span class="lead">Ce qu'il faut retenir</span> Cette variante n'est <b>pas</b> à reproduire dans le détail pour l'oral — l'important est de comprendre <i>pourquoi</i> elle existe : l'instruction "prendre le maximum du tableau" n'est pas magiquement atomique juste parce qu'on l'écrit sur une seule ligne de pseudo-code, et corriger ce genre d'hypothèse implicite demande souvent un mécanisme supplémentaire (ici, le drapeau <code>choosing</code>).</div>
+</div>
+
+<hr class="divider">
+<h2 id="s126">12.6 — Conclusion pratique</h2>
+<div class="concept">
+<p>L'algorithme de la Boulangerie généralise Dekker à $N$ processus grâce à un système de tickets et une relation d'ordre total ($\ll$) qui départage même les égalités de tickets par l'identifiant du processus. Il garantit exclusion mutuelle, absence d'interblocage, de live-lock et de famine — mais au prix d'une hypothèse d'atomicité sur le calcul du maximum qui, si elle n'est pas garantie par le matériel, doit être corrigée avec un mécanisme supplémentaire (<code>choosing</code>).</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "peut-il y avoir deux processus avec le même ticket ?" — oui, c'est même l'un des points centraux du chapitre : la relation $\ll$ existe précisément pour départager ce cas, en utilisant l'identifiant du processus comme critère secondaire. Sans cette clause de départage, l'algorithme ne fonctionnerait pas.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>L'idée</h4>
+<p>Chaque processus tire un ticket (numéro), attend que tous les processus avec un ticket "avant" le sien (selon $\ll$) aient terminé, puis entre. En sortant, il remet son ticket à $0$.</p>
+<h4>Algorithme (N processus)</h4>
+<p><code>number[i] ← 1 + max(number)</code> ; puis, pour chaque autre processus $j$ : <code>await (number[j]=0) ou (number[i] ≪ number[j])</code>.</p>
+<h4>La relation $\ll$</h4>
+<p>$$\text{number}[i] \ll \text{number}[j] \iff \big(\text{number}[i]\lt\text{number}[j]\big) \text{ ou } \big(\text{number}[i]=\text{number}[j] \text{ et } i\lt j\big)$$
+Ordre total strict : départage les égalités de tickets par l'identifiant du processus. Deux processus peuvent avoir le même ticket — l'algorithme reste correct grâce à cette clause.</p>
+<h4>Affectation non-atomique</h4>
+<p>Calculer <code>max(number)</code> n'est pas atomique en pratique (parcours de tableau). Solution : un second tableau <code>choosing[i]</code> signalant qu'un processus est en train de choisir son ticket ; les autres attendent que ce drapeau retombe avant de comparer les tickets. Élimine le chevauchement en écriture ; le chevauchement en lecture restant est prouvé inoffensif (Lamport).</p>
+<h4>Comparaison avec Dekker (chapitre 11)</h4>
+<p>Dekker : 2 processus seulement, variables sur mesure (<code>want</code>, <code>turn</code>). Bakery : $N$ processus quelconque, un tableau de tickets et une relation d'ordre générique — le même principe (garantir un ordre total et sans ambiguïté) mais généralisé.</p>
+</div>
+
+</body>
+</html>

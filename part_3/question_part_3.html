@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questions &amp; Réponses — Partie 3 : Parallel Algorithms</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+    --qbg:#eef1f5; --qline:#3a5674;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.6rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.2rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border); font-family:Helvetica,Arial,sans-serif;}
+  h3{font-size:1.0rem; color:var(--ink); margin:1.6rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  p{margin:.5rem 0;}
+  .qcard{border:1px solid var(--border); border-radius:10px; margin:1.4rem 0 2.4rem; overflow:hidden;}
+  .qhead{background:var(--qbg); border-left:5px solid var(--qline); padding:.8rem 1.1rem;}
+  .qnum{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--qline); margin-bottom:.3rem; display:block;}
+  .qtext{font-family:Helvetica,Arial,sans-serif; font-style:italic; color:#26344a; font-size:.97rem;}
+  .answer{padding:1rem 1.1rem;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.8rem 1rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.5;}
+  pre code{background:none; padding:0; color:inherit;}
+</style>
+</head>
+<body>
+
+<h1>Questions &amp; Réponses — Partie 3</h1>
+<p class="subtitle">Parallel Algorithms — INFO-F-404. Chaque réponse est autonome : aucune notion n'est supposée déjà connue ou expliquée ailleurs.</p>
+
+<div class="concept">
+<p><span class="lead">Vocabulaire de base (à garder sous le coude)</span></p>
+<ul>
+<li><b>$S(n)$</b> : facteur d'accélération — combien de fois plus vite tourne la version parallèle (sur $n$ processeurs) par rapport à la meilleure version séquentielle.</li>
+<li><b>$f$</b> : la fraction d'un programme qui reste <i>intrinsèquement séquentielle</i> (elle ne peut jamais être parallélisée, quel que soit le nombre de cœurs).</li>
+<li><b>Compare-and-swap</b> : opération de base du tri bitonique — prend deux éléments, les remet dans l'ordre voulu (croissant ou décroissant) en une unité de temps.</li>
+<li><b>Séquence bitonique</b> : une séquence qui monte puis descend (une seule fois chacun), ou qui le devient après un décalage circulaire.</li>
+</ul>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 34</span>
+<span class="qtext">Provide Amdahl's law and illustrate its consequences.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Énoncer la loi d'Amdahl (avec sa dérivation), puis illustrer ce qu'elle implique concrètement pour la parallélisation.</p>
+</div>
+
+<h3>Mise en place</h3>
+<div class="concept">
+<p><span class="lead">Le modèle</span> On découpe l'exécution d'un programme parallèle en deux phases : une phase <b>séquentielle</b> (un seul processeur travaille, les autres attendent) et une phase <b>parallèle</b> (tous les processeurs travaillent en même temps). Soit $f$ la fraction du temps de calcul total $t_s$ (le temps sur un seul processeur) qui correspond à la partie <i>non-parallélisable</i> ; $1-f$ est donc la fraction parallélisable.</p>
+<p><span class="lead">La dérivation</span> Le temps de la partie séquentielle reste $f\cdot t_s$ peu importe le nombre de processeurs (elle ne profite jamais du parallélisme). Le temps de la partie parallélisable, qui valait $(1-f)\cdot t_s$ sur un seul cœur, se répartit idéalement en $\dfrac{(1-f)\cdot t_s}{n}$ sur $n$ cœurs. Le temps total de la version parallèle est donc $t_p(n) = f\cdot t_s + \dfrac{(1-f)\cdot t_s}{n}$.</p>
+</div>
+
+<h3>Énoncé</h3>
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Loi d'Amdahl (Definition 97)</span>
+$$S(n) = \frac{t_s}{t_p(n)} = \frac{t_s}{f\cdot t_s + \dfrac{(1-f)\cdot t_s}{n}} = \frac{n}{1+(n-1)\cdot f}$$
+</div>
+<p><span class="lead">Traduction terme par terme</span> $n$ : le nombre de processeurs. $f$ : la fraction intrinsèquement séquentielle du programme (le seul paramètre qui compte vraiment). $(n-1)\cdot f$ : plus $n$ grandit, plus ce terme grandit lui aussi — c'est lui qui va limiter le gain, comme on va le voir.</p>
+</div>
+
+<h3>Conséquence 1 — une limite qu'on ne dépasse jamais</h3>
+<div class="concept">
+<p><span class="lead">Faire tendre $n\to\infty$</span> Dans $S(n)=\dfrac{n}{1+(n-1)f}$, quand $n$ devient très grand, le "$1$" au dénominateur devient négligeable et $(n-1)\approx n$ — la formule se comporte comme $\dfrac{n}{nf}=\dfrac{1}{f}$ :
+$$\lim_{n\to\infty} S(n) = \frac{1}{f}$$</p>
+<p><span class="step-title">Exemple numérique :</span> si $5\%$ d'un programme est intrinsèquement séquentiel ($f=0{,}05$), le facteur d'accélération maximal qu'on peut espérer est $\dfrac{1}{0{,}05}=20$ — <b>peu importe</b> le nombre de cœurs ajoutés, même un million. Avec $f=0{,}2$ (20% de code séquentiel), la limite tombe à $\dfrac{1}{0{,}2}=5$.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="60" y1="340.0" x2="620" y2="340.0" stroke="#eee" stroke-width="1"/>
+<text x="52" y="343.0" font-size="10" fill="#888" text-anchor="end">0</text>
+<line x1="60" y1="310.9" x2="620" y2="310.9" stroke="#eee" stroke-width="1"/>
+<text x="52" y="313.9" font-size="10" fill="#888" text-anchor="end">2</text>
+<line x1="60" y1="281.8" x2="620" y2="281.8" stroke="#eee" stroke-width="1"/>
+<text x="52" y="284.8" font-size="10" fill="#888" text-anchor="end">4</text>
+<line x1="60" y1="252.7" x2="620" y2="252.7" stroke="#eee" stroke-width="1"/>
+<text x="52" y="255.7" font-size="10" fill="#888" text-anchor="end">6</text>
+<line x1="60" y1="223.6" x2="620" y2="223.6" stroke="#eee" stroke-width="1"/>
+<text x="52" y="226.6" font-size="10" fill="#888" text-anchor="end">8</text>
+<line x1="60" y1="194.5" x2="620" y2="194.5" stroke="#eee" stroke-width="1"/>
+<text x="52" y="197.5" font-size="10" fill="#888" text-anchor="end">10</text>
+<line x1="60" y1="165.5" x2="620" y2="165.5" stroke="#eee" stroke-width="1"/>
+<text x="52" y="168.5" font-size="10" fill="#888" text-anchor="end">12</text>
+<line x1="60" y1="136.4" x2="620" y2="136.4" stroke="#eee" stroke-width="1"/>
+<text x="52" y="139.4" font-size="10" fill="#888" text-anchor="end">14</text>
+<line x1="60" y1="107.3" x2="620" y2="107.3" stroke="#eee" stroke-width="1"/>
+<text x="52" y="110.3" font-size="10" fill="#888" text-anchor="end">16</text>
+<line x1="60" y1="78.2" x2="620" y2="78.2" stroke="#eee" stroke-width="1"/>
+<text x="52" y="81.2" font-size="10" fill="#888" text-anchor="end">18</text>
+<line x1="60" y1="49.1" x2="620" y2="49.1" stroke="#eee" stroke-width="1"/>
+<text x="52" y="52.1" font-size="10" fill="#888" text-anchor="end">20</text>
+<line x1="60" y1="20.0" x2="620" y2="20.0" stroke="#eee" stroke-width="1"/>
+<text x="52" y="23.0" font-size="10" fill="#888" text-anchor="end">22</text>
+<line x1="68.8" y1="20" x2="68.8" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="68.8" y="356" font-size="10" fill="#888" text-anchor="middle">1</text>
+<line x1="130.0" y1="20" x2="130.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="130.0" y="356" font-size="10" fill="#888" text-anchor="middle">8</text>
+<line x1="200.0" y1="20" x2="200.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="200.0" y="356" font-size="10" fill="#888" text-anchor="middle">16</text>
+<line x1="270.0" y1="20" x2="270.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="270.0" y="356" font-size="10" fill="#888" text-anchor="middle">24</text>
+<line x1="340.0" y1="20" x2="340.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="340.0" y="356" font-size="10" fill="#888" text-anchor="middle">32</text>
+<line x1="410.0" y1="20" x2="410.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="410.0" y="356" font-size="10" fill="#888" text-anchor="middle">40</text>
+<line x1="480.0" y1="20" x2="480.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="480.0" y="356" font-size="10" fill="#888" text-anchor="middle">48</text>
+<line x1="550.0" y1="20" x2="550.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="550.0" y="356" font-size="10" fill="#888" text-anchor="middle">56</text>
+<line x1="620.0" y1="20" x2="620.0" y2="340" stroke="#eee" stroke-width="1"/>
+<text x="620.0" y="356" font-size="10" fill="#888" text-anchor="middle">64</text>
+<line x1="60" y1="340" x2="620" y2="340" stroke="#333" stroke-width="1.3"/>
+<line x1="60" y1="20" x2="60" y2="340" stroke="#333" stroke-width="1.3"/>
+<text x="340.0" y="378" font-size="12" fill="#222" text-anchor="middle">n (nombre de processeurs)</text>
+<text x="18" y="180.0" font-size="12" fill="#222" text-anchor="middle" transform="rotate(-90,18,180.0)">S(n)</text>
+<polyline points="68.8,325.5 77.5,312.3 86.2,300.3 95.0,289.4 103.8,279.4 112.5,270.2 121.2,261.7 130.0,253.8 138.8,246.5 147.5,239.7 156.2,233.3 165.0,227.4 173.8,221.8 182.5,216.6 191.2,211.7 200.0,207.0 208.8,202.6 217.5,198.5 226.2,194.5 235.0,190.8 243.8,187.3 252.5,183.9 261.2,180.7 270.0,177.6 278.8,174.7 287.5,171.9 296.2,169.2 305.0,166.7 313.8,164.2 322.5,161.9 331.2,159.6 340.0,157.5 348.8,155.4 357.5,153.4 366.2,151.4 375.0,149.6 383.8,147.8 392.5,146.1 401.2,144.4 410.0,142.8 418.8,141.2 427.5,139.7 436.2,138.2 445.0,136.8 453.8,135.5 462.5,134.1 471.2,132.8 480.0,131.6 488.8,130.4 497.5,129.2 506.2,128.1 515.0,126.9 523.8,125.9 532.5,124.8 541.2,123.8 550.0,122.8 558.8,121.8 567.5,120.9 576.2,120.0 585.0,119.1 593.8,118.2 602.5,117.3 611.2,116.5 620.0,115.7" fill="none" stroke="#7a3b2e" stroke-width="2.2"/>
+<line x1="60" y1="49.1" x2="620" y2="49.1" stroke="#7a3b2e" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+<text x="628" y="53.1" font-size="10.5" fill="#7a3b2e" font-weight="bold">1/f=20 (f=0.05)</text>
+<polyline points="68.8,325.5 77.5,315.8 86.2,308.8 95.0,303.6 103.8,299.6 112.5,296.4 121.2,293.7 130.0,291.5 138.8,289.7 147.5,288.1 156.2,286.7 165.0,285.5 173.8,284.4 182.5,283.4 191.2,282.6 200.0,281.8 208.8,281.1 217.5,280.5 226.2,279.9 235.0,279.4 243.8,278.9 252.5,278.5 261.2,278.0 270.0,277.7 278.8,277.3 287.5,277.0 296.2,276.7 305.0,276.4 313.8,276.1 322.5,275.8 331.2,275.6 340.0,275.4 348.8,275.1 357.5,274.9 366.2,274.7 375.0,274.5 383.8,274.4 392.5,274.2 401.2,274.0 410.0,273.9 418.8,273.7 427.5,273.6 436.2,273.5 445.0,273.3 453.8,273.2 462.5,273.1 471.2,273.0 480.0,272.9 488.8,272.8 497.5,272.7 506.2,272.6 515.0,272.5 523.8,272.4 532.5,272.3 541.2,272.2 550.0,272.1 558.8,272.0 567.5,272.0 576.2,271.9 585.0,271.8 593.8,271.7 602.5,271.7 611.2,271.6 620.0,271.6" fill="none" stroke="#3a5e56" stroke-width="2.2"/>
+<line x1="60" y1="267.3" x2="620" y2="267.3" stroke="#3a5e56" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+<text x="628" y="271.3" font-size="10.5" fill="#3a5e56" font-weight="bold">1/f=5 (f=0.2)</text>
+<polyline points="68.8,325.5 77.5,320.6 86.2,318.2 95.0,316.7 103.8,315.8 112.5,315.1 121.2,314.5 130.0,314.1 138.8,313.8 147.5,313.6 156.2,313.3 165.0,313.1 173.8,313.0 182.5,312.8 191.2,312.7 200.0,312.6 208.8,312.5 217.5,312.4 226.2,312.4 235.0,312.3 243.8,312.2 252.5,312.2 261.2,312.1 270.0,312.1 278.8,312.0 287.5,312.0 296.2,311.9 305.0,311.9 313.8,311.9 322.5,311.8 331.2,311.8 340.0,311.8 348.8,311.8 357.5,311.7 366.2,311.7 375.0,311.7 383.8,311.7 392.5,311.7 401.2,311.6 410.0,311.6 418.8,311.6 427.5,311.6 436.2,311.6 445.0,311.6 453.8,311.5 462.5,311.5 471.2,311.5 480.0,311.5 488.8,311.5 497.5,311.5 506.2,311.5 515.0,311.5 523.8,311.4 532.5,311.4 541.2,311.4 550.0,311.4 558.8,311.4 567.5,311.4 576.2,311.4 585.0,311.4 593.8,311.4 602.5,311.4 611.2,311.4 620.0,311.4" fill="none" stroke="#3a5ea6" stroke-width="2.2"/>
+<line x1="60" y1="310.9" x2="620" y2="310.9" stroke="#3a5ea6" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+<text x="628" y="314.9" font-size="10.5" fill="#3a5ea6" font-weight="bold">1/f=2 (f=0.5)</text>
+</svg>
+<p class="caption">$S(n)$ pour trois valeurs de $f$ : chaque courbe s'aplatit et se rapproche de son asymptote $1/f$ sans jamais la dépasser.</p>
+</div>
+</div>
+
+<h3>Conséquence 2 — la partie séquentielle finit toujours par dominer</h3>
+<div class="concept">
+<p><span class="step-title">Regarde la courbe rouge ($f=0{,}05$) :</span> entre $n=32$ et $n=64$ processeurs (le double !), $S(n)$ ne gagne que quelques unités (de $12{,}55$ à $15{,}42$). Ajouter des cœurs au-delà d'un certain point rapporte de moins en moins — la loi des rendements décroissants s'applique brutalement.</p>
+<div class="analogie"><span class="lead">Analogie</span> Un livre de 20 chapitres à recopier à la main. On peut embaucher autant de copistes que voulu pour les 19 chapitres du milieu, en parallèle — mais l'introduction doit être écrite en premier par une seule personne (elle fixe le style), et la conclusion en dernier, aussi par une seule personne. Peu importe le nombre de copistes ajoutés pour le milieu, le temps total ne descendra jamais sous le temps qu'il faut à une seule personne pour écrire l'intro et la conclusion.</div>
+</div>
+
+<h3>Conséquence 3 — une conclusion pratique pour la conception de logiciels</h3>
+<div class="concept">
+<p>La loi d'Amdahl a une implication directe pour qui conçoit un programme parallèle : si une partie du programme ne peut pas être parallélisée, ajouter des processeurs n'améliore <b>jamais</b> les performances de <i>cette partie précise</i>. Il est donc important d'identifier en premier les portions non-parallélisables et de les optimiser en elles-mêmes (les rendre plus rapides séquentiellement) — c'est souvent là que se cache le vrai gain, une fois que la partie parallélisable a déjà été distribuée sur suffisamment de cœurs pour approcher l'asymptote $1/f$.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "pourquoi ne pas juste ajouter plus de cœurs ?" — la loi d'Amdahl est la réponse directe : au-delà d'un certain point, ça ne sert quasiment à rien, parce que la partie séquentielle du programme, aussi petite soit-elle, finit par dominer complètement le temps total.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 35</span>
+<span class="qtext">Bitonic Mergesort: principles, algorithms, complexity.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Décrire les principes du tri bitonique (bitonic mergesort), son algorithme, et sa complexité — de façon suffisamment complète pour pouvoir l'expliquer à l'oral sans notes.</p>
+</div>
+
+<h3>Principe : pourquoi une séquence bitonique en particulier ?</h3>
+<div class="concept">
+<div class="def"><span class="lead">Séquence bitonique</span> Une séquence $(a_0,\dots,a_{2k-1})$ est bitonique s'il existe un indice $j$ tel qu'elle monte jusqu'à $a_j$ puis descend ensuite (ou le devient après un décalage circulaire). Exemple : $3,5,8,9,7,4,2,1$.</div>
+<div class="def"><span class="lead">Compare-and-swap</span> Une opération qui prend deux éléments et produit, en une seule unité de temps, une paire ordonnée (croissante ou décroissante selon la direction demandée). C'est la brique de base de tout l'algorithme.</div>
+<p><span class="lead">L'idée centrale</span> On peut trier une séquence bitonique très efficacement en la <b>coupant en deux</b> par des comparaisons parallèles, de façon à ce que "tous les petits" finissent dans une moitié et "tous les grands" dans l'autre — et chaque moitié reste, comme par magie, elle-même bitonique. On répète alors le même découpage récursivement, en parallèle, jusqu'à des morceaux de taille $1$.</p>
+</div>
+
+<h3>Le lemme qui rend tout ça possible</h3>
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Lemma 100</span>
+<p>Soit $(a_0,\dots,a_{2k-1})$ une séquence bitonique. Pose $d_i \overset{\text{def}}{=} \min(a_i,a_{k+i})$ et $e_i \overset{\text{def}}{=} \max(a_i,a_{k+i})$, pour $i=0,\dots,k-1$. Alors les séquences $(d_0,\dots,d_{k-1})$ et $(e_0,\dots,e_{k-1})$ sont <b>toutes les deux bitoniques</b>, et $\max(d_0,\dots,d_{k-1}) \leqslant \min(e_0,\dots,e_{k-1})$.</p>
+</div>
+<p><span class="lead">Traduction</span> On compare chaque élément de la première moitié avec l'élément qui lui correspond dans la seconde moitié. Le plus petit des deux ($d_i$) reste conceptuellement "à gauche", le plus grand ($e_i$) va "à droite". Deux garanties fortes : les deux nouveaux groupes restent bitoniques (on peut répéter l'opération), et <b>tout</b> élément du groupe $d$ est $\leqslant$ <b>tout</b> élément du groupe $e$ — les deux groupes ne se mélangeront plus jamais.</p>
+</div>
+
+<h3>L'algorithme BitonicMerge</h3>
+<div class="concept">
+<ol>
+<li><b>Étape 1</b> — Séparer, en parallèle, les groupes $d$ et $e$, via $k$ comparaisons indépendantes $(a_i,a_{k+i})$, en une seule unité de temps.</li>
+<li><b>Étape 2</b> — Trier récursivement chacun des deux groupes (chacun bitonique, de taille $k$) par un appel récursif à BitonicMerge.</li>
+<li><b>Étape 3</b> — Concaténer : comme $\max(d)\leqslant\min(e)$, les deux groupes triés s'emboîtent sans jamais se mélanger.</li>
+</ol>
+<pre><code>void bitonicMerge(int lo, int cnt, int dir) {
+    if (cnt &gt; 1) {
+        int k = cnt/2;
+        for (i=lo; i&lt;lo+k; i++) // en parallèle
+            compare-and-swap(i, i+k, dir);
+        bitonicMerge(lo,   k, dir); // récursif, parallèle
+        bitonicMerge(lo+k, k, dir); // récursif, parallèle
+    }
+}</code></pre>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Exemple complet, vérifié pas à pas ($n=4$)</div>
+<p>Séquence bitonique $[3,8,6,1]$ (positions $0$–$3$) : $3\leqslant8$, puis $8\geqslant6\geqslant1$ — bitonique. Direction croissante.</p>
+<p><span class="step-title">Niveau 1 ($k=2$) — comparer $(i,i+2)$ :</span></p>
+<table>
+<tr><th>Positions</th><th>Valeurs avant</th><th>Règle</th><th>Décision</th><th>Valeurs après</th></tr>
+<tr><td>$(0,2)$</td><td>$(3,6)$</td><td>$3\gt6$ ? non → rien</td><td>pas d'échange</td><td>$(3,6)$</td></tr>
+<tr><td>$(1,3)$</td><td>$(8,1)$</td><td>$8\gt1$ → échanger</td><td>échange</td><td>$(1,8)$</td></tr>
+</table>
+<p>Tableau après le niveau 1 : $[3,1,6,8]$. Vérification du Lemme 100 : groupe $d=(3,1)$, groupe $e=(6,8)$ ; $\max(3,1)=3\leqslant\min(6,8)=6$ ✓.</p>
+<p><span class="step-title">Niveau 2 ($k=1$) — comparer $(i,i+1)$ sur chaque groupe de 2 :</span></p>
+<table>
+<tr><th>Positions</th><th>Valeurs avant</th><th>Règle</th><th>Décision</th><th>Valeurs après</th></tr>
+<tr><td>$(0,1)$</td><td>$(3,1)$</td><td>$3\gt1$ → échanger</td><td>échange</td><td>$(1,3)$</td></tr>
+<tr><td>$(2,3)$</td><td>$(6,8)$</td><td>$6\gt8$ ? non → rien</td><td>pas d'échange</td><td>$(6,8)$</td></tr>
+</table>
+<p><span class="step-title">Résultat final :</span> $[1,3,6,8]$ — trié, en $2=\log_2(4)$ niveaux.</p>
+</div>
+
+<h3>Trier une séquence quelconque : le pré-traitement</h3>
+<div class="concept">
+<p><span class="lead">Le problème</span> BitonicMerge suppose la séquence <i>déjà</i> bitonique. Pour une séquence quelconque, il faut d'abord un <b>pré-traitement</b> : on construit des séquences bitoniques de taille croissante (doublant à chaque étape), en appelant BitonicMerge <i>complet</i> sur des blocs de taille croissante, en alternant la direction d'un bloc à l'autre (un bloc croissant, le suivant décroissant) — deux blocs voisins triés en sens opposés, mis bout à bout, forment automatiquement une "montagne". Voir la Question 36 pour un exemple chiffré complet de ce pré-traitement.</p>
+</div>
+
+<h3>Complexité</h3>
+<div class="concept">
+<p><span class="lead">Temps parallèle (profondeur)</span> À chaque niveau de récursion de BitonicMerge, la taille du problème est divisée par $2$ — donc $\log_2(n)$ niveaux, chacun en une seule unité de temps (comparaisons indépendantes). Le pré-traitement suit la même logique ($\log_2(n)$ étapes, chacune en $\mathcal{O}(\log n)$) : $\mathcal{O}((\log n)^2)$ au total, le même ordre que le tri final. D'où :
+$$T_\infty(n) = \mathcal{O}((\log n)^2)$$</p>
+<p><span class="lead">Travail total (nombre de compare-and-swap)</span> En comptant <b>toutes</b> les comparaisons (pas seulement la profondeur, mais le nombre total d'opérations) :
+$$W(n) = \mathcal{O}(n(\log n)^2)$$</p>
+<div class="remark"><span class="lead">Pourquoi la distinction travail/temps est importante</span> Le <b>temps</b> ($T_\infty$) suppose qu'on dispose d'autant de cœurs que nécessaire à chaque niveau pour exécuter toutes les comparaisons de ce niveau simultanément. Le <b>travail</b> ($W$) compte le nombre total de compare-and-swap, toutes unités de temps confondues — c'est la quantité de "comparateurs" qu'il faudrait au maximum si on voulait tout paralléliser au maximum en même temps. C'est pour cette raison qu'on l'appelle parfois "bitonic <i>merge</i>sort" : le cœur de l'algorithme est une opération de fusion (merge) appliquée récursivement, un peu comme le mergesort séquentiel classique — sauf qu'ici la fusion s'appuie sur un réseau fixe de comparateurs plutôt que sur la fusion classique de deux listes déjà triées.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 36</span>
+<span class="qtext">Please apply the bitonic pre-processing process in order to convert this arbitrary sequence (length n = 2³): &lt;8, 7, 9, 5, 10, 3, 12, 1&gt; into a bitonic sequence of length 8.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Appliquer le pré-traitement du tri bitonique (pas le tri complet — juste construire <i>une</i> séquence bitonique) à $A=[8,7,9,5,10,3,12,1]$. On indexe les positions à partir de $0$ (comme dans le pseudo-code), donc $a_0=8,\ a_1=7,\dots,a_7=1$.</p>
+</div>
+
+<h3>Rappel de la méthode</h3>
+<div class="concept">
+<p>On construit des séquences bitoniques de taille croissante en doublant à chaque étape : d'abord des paires (taille $2$, trivialement bitoniques), en alternant la direction (paire 1 croissante, paire 2 décroissante, paire 3 croissante, ...) ; puis on fusionne les paires voisines en blocs de taille $4$ via un appel <b>complet</b> à BitonicMerge sur chaque bloc, en alternant à nouveau la direction (bloc 1 croissant, bloc 2 décroissant) — jusqu'à obtenir une seule séquence bitonique de la taille complète.</p>
+</div>
+
+<h3>Étape 1 — comparer par paires voisines, direction alternée</h3>
+<div class="concept">
+<table>
+<tr><th>Positions</th><th>Valeurs avant</th><th>Direction</th><th>Règle</th><th>Décision</th><th>Valeurs après</th></tr>
+<tr><td>$(0,1)$</td><td>$(8,7)$</td><td>croissant</td><td>$8\gt7$ → échanger</td><td>échange</td><td>$(7,8)$</td></tr>
+<tr><td>$(2,3)$</td><td>$(9,5)$</td><td>décroissant</td><td>$9\lt5$ ? non → rien</td><td>pas d'échange</td><td>$(9,5)$</td></tr>
+<tr><td>$(4,5)$</td><td>$(10,3)$</td><td>croissant</td><td>$10\gt3$ → échanger</td><td>échange</td><td>$(3,10)$</td></tr>
+<tr><td>$(6,7)$</td><td>$(12,1)$</td><td>décroissant</td><td>$12\lt1$ ? non → rien</td><td>pas d'échange</td><td>$(12,1)$</td></tr>
+</table>
+<p>Tableau après l'étape 1 : $[7,8,9,5,3,10,12,1]$. On a maintenant $4$ paires trivialement bitoniques.</p>
+</div>
+
+<h3>Étape 2 — fusionner les paires en blocs de taille 4, direction alternée</h3>
+<div class="concept">
+<p><i>Bloc 1</i> $=$ positions $0$–$3$ $=[7,8,9,5]$, direction <b>croissante</b> (BitonicMerge complet, $2$ niveaux) :</p>
+<table>
+<tr><th>Niveau</th><th>Positions</th><th>Valeurs avant</th><th>Règle (croissant)</th><th>Décision</th><th>Valeurs après</th></tr>
+<tr><td>1 ($k=2$)</td><td>$(0,2)$</td><td>$(7,9)$</td><td>$7\gt9$ ? non → rien</td><td>pas d'échange</td><td>$(7,9)$</td></tr>
+<tr><td>1 ($k=2$)</td><td>$(1,3)$</td><td>$(8,5)$</td><td>$8\gt5$ → échanger</td><td>échange</td><td>$(5,8)$</td></tr>
+<tr><td>2 ($k=1$)</td><td>$(0,1)$</td><td>$(7,5)$</td><td>$7\gt5$ → échanger</td><td>échange</td><td>$(5,7)$</td></tr>
+<tr><td>2 ($k=1$)</td><td>$(2,3)$</td><td>$(9,8)$</td><td>$9\gt8$ → échanger</td><td>échange</td><td>$(8,9)$</td></tr>
+</table>
+<p>Bloc 1 final : $[5,7,8,9]$ (trié croissant).</p>
+
+<p><i>Bloc 2</i> $=$ positions $4$–$7$ $=[3,10,12,1]$, direction <b>décroissante</b> (BitonicMerge complet, $2$ niveaux) :</p>
+<table>
+<tr><th>Niveau</th><th>Positions</th><th>Valeurs avant</th><th>Règle (décroissant)</th><th>Décision</th><th>Valeurs après</th></tr>
+<tr><td>1 ($k=2$)</td><td>$(4,6)$</td><td>$(3,12)$</td><td>$3\lt12$ → échanger</td><td>échange</td><td>$(12,3)$</td></tr>
+<tr><td>1 ($k=2$)</td><td>$(5,7)$</td><td>$(10,1)$</td><td>$10\lt1$ ? non → rien</td><td>pas d'échange</td><td>$(10,1)$</td></tr>
+<tr><td>2 ($k=1$)</td><td>$(4,5)$</td><td>$(12,10)$</td><td>$12\lt10$ ? non → rien</td><td>pas d'échange</td><td>$(12,10)$</td></tr>
+<tr><td>2 ($k=1$)</td><td>$(6,7)$</td><td>$(3,1)$</td><td>$3\lt1$ ? non → rien</td><td>pas d'échange</td><td>$(3,1)$</td></tr>
+</table>
+<p>Bloc 2 final : $[12,10,3,1]$ (trié décroissant).</p>
+<p>Tableau après l'étape 2 : $[5,7,8,9,12,10,3,1]$.</p>
+</div>
+
+<h3>Vérification finale</h3>
+<div class="concept">
+<p><span class="lead">Résultat :</span>
+$$\langle 5,\ 7,\ 8,\ 9,\ 12,\ 10,\ 3,\ 1 \rangle$$</p>
+<p><span class="step-title">Est-ce bien bitonique ?</span> $5\leqslant7\leqslant8\leqslant9\leqslant12$ (ça monte), puis $12\geqslant10\geqslant3\geqslant1$ (ça descend) — une seule montée, une seule descente : c'est bien une séquence bitonique de longueur $8$. Le pré-traitement est terminé ; on pourrait maintenant appeler BitonicMerge sur l'ensemble pour obtenir le tri complet (voir Question 35).</p>
+<div class="remark"><span class="lead">Remarque</span> Cette séquence bitonique n'est pas unique : elle dépend de l'ordre dans lequel on choisit d'alterner croissant/décroissant à chaque étape. N'importe quelle alternance valide produit une séquence bitonique correcte — celle-ci est simplement celle obtenue en suivant strictement la règle "1er bloc/paire croissant, 2e décroissant, ...".</div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

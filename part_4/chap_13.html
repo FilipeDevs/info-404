@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 13 — Fiche de révision — Semaphores</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.85rem;}
+  th,td{border:1px solid var(--border); padding:.35rem .5rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.7rem .9rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.55;}
+  pre code{background:none; padding:0; color:inherit;}
+  .code-cols{display:flex; gap:1rem; flex-wrap:wrap;}
+  .code-cols pre{flex:1 1 220px; margin:.3rem 0;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 13 — Fiche de révision</h1>
+<p class="subtitle">Semaphores — INFO-F-404. On quitte le niveau "instructions machine" (turn, want, number...) pour un outil de plus haut niveau : le sémaphore. Deux usages : protéger une section critique, et synchroniser l'ordre d'exécution entre processus. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s130">Motivation</a></li>
+<li><a href="#s131">États d'un processus</a></li>
+<li><a href="#s132">Le type de données sémaphore</a></li>
+<li><a href="#s133">Section critique avec sémaphores</a></li>
+<li><a href="#s134">Synchronisation : merge sort</a></li>
+<li><a href="#s135">Synchronisation : producteur-consommateur</a></li>
+<li><a href="#s136">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s130">13.0 — Motivation</h2>
+<div class="concept">
+<p><span class="lead">Où on en était</span> Les chapitres 11 et 12 ont résolu le problème des sections critiques avec des variables "au niveau machine" (<code>turn</code>, <code>want</code>, <code>number</code>) — l'atomicité qu'on supposait était censée refléter ce que le <b>processeur</b> garantit réellement, instruction par instruction.</p>
+<p><span class="lead">Le changement de niveau</span> Ce chapitre introduit le <b>sémaphore</b> : une construction de <b>plus haut niveau</b>, fournie par le système d'exploitation ou le langage de programmation, conçue spécifiquement pour la conception de programmes concurrents. Au lieu de bricoler des drapeaux et des boucles d'attente active, on dispose d'un objet unique avec deux opérations bien définies, et on va voir qu'il résout d'un coup les quatre problèmes classiques du chapitre 11.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s131">13.1 — États d'un processus</h2>
+<div class="concept">
+<p>Avant de définir le sémaphore, il faut un peu de vocabulaire sur le cycle de vie d'un processus — le sémaphore agit justement en faisant transiter des processus entre ces états.</p>
+<ul>
+<li><b>Inactive</b> : état initial, avant que le processus ne soit admis à s'exécuter.</li>
+<li><b>Ready</b> <span class="eng">(prêt)</span> : le processus attend d'être exécuté par le CPU — toutes les ressources dont il a besoin sont disponibles, il ne manque que le processeur lui-même.</li>
+<li><b>Running</b> <span class="eng">(en cours)</span> : ses calculs progressent réellement, il occupe le CPU.</li>
+<li><b>Blocked</b> <span class="eng">(bloqué)</span> : le processus n'est <b>pas</b> éligible à l'exécution (par exemple, il attend une ressource non disponible).</li>
+<li><b>Completed</b> <span class="eng">(terminé)</span> : la dernière instruction a été exécutée.</li>
+</ul>
+<div class="diagram">
+<svg viewBox="0 0 660 210" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#555"/></marker></defs>
+<rect x="20" y="30" width="110" height="50" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="75.0" y="59.0" font-size="11" fill="#222" text-anchor="middle">Inactive</text>
+<rect x="200" y="30" width="110" height="50" fill="#eef3ef" stroke="#999" rx="8"/>
+<text x="255.0" y="59.0" font-size="11" fill="#222" text-anchor="middle">Ready</text>
+<rect x="380" y="30" width="110" height="50" fill="#f7ece9" stroke="#999" rx="8"/>
+<text x="435.0" y="59.0" font-size="11" fill="#222" text-anchor="middle">Running</text>
+<rect x="530" y="140" width="110" height="50" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="585.0" y="169.0" font-size="11" fill="#222" text-anchor="middle">Completed</text>
+<rect x="200" y="140" width="110" height="50" fill="#efe9f5" stroke="#999" rx="8"/>
+<text x="255.0" y="169.0" font-size="11" fill="#222" text-anchor="middle">Blocked</text>
+<line x1="130" y1="55" x2="196" y2="55" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="163" y="47" font-size="10.5" fill="#3a5674" text-anchor="middle">admission</text>
+<line x1="310" y1="55" x2="376" y2="55" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="343" y="47" font-size="10.5" fill="#3a5674" text-anchor="middle">CPU alloué</text>
+<path d="M380,45 C300,10 260,10 220,26" fill="none" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="300" y="16" font-size="10.5" fill="#3a5674" text-anchor="middle">préempté</text>
+<line x1="400" y1="80" x2="290" y2="140" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="380" y="110" font-size="10.5" fill="#3a5674" text-anchor="middle">attend une ressource</text>
+<path d="M230,140 C215,110 215,90 210,84" fill="none" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="175" y="110" font-size="10.5" fill="#3a5674" text-anchor="middle">débloqué</text>
+<line x1="470" y1="75" x2="555" y2="140" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="545" y="100" font-size="10.5" fill="#3a5674" text-anchor="middle">terminé</text>
+</svg>
+<p class="caption">Le sémaphore, comme on va le voir, agit précisément sur la transition Running ⇄ Blocked ⇄ Ready.</p>
+</div>
+</div>
+
+<hr class="divider">
+<h2 id="s132">13.2 — Le type de données sémaphore</h2>
+<div class="concept">
+<div class="def"><span class="lead">Sémaphore</span> Un sémaphore $S$ est composé de deux éléments : un entier non signé $V$ (un compteur), et un ensemble de processus $L$ (la liste d'attente). Il est initialisé avec une valeur positive ou nulle pour $V$ et un ensemble vide pour $L$ : $S \leftarrow (k, \emptyset)$.</div>
+<p><span class="lead">Les deux opérations, toutes deux atomiques</span></p>
+<ul>
+<li><code>wait(S)</code> : pour obtenir l'accès à la ressource partagée (ou faire la queue si elle n'est pas disponible).</li>
+<li><code>signal(S)</code> : pour libérer la ressource, et potentiellement réveiller un processus en attente.</li>
+</ul>
+<div class="remark"><span class="lead">Vocabulaire alternatif</span> Dans la littérature, ces opérations sont souvent notées $P()$ et $V()$ — des noms inventés par Dijkstra, tirés du néerlandais <i>"Proberen"</i> (tester) et <i>"Verhogen"</i> (augmenter).</div>
+</div>
+
+<div class="concept">
+<pre><code>wait(S) — p désigne le processus qui exécute l'opération
+  si V &gt; 0 alors
+    V ← V − 1
+  sinon
+    L ← L ∪ {p}
+    p.état ← bloqué
+  fin si
+
+signal(S)
+  si L = ∅ alors
+    V ← V + 1
+  sinon
+    choisir q ∈ L
+    L ← L ∖ {q}
+    q.état ← prêt
+  fin si</code></pre>
+<p><span class="lead">Comment le lire</span> <code>wait(S)</code> : s'il reste des "jetons" disponibles ($V \gt 0$), le processus en prend un et continue immédiatement. Sinon, il se met en file d'attente et se bloque. <code>signal(S)</code> : si personne n'attend, on ajoute simplement un jeton au compteur. Mais si quelqu'un attend déjà, on ne touche <b>pas</b> à $V$ — on transmet directement le jeton à un processus de la file, qui redevient prêt. C'est ce transfert direct qui garantit qu'aucun réveil n'est "perdu".</p>
+<div class="def"><span class="lead">Sémaphore binaire</span> Un sémaphore particulier où la partie entière $V$ ne peut prendre que deux valeurs : $0$ ou $1$. C'est le type de sémaphore utilisé pour protéger une section critique (un seul "jeton" à distribuer).</div>
+</div>
+
+<hr class="divider">
+<h2 id="s133">13.3 — Section critique avec sémaphores</h2>
+<div class="concept">
+<h3><span class="n">Avec 2 processus</span></h3>
+<pre><code>sémaphore binaire S ← (1, ∅)
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: wait(S)                      q2: wait(S)
+ p3: section critique             q3: section critique
+ p4: signal(S)                    q4: signal(S)</code></pre>
+<p>Comparé aux quatre tentatives du chapitre 11 : c'est <b>radicalement plus simple</b>. Deux lignes (<code>wait</code>/<code>signal</code>) suffisent, parce que toute la complexité (attente, réveil, atomicité du test-puis-action) est déjà gérée à l'intérieur du sémaphore lui-même.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Le diagramme d'états : pourquoi ça marche, sans famine ni interblocage</div>
+<p>Départ : $S=(1,\emptyset)$. Les deux processus tentent d'entrer. Un seul chemin est montré ci-dessous (celui où $p$ passe en premier) — le cas où $q$ passe en premier est parfaitement symétrique.</p>
+<div class="diagram">
+<svg viewBox="0 0 780 130" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#555"/></marker></defs>
+<rect x="10" y="30" width="138" height="60" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="79.0" y="50.0" font-size="10" fill="#222" text-anchor="middle">p: attend wait(S)</text>
+<text x="79.0" y="64.0" font-size="10" fill="#222" text-anchor="middle">q: attend wait(S)</text>
+<text x="79.0" y="78.0" font-size="10" fill="#222" text-anchor="middle">(V=1, L=∅)</text>
+<rect x="165" y="30" width="138" height="60" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="234.0" y="50.0" font-size="10" fill="#222" text-anchor="middle">p: en SC</text>
+<text x="234.0" y="64.0" font-size="10" fill="#222" text-anchor="middle">q: wait(S) → bloque</text>
+<text x="234.0" y="78.0" font-size="10" fill="#222" text-anchor="middle">(V=0, L=∅)</text>
+<rect x="320" y="30" width="138" height="60" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="389.0" y="50.0" font-size="10" fill="#222" text-anchor="middle">p: en SC</text>
+<text x="389.0" y="64.0" font-size="10" fill="#222" text-anchor="middle">q: bloqué</text>
+<text x="389.0" y="78.0" font-size="10" fill="#222" text-anchor="middle">(V=0, L={q})</text>
+<rect x="475" y="30" width="138" height="60" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="544.0" y="50.0" font-size="10" fill="#222" text-anchor="middle">p: signal(S)</text>
+<text x="544.0" y="64.0" font-size="10" fill="#222" text-anchor="middle">q: réveillé, entre en SC</text>
+<text x="544.0" y="78.0" font-size="10" fill="#222" text-anchor="middle">(V=0, L=∅)</text>
+<rect x="630" y="30" width="138" height="60" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="699.0" y="50.0" font-size="10" fill="#222" text-anchor="middle">p: repart</text>
+<text x="699.0" y="64.0" font-size="10" fill="#222" text-anchor="middle">q: signal(S)</text>
+<text x="699.0" y="78.0" font-size="10" fill="#222" text-anchor="middle">(V=1, L=∅)</text>
+<line x1="148" y1="60" x2="165" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="156.5" y="52" font-size="10" fill="#3a5674" text-anchor="middle">p: wait(S)</text>
+<line x1="303" y1="60" x2="320" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="311.5" y="52" font-size="10" fill="#3a5674" text-anchor="middle">q: wait(S)</text>
+<line x1="458" y1="60" x2="475" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="466.5" y="52" font-size="10" fill="#3a5674" text-anchor="middle">p: signal(S)</text>
+<line x1="613" y1="60" x2="630" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="621.5" y="52" font-size="10" fill="#3a5674" text-anchor="middle">q: signal(S)</text>
+</svg>
+<p class="caption">Le système revient exactement à l'état de départ $(V=1,\emptyset)$ — prêt pour un nouveau tour, sans qu'aucune information n'ait été perdue en chemin.</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> $q$ ne "teste puis agit" jamais lui-même — c'est le sémaphore qui gère ça de façon atomique en interne. $q$ ne rate jamais un réveil (grâce au transfert direct dans <code>signal</code>, sans repasser par $V$) et n'entre jamais en section critique en même temps que $p$ (puisque $V$ ne peut jamais dépasser $1$). Les quatre bugs du chapitre 11 (famine, violation d'exclusion mutuelle, interblocage, live-lock) sont tous évités d'un coup.</p>
+</div>
+
+<div class="concept">
+<h3><span class="n">Avec N processus</span></h3>
+<pre><code>sémaphore binaire S ← (1, ∅)
+
+Processus i (en boucle) :
+ p1: section non-critique
+ p2: wait(S)
+ p3: section critique
+ p4: signal(S)</code></pre>
+<p>La généralisation à $N$ processus ne change <b>rien</b> au code — tous les processus partagent le même sémaphore $S$, initialisé à $1$ (un seul "jeton" pour tout le monde, donc un seul processus en section critique à la fois).</p>
+<div class="remark"><span class="lead">Une famine possible, si on n'y prend pas garde</span> Dans l'algorithme <code>wait</code>/<code>signal</code> tel que défini, la ligne <code>choisir q ∈ L</code> ne précise <b>pas</b> l'ordre — si $L$ est traité comme un ensemble non ordonné, le prochain réveillé pourrait être choisi "au hasard", et un processus malchanceux pourrait en théorie attendre indéfiniment (les autres étant toujours choisis avant lui). La correction est simple : traiter $L$ comme une <b>file FIFO</b> (premier arrivé, premier réveillé) plutôt qu'un ensemble — ça élimine complètement ce risque de famine.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s134">13.4 — Synchronisation : merge sort</h2>
+<div class="concept">
+<p><span class="lead">Au-delà de l'exclusion mutuelle</span> Un sémaphore ne sert pas qu'à protéger une section critique — plus généralement, il peut forcer un <b>ordre d'exécution</b> entre processus : "n'exécute cette instruction qu'une fois que telle autre chose s'est produite ailleurs". C'est ce qu'on appelle un problème de <b>synchronisation</b>.</p>
+<p><span class="lead">L'exemple</span> Trier un tableau $A$ en le divisant en deux moitiés, triées indépendamment en parallèle, puis fusionnées — mais la fusion ne peut commencer <b>qu'une fois</b> les deux tris terminés.</p>
+<pre><code>sémaphore binaire S1 ← (0, ∅)
+sémaphore binaire S2 ← (0, ∅)
+
+sort1 :                    sort2 :                    merge :
+ p1: trie la 1ère moitié     q1: trie la 2ème moitié     r1: wait(S1)
+ p2: signal(S1)              q2: signal(S2)              r2: wait(S2)
+                                                          r3: fusionne les deux moitiés</code></pre>
+<p><span class="lead">Comment ça marche</span> Remarque le détail crucial : $S_1$ et $S_2$ démarrent à $0$, pas à $1$ ! Ce ne sont pas des sémaphores d'exclusion mutuelle (personne ne "partage une ressource"), mais des <b>signaux</b> : <code>wait(S1)</code> dans <code>merge</code> bloque <b>tant que</b> <code>sort1</code> n'a pas exécuté <code>signal(S1)</code> — c'est-à-dire tant que la première moitié n'est pas triée. Une fois <code>signal(S1)</code> et <code>signal(S2)</code> exécutés, <code>merge</code> peut passer les deux <code>wait</code> et fusionner en toute sécurité, sachant que les deux moitiés sont bien triées.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s135">13.5 — Synchronisation : producteur-consommateur</h2>
+<div class="concept">
+<p><span class="lead">Le problème</span> Deux types de processus : des <b>producteurs</b> qui génèrent des données, et des <b>consommateurs</b> qui les utilisent — reliés par un tampon partagé. Situation très fréquente (ligne de communication, clavier/OS, traitement de texte/imprimante...).</p>
+</div>
+
+<h3><span class="n">Tampon infini</span></h3>
+<div class="concept">
+<pre><code>file infinie de données buffer ← file vide
+sémaphore notEmpty ← (0, ∅)
+
+producteur :                       consommateur :
+loop forever                        loop forever
+ p1: d ← produire                    q1: wait(notEmpty)
+ p2: ajouter(d, buffer)              q2: d ← retirer(buffer)
+ p3: signal(notEmpty)                q3: consommer(d)</code></pre>
+<p><span class="lead">Le principe</span> C'est le même mécanisme que <code>merge</code> ci-dessus, mais répété en boucle : <code>notEmpty</code> compte combien d'éléments sont disponibles dans le tampon. <code>wait(notEmpty)</code> bloque le consommateur tant que le tampon est vide ; <code>signal(notEmpty)</code> le débloque dès qu'une donnée arrive. Remarque : la partie entière du sémaphore n'est ici <b>pas bornée</b> — elle peut grandir indéfiniment si le producteur va plus vite que le consommateur, puisque le tampon est infini.</p>
+</div>
+
+<h3><span class="n">Tampon borné (le cas réaliste)</span></h3>
+<div class="concept">
+<p><span class="lead">Le problème du tampon infini</span> En réalité, un tampon a toujours une taille limitée $N$. Il faut donc aussi empêcher le producteur d'écrire quand le tampon est <b>plein</b>.</p>
+<pre><code>file bornée (taille N) de données buffer ← file vide
+sémaphore notEmpty ← (0, ∅)
+sémaphore notFull ← (N, ∅)
+
+producteur :                       consommateur :
+loop forever                        loop forever
+ p1: d ← produire                    q1: wait(notEmpty)
+ p2: wait(notFull)                   q2: d ← retirer(buffer)
+ p3: ajouter(d, buffer)              q3: signal(notFull)
+ p4: signal(notEmpty)                q4: consommer(d)</code></pre>
+<p><span class="lead">Comment le lire</span> <code>notFull</code> démarre à $N$ (toutes les places sont libres au début) et compte le nombre de places <b>encore disponibles</b> dans le tampon ; <code>notEmpty</code> démarre à $0$ et compte le nombre d'éléments <b>déjà présents</b>. Le producteur attend une place libre (<code>wait(notFull)</code>) avant d'écrire, puis signale qu'un élément est disponible (<code>signal(notEmpty)</code>). Le consommateur fait l'inverse : il attend un élément (<code>wait(notEmpty)</code>), puis, après l'avoir retiré, signale qu'une place s'est libérée (<code>signal(notFull)</code>).</p>
+<div class="remark"><span class="lead">L'invariant à retenir</span> À chaque tour de boucle, $\text{notEmpty} + \text{notFull} = N$ : la somme des places occupées et des places libres est toujours égale à la taille totale du tampon. C'est une bonne façon de vérifier qu'on a compris le mécanisme — si cette somme n'est plus $N$ dans un scénario donné, quelque chose ne va pas.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s136">13.6 — Conclusion pratique</h2>
+<div class="concept">
+<p>Le sémaphore remplace tout le bricolage du chapitre 11 (drapeaux, boucles d'attente active, variables d'arbitrage) par deux opérations atomiques bien définies, <code>wait</code> et <code>signal</code>. Utilisé avec une valeur initiale de $1$ (sémaphore binaire), il protège une section critique pour un nombre quelconque de processus. Utilisé avec une valeur initiale de $0$ (ou $N$), il devient un outil de <b>synchronisation</b> pur — un signal qui force un ordre d'exécution entre processus, comme on l'a vu avec le merge sort et le producteur-consommateur.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "quelle est la différence entre un sémaphore d'exclusion mutuelle et un sémaphore de synchronisation ?" — c'est uniquement une question de <b>valeur initiale et d'intention</b>, pas de mécanisme différent : initialisé à $1$, il protège une ressource partagée (un seul accès à la fois) ; initialisé à $0$, il sert de signal pur ("attends que quelque chose se soit produit ailleurs") ; initialisé à $N$, il compte des ressources multiples disponibles (comme les places d'un tampon).</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>États d'un processus</h4>
+<p>Inactive → Ready → Running → Completed, avec Running ⇄ Blocked ⇄ Ready en cas d'attente. Le sémaphore agit sur les transitions Running → Blocked (via <code>wait</code>) et Blocked → Ready (via <code>signal</code>).</p>
+<h4>Le sémaphore</h4>
+<p>$S=(V,L)$ : $V$ = compteur entier non signé, $L$ = ensemble (idéalement une file FIFO) de processus en attente. $S \leftarrow (k,\emptyset)$ à l'initialisation. $P()$/$V()$ = noms historiques de <code>wait</code>/<code>signal</code> (Dijkstra, du néerlandais).</p>
+<h4><code>wait(S)</code> / <code>signal(S)</code> (toutes deux atomiques)</h4>
+<p><code>wait</code> : si $V \gt 0$, $V\leftarrow V-1$ ; sinon, le processus rejoint $L$ et se bloque. <code>signal</code> : si $L=\emptyset$, $V\leftarrow V+1$ ; sinon, un processus de $L$ est directement réveillé (transfert du jeton sans passer par $V$ — aucun réveil n'est perdu).</p>
+<h4>Sémaphore binaire ($V\in\{0,1\}$)</h4>
+<p>Initialisé à $1$ → protège une section critique (2 ou N processus) : <code>wait(S)</code> avant, <code>signal(S)</code> après.</p>
+<h4>Sémaphore de synchronisation (initialisé à $0$)</h4>
+<p>Force un ordre : "attends que quelque chose se produise ailleurs". Exemples : merge sort ($S_1,S_2$ signalent la fin de chaque tri), producteur-consommateur infini (<code>notEmpty</code> signale l'arrivée de données).</p>
+<h4>Tampon borné : deux sémaphores</h4>
+<p><code>notEmpty ← (0,∅)</code> (éléments disponibles), <code>notFull ← (N,∅)</code> (places libres). Invariant : $\text{notEmpty}+\text{notFull}=N$ à chaque tour de boucle.</p>
+</div>
+
+</body>
+</html>

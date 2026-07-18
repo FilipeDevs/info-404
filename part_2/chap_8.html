@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 8 — Fiche de révision — Global Scheduling</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .legend{display:flex; gap:1.1rem; flex-wrap:wrap; font-family:Helvetica,Arial,sans-serif; font-size:.8rem; margin:.4rem 0 .8rem; justify-content:center;}
+  .legend span.sw{display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:.35rem; vertical-align:-1px;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 8 — Fiche de révision</h1>
+<p class="subtitle">Global Scheduling — Ordonnancement multiprocesseur, INFO-F404. La migration est autorisée : que peut-on garantir, et à quel prix ? D'abord deux mauvaises nouvelles, puis trois résultats positifs (le test générique, PFair, EDF global et EDF(k)). 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s80">Introduction</a></li>
+<li><a href="#s81">Résultat négatif 1 : aucun ordonnanceur en ligne optimal</a></li>
+<li><a href="#s82">Résultat négatif 2 : les anomalies d'ordonnancement</a></li>
+<li><a href="#s83">Résultat positif : la condition générique $U(\tau)\leqslant m$</a></li>
+<li><a href="#s84">PFair : l'ordonnanceur optimal</a></li>
+<li><a href="#s85">Global EDF</a></li>
+<li><a href="#s86">EDF(k)</a></li>
+<li><a href="#s87">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s80">8.0 — Introduction</h2>
+<div class="concept">
+<p><span class="lead">Rappel du chapitre 6</span> L'ordonnancement <b>global</b> autorise la migration : une file unique et partagée, une décision dynamique à chaque instant sur les $m$ processeurs. Ce chapitre examine ce qu'on peut garantir dans ce cadre : d'abord deux <b>résultats négatifs</b> (des limites fondamentales, propres au multiprocesseur), puis des <b>résultats positifs</b> (des ordonnanceurs et tests qui fonctionnent malgré tout).</p>
+</div>
+
+<hr class="divider">
+<h2 id="s81">8.1 — Résultat négatif 1 : aucun ordonnanceur en ligne optimal</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 79 — Ordonnanceur en ligne</span> <span class="eng">(online scheduler)</span> Un ordonnanceur qui prend ses décisions <b>à l'exécution</b>, en se basant uniquement sur les jobs déjà relâchés — sans connaître à l'avance quand les jobs futurs arriveront.</div>
+<div class="formal">
+<span class="lead">📝 Theorem 80</span>
+<p>Pour tout $m \gt 1$, il n'existe <b>aucun</b> ordonnanceur en ligne optimal.</p>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 La preuve : un piège à deux branches</div>
+<p>On prend $m=2$ processeurs. À l'instant $0$, trois jobs sont relâchés : $J_1, J_2$ avec $d_1=d_2=4,\ e_1=e_2=2$, et $J_3$ avec $d_3=8,\ e_3=4$. N'importe quel ordonnanceur en ligne doit choisir, sur l'intervalle $[0,2)$, entre exactement deux comportements pour $J_3$ :</p>
+<table>
+<tr><th></th><th>Branche (i) — $J_3$ s'exécute un peu sur $[0,2)$</th><th>Branche (ii) — $J_3$ n'exécute pas du tout sur $[0,2)$</th></tr>
+<tr><td><b>Conséquence immédiate</b></td><td>$J_1$ ou $J_2$ (disons $J_2$) ne termine pas à $t=2$</td><td>À $t=4$, il reste au moins 2 unités de $J_3$</td></tr>
+<tr><td><b>Le piège tendu par l'adversaire</b></td><td>Deux nouveaux jobs $J_4,J_5$ arrivent à $t=2$ avec $d_4=d_5=4$, $e_4=e_5=2$</td><td>Deux nouveaux jobs $J_4',J_5'$ arrivent à $t=4$ avec $d_4'=d_5'=8$, $e_4'=e_5'=4$</td></tr>
+<tr><td><b>Résultat</b></td><td>Le système est infaisable — pourtant il existait une solution : ne <b>pas</b> exécuter $J_3$ avant $t=4$</td><td>Le système est infaisable — pourtant il existait une solution : exécuter $J_3$ dès $[0,2)$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> quel que soit le choix fait sur $[0,2)$, l'adversaire construit ensuite (avec le recul) un scénario qui rend ce choix perdant — alors qu'un ordonnanceur <b>connaissant l'avenir</b> aurait pu deviner correctement. D'où le terme utilisé par le cours : il faudrait de la <b>clairvoyance</b> pour prendre la décision optimale, ce qu'un ordonnanceur en ligne n'a par définition pas.</p>
+<div class="remark"><span class="lead">Portée du résultat</span> Ce résultat est propre au cas général (jobs sporadiques/apériodiques, caractéristiques inconnues à l'avance). Il ne contredit pas l'existence d'ordonnanceurs optimaux pour des sous-cas plus restreints (voir PFair en 8.4), où toutes les dates de relâchement futures sont connues d'avance.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s82">8.2 — Résultat négatif 2 : les anomalies d'ordonnancement</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 81 — Anomalie d'ordonnancement</span> Une anomalie se produit quand un changement de paramètres qui semble <i>a priori</i> bénéfique rend en fait le système <b>moins</b> ordonnançable.</div>
+<div class="def"><span class="lead">Definition 82 — Changement "intuitivement positif"</span> Un changement qui <b>réduit</b> l'utilisation d'une tâche : augmenter une période, diminuer un WCET, ou augmenter la vitesse d'un processeur.</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Système 83 : augmenter une période... et rater une deadline</div>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$D_i$</th><th>$T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>2</td><td>4</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>3</td><td>5</td></tr>
+<tr><td>$\tau_3$</td><td>7</td><td>8</td><td>20</td></tr>
+</table>
+<p>Ordonnancé avec global DM sur 2 processeurs ($D_1=2 \lt D_2=3 \lt D_3=8$, donc $\tau_1 \succ \tau_2 \succ \tau_3$) :</p>
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 760 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="80.7" y1="18" x2="80.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="115.4" y1="18" x2="115.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="115.4" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="150.1" y1="18" x2="150.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="184.8" y1="18" x2="184.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="184.8" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="219.5" y1="18" x2="219.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="254.2" y1="18" x2="254.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="254.2" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="288.9" y1="18" x2="288.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="323.6" y1="18" x2="323.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="323.6" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="358.3" y1="18" x2="358.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="393.0" y1="18" x2="393.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="393.0" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="427.7" y1="18" x2="427.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="462.4" y1="18" x2="462.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="462.4" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="497.1" y1="18" x2="497.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="531.8" y1="18" x2="531.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="531.8" y="146" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="566.5" y1="18" x2="566.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="601.2" y1="18" x2="601.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="601.2" y="146" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.9" y1="18" x2="635.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="670.6" y1="18" x2="670.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="670.6" y="146" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.3" y1="18" x2="705.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="740.0" y1="18" x2="740.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="740.0" y="146" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="740.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="63.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="80.7" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="115.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="150.1" y="22.0" width="34.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="167.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="202.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="219.5" y="22.0" width="104.1" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="271.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="323.6" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="341.0" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="393.0" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="427.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="462.4" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="479.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="566.5" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="583.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="618.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="635.9" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="653.3" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="740.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="63.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="80.7" y="80.0" width="69.4" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="115.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="80.0" width="138.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="254.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="462.4" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="479.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="618.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Avec $T_1=4$ : $\tau_3$ accumule ses 7 unités bien avant sa deadline à $t=8$. Toutes les deadlines sont respectées.</p>
+</div>
+<p><span class="step-title">Maintenant on augmente $T_1$ de 4 à 5</span> (un changement "intuitivement positif" : $U_1$ baisse de $0.25$ à $0.2$, et $D_1=2$ ne change pas). Voici le résultat, simulé et vérifié :</p>
+<div class="diagram">
+<svg viewBox="0 0 560 175" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="95.4" y1="18" x2="95.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="95.4" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="144.8" y1="18" x2="144.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="144.8" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="194.2" y1="18" x2="194.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="194.2" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="243.6" y1="18" x2="243.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="243.6" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="293.0" y1="18" x2="293.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="293.0" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="342.4" y1="18" x2="342.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="342.4" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="391.8" y1="18" x2="391.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="391.8" y="146" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="441.2" y1="18" x2="441.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="441.2" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="490.6" y1="18" x2="490.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="490.6" y="146" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="540.0" y1="18" x2="540.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="540.0" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="540.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="49.4" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="70.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="95.4" y="22.0" width="98.8" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="144.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="194.2" y="22.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="243.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="293.0" y="22.0" width="49.4" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="317.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="342.4" y="22.0" width="98.8" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="391.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="441.2" y="22.0" width="49.4" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="465.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="540.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="49.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="70.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="95.4" y="80.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="144.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="293.0" y="80.0" width="49.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="317.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="342.4" y="80.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" stroke-width="1"/>
+<text x="391.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<line x1="441.2" y1="14" x2="441.2" y2="136" stroke="#b23b3b" stroke-width="2" stroke-dasharray="4,3"/>
+<text x="441.2" y="10" font-size="16" text-anchor="middle">💣</text>
+<text x="441.2" y="150" font-size="9" fill="#b23b3b" text-anchor="middle" font-weight="bold">τ3 rate sa deadline</text>
+</svg>
+<p class="caption">Avec $T_1=5$ : à $t=8$, il reste encore 1 unité de $\tau_3$ à exécuter — <b>deadline manquée</b>, alors que le système était strictement plus faisable qu'avant ($U_1$ a baissé) !</p>
+</div>
+<p><span class="step-title">Pourquoi ça arrive :</span> avec $T_1=4$, les réveils de $\tau_1$ "rythment" l'ordonnancement d'une manière qui laisse à $\tau_3$ des créneaux suffisamment bien placés sur les deux processeurs pour cumuler ses 7 unités avant $t=8$. Décaler $T_1$ à 5 déplace légèrement les réveils de $\tau_1$, ce qui perturbe cet équilibre fragile — et $\tau_3$, qui est un job <b>unique</b> ne pouvant pas se découper sur les deux processeurs à la fois, n'a plus le temps.</p>
+<div class="remark"><span class="lead">Pourquoi c'est spécifique au multiprocesseur</span> La cause profonde : un job ne peut jamais s'exécuter en parallèle sur deux processeurs (chapitre 6). C'est cette contrainte de "non-parallélisme intra-job", combinée à la possibilité de migration, qui crée l'anomalie. En <b>uniprocesseur</b>, ce phénomène est <b>impossible</b> : il n'y a ni parallélisme entre processeurs, ni migration à perturber.</div>
+<div class="remark"><span class="lead">Conséquence pratique importante</span> Pour vérifier la faisabilité d'un système sporadique en multiprocesseur, il ne suffit <b>pas</b> de vérifier le cas périodique synchrone (contrairement à l'uniprocesseur, chapitre 3) : à cause des anomalies, on ne sait même pas en général où se situe "l'instant critique" en multiprocesseur — c'est une question encore ouverte.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s83">8.3 — Résultat positif : la condition générique $U(\tau)\leqslant m$</h2>
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Theorem 84</span>
+<p>Tout système périodique à deadline implicite est faisable <b>si et seulement si</b>
+$$U(\tau) \leqslant m \quad \text{et} \quad U_{\max}(\tau) \leqslant 1$$</p>
+</div>
+<p><span class="lead">L'idée de la preuve (partitionnement fluide)</span> On découpe la ligne du temps en tranches infinitésimales, et on fait tourner chaque tâche $\tau_i$ pendant une fraction de chaque tranche proportionnelle à $U(\tau_i)$ — un "partage fluide" du processeur, comme si chaque tâche recevait en continu exactement sa part. Tant que $\sum U_i \leqslant m$, ce partage fluide tient dans la capacité totale de la plateforme, et chaque job termine pile à sa deadline.</p>
+<div class="remark"><span class="lead">Pourquoi $U_{\max}\leqslant1$ est indispensable même avec $m\gt1$</span> Un job ne peut jamais s'exécuter sur deux processeurs à la fois (chapitre 6) — donc même avec $m$ processeurs disponibles, une tâche individuelle ne peut jamais dépasser la capacité d'<b>un seul</b> processeur. Si $U_i\gt1$ pour une tâche, aucun nombre de processeurs supplémentaires ne peut compenser.</div>
+<p><span class="lead">Le problème :</span> ce partage fluide est <b>impossible à implémenter</b> en pratique — il demanderait un nombre infini de préemptions et une granularité de temps continue. Il faut une version <b>discrète</b> et réalisable : c'est PFair.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s84">8.4 — PFair : l'ordonnanceur optimal</h2>
+<div class="concept">
+<p><span class="lead">Où on en était</span> Au chapitre 8.3, on a vu que la condition $U(\tau)\leqslant m,\ U_{\max}\leqslant1$ suffit à garantir la faisabilité — mais seulement si on peut donner à chaque tâche une <b>fraction continue</b> du processeur à chaque instant (le "partage fluide"). En pratique, un ordonnanceur ne peut prendre des décisions qu'à des instants discrets (des "quanta" : $t=0,1,2,3,\dots$), pas en continu. PFair est la façon de reconstruire, en discret, une approximation de ce partage fluide qui reste assez fidèle pour ne jamais rater de deadline.</p>
+<p><span class="lead">L'exemple qu'on va suivre du début à la fin</span> Deux tâches sur <b>1 seul processeur</b> (le raisonnement est identique avec $m \gt 1$, sauf qu'on peut faire tourner jusqu'à $m$ tâches par quantum au lieu d'une seule) :</p>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i$</th><th>$U_i = C_i/T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>2</td><td>$1/2 = 0.5$</td></tr>
+<tr><td>$\tau_2$</td><td>1</td><td>4</td><td>$1/4 = 0.25$</td></tr>
+</table>
+<p>Rappel : $U_i = C_i/T_i$ est l'<b>utilisation</b> de $\tau_i$ — la fraction du processeur qu'elle consomme en moyenne. Ici $U(\tau) = U_1+U_2 = 0.75 \leqslant m=1$ et $U_{\max}=0.5\leqslant1$ : d'après le Theorem 84, ce système <b>est</b> faisable. Le but de cette section est de construire, pas à pas, un ordonnancement discret concret qui le prouve.</p>
+</div>
+
+<div class="concept">
+<div class="def">
+<span class="lead">Definition 85 — Équité idéale</span> <span class="eng">(ideal fairness)</span>
+<p>Un ordonnancement est idéalement équitable si chaque tâche $\tau_i$ progresse à un rythme <b>parfaitement constant</b> égal à $U_i$ : sur n'importe quel intervalle $[0,t)$, elle reçoit exactement $U_i \times t$ unités d'exécution — pas une de plus, pas une de moins, à n'importe quel instant réel $t$ (même non entier).</p>
+</div>
+<p><span class="lead">Traduction en langage naturel</span> $U_i \times t$ veut juste dire : "utilisation de la tâche" $\times$ "durée écoulée". C'est le service que la tâche <i>devrait</i> avoir reçu si on pouvait vraiment lui donner une fraction $U_i$ du processeur à chaque instant. Exemple avec nos deux tâches : à $t=3$, $\tau_1$ devrait idéalement avoir reçu $U_1 \times 3 = 0.5 \times 3 = 1.5$ unités d'exécution, et $\tau_2$ devrait avoir reçu $U_2 \times 3 = 0.25 \times 3 = 0.75$ unités. Le problème : on ne peut pas donner "0.5 unité" à un instant discret — un processeur exécute une tâche entière ou aucune sur chaque quantum. D'où la définition suivante.</p>
+</div>
+
+<div class="concept">
+<div class="def">
+<span class="lead">Definition 86 — Un ordonnancement discret</span>
+<p>Une fonction $S : \tau \times \mathbb{N} \to \{0,1\}$ où $S(\tau_i,t)=1$ signifie que $\tau_i$ tourne sur le créneau $[t,t+1)$, et $S(\tau_i,t)=0$ signifie qu'elle ne tourne pas.</p>
+</div>
+<p><span class="lead">Traduction en langage naturel</span> $\tau \times \mathbb{N}$ = l'ensemble de toutes les paires possibles (une tâche, un numéro de quantum). $\{0,1\}$ = la réponse est binaire : soit la tâche tourne pendant ce quantum entier, soit elle ne tourne pas du tout — jamais "à moitié". C'est exactement la contrainte qu'on avait déjà vue au chapitre 6 : à un instant donné, un processeur exécute un seul job ou reste inactif.</p>
+<p><span class="lead">Construisons un $S$ concret pour notre exemple</span> Choisissons l'ordonnancement suivant sur $[0,4)$ : $\tau_1$ tourne sur $[0,1)$ et $[2,3)$ ; $\tau_2$ tourne sur $[1,2)$ ; le processeur est inactif sur $[3,4)$. Cela donne :</p>
+<table>
+<tr><th>quantum $\ell$</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+<tr><td>$S(\tau_1,\ell)$</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>$S(\tau_2,\ell)$</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+</table>
+<p>C'est juste un choix parmi d'autres — la question qu'on se pose maintenant est : <b>ce choix est-il "assez proche" de l'idéal</b> pour qu'aucune deadline ne soit ratée ? C'est exactement ce que le lag va mesurer.</p>
+</div>
+
+<div class="concept">
+<div class="def">
+<span class="lead">Definition 87 — Le lag</span>
+$$\text{lag}(\tau_i,t) \overset{\text{def}}{=} U(\tau_i)\cdot t \; - \sum_{\ell=0}^{t-1} S(\tau_i,\ell)$$
+</div>
+<p><span class="lead">Traduction terme par terme</span></p>
+<ul>
+<li>$U(\tau_i)\cdot t$ : le service <b>idéal</b> — ce que $\tau_i$ devrait avoir reçu sur $[0,t)$ si le partage était parfaitement fluide (Definition 85).</li>
+<li>$\sum_{\ell=0}^{t-1} S(\tau_i,\ell)$ : le service <b>réel</b> — on additionne les $0$ et les $1$ de $S(\tau_i,\ell)$ pour chaque quantum $\ell$ déjà écoulé (de $0$ à $t-1$). Comme chaque $S$ vaut $0$ ou $1$, cette somme compte simplement <b>le nombre de quanta</b> où $\tau_i$ a réellement tourné avant $t$.</li>
+<li>$\text{lag}(\tau_i,t)$ = idéal $-$ réel. Si le lag est <b>positif</b>, la tâche a reçu <i>moins</i> que l'idéal : elle est en retard. Si le lag est <b>négatif</b>, elle a reçu <i>plus</i> que l'idéal : elle a de l'avance (elle a "emprunté" par anticipation).</li>
+</ul>
+<p><span class="lead">Calculons le lag à chaque instant, sans en sauter aucun</span></p>
+<p><b>À $t=1$</b> (un seul quantum écoulé, $\ell=0$) :</p>
+<p>$\text{lag}(\tau_1,1) = U_1\cdot 1 - S(\tau_1,0) = 0.5\times1 - 1 = 0.5-1 = -0.5$</p>
+<p>$\text{lag}(\tau_2,1) = U_2\cdot 1 - S(\tau_2,0) = 0.25\times1 - 0 = 0.25-0 = 0.25$</p>
+<p><b>À $t=2$</b> (deux quanta écoulés, $\ell=0,1$) :</p>
+<p>$\text{lag}(\tau_1,2) = U_1\cdot 2 - \big(S(\tau_1,0)+S(\tau_1,1)\big) = 1 - (1+0) = 1-1 = 0$</p>
+<p>$\text{lag}(\tau_2,2) = U_2\cdot 2 - \big(S(\tau_2,0)+S(\tau_2,1)\big) = 0.5 - (0+1) = 0.5-1 = -0.5$</p>
+<p><b>À $t=3$</b> (trois quanta écoulés, $\ell=0,1,2$) :</p>
+<p>$\text{lag}(\tau_1,3) = U_1\cdot 3 - (1+0+1) = 1.5 - 2 = -0.5$</p>
+<p>$\text{lag}(\tau_2,3) = U_2\cdot 3 - (0+1+0) = 0.75 - 1 = -0.25$</p>
+<p><b>À $t=4$</b> (quatre quanta écoulés, $\ell=0,1,2,3$) :</p>
+<p>$\text{lag}(\tau_1,4) = U_1\cdot 4 - (1+0+1+0) = 2 - 2 = 0$</p>
+<p>$\text{lag}(\tau_2,4) = U_2\cdot 4 - (0+1+0+0) = 1 - 1 = 0$</p>
+<p><span class="lead">Récapitulatif</span></p>
+<table>
+<tr><th>$t$</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+<tr><td>$\text{lag}(\tau_1,t)$</td><td>$-0.5$</td><td>$0$</td><td>$-0.5$</td><td>$0$</td></tr>
+<tr><td>$\text{lag}(\tau_2,t)$</td><td>$+0.25$</td><td>$-0.5$</td><td>$-0.25$</td><td>$0$</td></tr>
+</table>
+</div>
+
+<div class="concept">
+<div class="def">
+<span class="lead">Definition 88 — Ordonnancement PFair</span>
+$$-1 \lt \text{lag}(\tau_i,t) \lt 1 \qquad \forall \tau_i \in \tau,\ \forall t \in \mathbb{N}$$
+</div>
+<p><span class="lead">Traduction terme par terme</span> $-1 \lt \text{lag}(\tau_i,t) \lt 1$ : le lag doit rester <b>strictement entre $-1$ et $1$</b> — jamais d'écart d'un quantum entier ou plus par rapport à l'idéal. $\forall \tau_i \in \tau$ : "pour <b>toutes</b> les tâches du système". $\forall t \in \mathbb{N}$ : "à <b>tout</b> instant discret". Autrement dit, un ordonnancement est PFair si, en permanence et pour chaque tâche, l'écart entre le service reçu et le service idéal reste inférieur à un quantum — ni plus, ni moins. Concrètement, cela force chaque tâche à avoir reçu à chaque instant $t$ soit $\lfloor U_i \cdot t\rfloor$ (l'idéal arrondi vers le bas), soit $\lceil U_i \cdot t\rceil$ (l'idéal arrondi vers le haut) — jamais autre chose.</p>
+<p><span class="lead">Vérifions notre exemple</span> En reprenant le tableau ci-dessus : les huit valeurs de lag calculées sont $-0.5,\ 0,\ -0.5,\ 0$ (pour $\tau_1$) et $0.25,\ -0.5,\ -0.25,\ 0$ (pour $\tau_2$). Toutes sont strictement comprises entre $-1$ et $1$ → <b>notre ordonnancement $S$ est bien PFair.</b></p>
+</div>
+
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Theorem 89</span>
+<p>Le respect de la propriété PFair implique que <b>toutes</b> les deadlines sont respectées.</p>
+</div>
+<p><span class="lead">Idée de la preuve, traduite en langage naturel</span> On regarde ce qui se passe précisément aux instants $t=\ell\cdot T_i$ — c'est-à-dire aux <b>frontières de période</b> de $\tau_i$ (là où une deadline tombe, puisque $D_i=T_i$). À un tel instant, le service idéal vaut :
+$$U(\tau_i)\cdot t = \frac{C_i}{T_i}\cdot(\ell\cdot T_i) = \ell\cdot C_i$$
+c'est-à-dire un <b>nombre entier</b> (un multiple entier de $C_i$). Or si $|\text{lag}|\lt1$ à cet instant précis, la tâche a reçu un nombre de quanta qui ne peut s'écarter de cet entier que de moins de $1$ — et comme le nombre de quanta reçus est <i>lui aussi</i> forcément un entier, la seule possibilité est que le service réel soit <b>exactement égal</b> à l'idéal $\ell\cdot C_i$. Autrement dit, aux frontières de période, PFair "retombe pile" sur le partage fluide idéal — qui, lui, respecte toutes les deadlines par construction (Definition 85).</p>
+<p><span class="lead">Vérifions ça sur notre exemple, avec les vrais chiffres</span></p>
+<p>Pour $\tau_2$ ($T_2=4$, donc $\ell=1$ donne $t=4$) : $U_2\cdot t = 0.25\times4 = 1$, et $\ell\cdot C_2 = 1\times1=1$ — bien un entier, et les deux coïncident. On avait calculé $\text{lag}(\tau_2,4)=0$ : $\tau_2$ a donc reçu <b>exactement</b> $C_2=1$ unité sur $[0,4)$, ce qui est précisément ce qu'exige sa deadline $D_2=T_2=4$. ✓ Deadline respectée.</p>
+<p>Pour $\tau_1$ ($T_1=2$) : à $\ell=1$ (donc $t=2$), $U_1\cdot t = 0.5\times2=1=\ell\cdot C_1=1\times1$. On avait calculé $\text{lag}(\tau_1,2)=0$ : le premier job de $\tau_1$ a reçu exactement $C_1=1$ unité avant sa deadline à $t=2$. ✓ À $\ell=2$ (donc $t=4$), $U_1\cdot t=0.5\times4=2=\ell\cdot C_1=2\times1$, et on avait $\text{lag}(\tau_1,4)=0$ : le deuxième job de $\tau_1$ (relâché à $t=2$, deadline à $t=4$) a lui aussi reçu exactement ses $C_1=1$ unité. ✓</p>
+<p>Les trois deadlines de notre petit exemple sont donc respectées — exactement comme le prédit le théorème.</p>
+</div>
+
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Theorem 90 — Optimalité de PFair</span>
+<p>Soit $\tau$ un système périodique synchrone à deadline implicite. Il existe un ordonnancement PFair de $\tau$ sur $m$ processeurs si et seulement si
+$$U(\tau) \leqslant m \quad \text{et} \quad U_{\max} \leqslant 1$$</p>
+</div>
+<p><span class="lead">Traduction en langage naturel</span> $U(\tau)\leqslant m$ = la somme des utilisations de toutes les tâches ne dépasse pas le nombre de processeurs disponibles (la demande totale de calcul tient dans la capacité totale de la plateforme). $U_{\max}\leqslant1$ = aucune tâche individuelle ne demande, à elle seule, plus qu'un processeur entier (rappel du chapitre 6 : un job ne peut jamais s'exécuter sur deux processeurs à la fois). C'est <b>exactement</b> la même condition que le Theorem 84 (le résultat "nécessaire et suffisant" du partage fluide idéal, en 8.3) — sauf qu'ici, PFair est un algorithme <b>réellement implémentable</b> (en temps discret, quantum par quantum) qui atteint cette même garantie.</p>
+<p>Conséquence directe : PFair ordonnance <b>avec succès tout système qui est faisable</b> — il ne rate jamais un système faisable. C'est précisément la définition d'un ordonnanceur <b>optimal</b>.</p>
+<p>Sur notre exemple : $U(\tau)=U_1+U_2=0.5+0.25=0.75 \leqslant m=1$, et $U_{\max}=0.5\leqslant1$. Les deux conditions sont vérifiées → un ordonnancement PFair devait exister, et on vient d'en construire un explicitement.</p>
+<div class="remark"><span class="lead">Ceci ne contredit pas le Theorem 80 !</span> Le résultat négatif de 8.1 (aucun ordonnanceur en ligne optimal) concernait des jobs sporadiques dont on ne connaît <b>pas</b> à l'avance les caractéristiques (dates de relâchement futures inconnues). Ici, on se limite aux systèmes <b>périodiques</b> : toutes les dates de relâchement futures se déduisent directement de $T_i$, donc elles sont connues dès le départ. Pas besoin de "clairvoyance" quand l'avenir n'a rien de caché.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s85">8.5 — Global EDF</h2>
+<div class="concept">
+<p><span class="lead">Où on en était</span> PFair (8.4) est optimal : il ordonnance <b>tout</b> système faisable dès que $U(\tau)\leqslant m$ et $U_{\max}\leqslant1$. Mais ce résultat a un coût pratique : PFair doit potentiellement préempter et migrer une tâche à <b>chaque</b> quantum, sur chaque processeur. En vrai, changer de tâche a un coût (recharger le cache, sauvegarder l'état...), donc un ordonnanceur qui préempte à ce rythme-là est difficile à utiliser tel quel dans un vrai système.</p>
+<p><span class="lead">L'idée naturelle</span> En uniprocesseur, EDF (chapitre 4) était à la fois optimal <i>et</i> simple : "à tout instant, exécute le job dont la deadline absolue est la plus proche." Pourquoi ne pas simplement copier cette même règle au multiprocesseur : à tout instant, faire tourner les $m$ jobs actifs dont les deadlines sont les plus proches, un par processeur ? C'est exactement ça, <b>EDF global</b> — moins fin que PFair (pas de calcul de lag, pas de granularité quantum par quantum), donc plus simple à implémenter, mais on va voir que cette simplicité se paie en garanties plus faibles.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Est-ce que EDF global est optimal, comme en uniprocesseur ?</span> Non — et c'est le point important de cette section. On a un <b>test suffisant</b> (si la condition est vérifiée, ça marche à coup sûr), mais ce n'est plus une condition nécessaire et suffisante comme pour PFair. Voici ce test :</p>
+<div class="formal">
+<span class="lead">📝 Theorem 91</span>
+<p>Tout système sporadique à deadline implicite est ordonnançable avec EDF global sur $m$ processeurs si
+$$U(\tau) \leqslant m - (m-1)\cdot U_{\max}$$</p>
+</div>
+<p><span class="lead">Traduction terme par terme</span></p>
+<ul>
+<li>$U(\tau)$ : l'utilisation totale du système — la demande CPU cumulée de toutes les tâches.</li>
+<li>$m$ : le nombre de processeurs — la capacité maximale théorique de la plateforme.</li>
+<li>$U_{\max}$ : l'utilisation de la tâche la plus chargée du système (celle qui a le plus grand $C_i/T_i$).</li>
+<li>$(m-1)\cdot U_{\max}$ : une <b>pénalité</b> qu'on retire de la capacité $m$. Plus il y a de processeurs ($m$ grand) et plus la tâche la plus lourde est chargée ($U_{\max}$ grand), plus cette pénalité est sévère.</li>
+</ul>
+<p>Autrement dit : on ne peut <b>pas</b> compter sur la pleine capacité $m$ des processeurs. Il faut se réserver une marge de sécurité, et cette marge grandit avec $U_{\max}$.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Voir concrètement à quel point ce test est pessimiste</div>
+<p>Prenons $m=4$ processeurs — 400% de capacité CPU en théorie. Supposons qu'une des tâches du système soit assez lourde, avec $U_{\max}=0{,}9$ (elle consomme à elle seule 90% d'un processeur). Que dit le test ?</p>
+<p>$$U(\tau) \leqslant 4 - (4-1)\times0{,}9 = 4 - 3\times0{,}9 = 4-2{,}7 = 1{,}3$$</p>
+<p><span class="step-title">Le "aha" :</span> avec $4$ processeurs, on ne peut garantir la faisabilité que jusqu'à $U(\tau)=1{,}3$ — à peine plus que ce qu'<b>un seul</b> processeur pourrait à lui seul absorber ($U(\tau)\leqslant1$ en uniprocesseur) ! Autrement dit, $2{,}7$ unités de capacité sur les $4$ disponibles sont gaspillées par le test, à cause d'une seule tâche un peu lourde.</p>
+<p><span class="step-title">Et si cette tâche était encore plus lourde ?</span> Pousse $U_{\max}$ vers sa valeur maximale possible, $U_{\max}\to1$ (une tâche qui utilise la quasi-totalité d'un processeur) : la borne devient
+$$U(\tau) \leqslant m - (m-1)\times1 = m-m+1 = 1$$
+— <b>exactement</b> comme s'il n'y avait qu'un seul processeur, peu importe la valeur de $m$ ! Une seule tâche très chargée suffit à "geler" toute la capacité supplémentaire qu'apportent les autres processeurs, même sur une plateforme à 100 cœurs.</p>
+</div>
+
+<div class="concept">
+<div class="analogie"><span class="lead">Analogie</span> Imagine une équipe de $4$ déménageurs (les processeurs) et un très gros meuble qui, à lui seul, immobilise presque un déménageur entier pendant toute la durée du chantier (la tâche lourde, $U_{\max}\approx1$). Le test d'EDF global raisonne "dans le pire des cas" : il suppose que ce meuble encombrant va systématiquement gêner la coordination de <i>toute</i> l'équipe, et il se met donc à calculer les garanties comme si on n'avait presque plus qu'un seul déménageur valide — même si, en pratique, les trois autres pourraient très bien continuer à travailler efficacement en parallèle.</div>
+<div class="remark"><span class="lead">Comparaison avec le chapitre 7</span> Cette pathologie ressemble à celle de RM partitionné (7.4) : une seule caractéristique défavorable ($U_{\max}$ ici, le nombre de tâches sur un cœur là-bas) peut faire s'effondrer toute la garantie. Solution du cours : au lieu de laisser la tâche la plus lourde "polluer" l'analyse de tout le monde, on va la <b>mettre à part</b> → c'est l'idée d'EDF(k), section suivante.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s86">8.6 — EDF(k)</h2>
+<div class="concept">
+<p><span class="lead">L'idée en une phrase</span> Le problème avec EDF global pur, c'est qu'<b>une seule</b> tâche lourde pénalise <b>tout</b> le monde dans le calcul de la borne. La solution : donner à cette tâche (et éventuellement aux quelques autres les plus lourdes) un processeur <b>réservé rien que pour elle</b>, pour qu'elle ne bloque jamais personne — et analyser le reste du système séparément, sans que sa lourdeur ne vienne polluer le calcul.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Mettre en place la notation, avec un exemple concret d'abord</span> Imagine 5 tâches, déjà triées par utilisation décroissante : $U_1=0{,}9,\ U_2=0{,}5,\ U_3=0{,}3,\ U_4=0{,}2,\ U_5=0{,}1$. On note $\tau^{(3)}$ le sous-ensemble "à partir du rang $3$" : $\tau^{(3)}=\{\tau_3,\tau_4,\tau_5\}$, et $U(\tau^{(3)})=U_3+U_4+U_5=0{,}3+0{,}2+0{,}1=0{,}6$ — juste la somme des utilisations des tâches à partir de ce rang. C'est tout ce que représente $\tau^{(i)}$ : "les tâches restantes, une fois qu'on a mis de côté les $i-1$ premières (les plus lourdes)".</p>
+<div class="def"><span class="lead">Definition 92 — EDF(k)</span> On choisit un rang $k$. Les $k-1$ tâches les plus lourdes ($\tau_1,\dots,\tau_{k-1}$) reçoivent la priorité <b>maximale</b> — concrètement, on fixe artificiellement leur deadline absolue à $-\infty$, ce qui garantit qu'elles passeront <b>toujours</b> en premier, sans jamais attendre. Les tâches restantes ($\tau_k,\dots,\tau_n$, c'est-à-dire $\tau^{(k)}$) sont ordonnancées normalement avec EDF global classique entre elles. Avec $k=1$, on ne réserve aucune tâche : on retombe exactement sur EDF global pur (8.5).</div>
+<p><span class="lead">Pourquoi ça aide, intuitivement</span> En "sortant" les $k-1$ tâches les plus lourdes du jeu (chacune a son propre processeur, elle ne partage jamais et ne bloque jamais personne), le reste du système n'a plus à subir la pénalité liée à $U_{\max}=U_1$. Il subit une pénalité liée à $U_k$ à la place — une valeur forcément <b>plus petite</b> puisque les tâches sont triées par ordre décroissant. Moins de pénalité = borne moins pessimiste.</p>
+</div>
+
+<div class="concept">
+<div class="formal">
+<span class="lead">📝 Theorem 93</span>
+<p>Un système sporadique à deadline implicite est ordonnançable sur $m$ processeurs avec EDF(k) si
+$$m \geqslant (k-1) + \left\lceil \frac{U(\tau^{(k+1)})}{1-U(\tau_k)} \right\rceil$$</p>
+</div>
+<p><span class="lead">Traduction terme par terme</span></p>
+<ul>
+<li>$(k-1)$ : le nombre de processeurs qu'on "sacrifie", un par tâche réservée — chacune des $k-1$ tâches les plus lourdes tourne seule sur son propre cœur, sans jamais être bloquée.</li>
+<li>$U(\tau^{(k+1)})$ : la demande totale du <b>reste</b> du système — la somme des utilisations de toutes les tâches à partir du rang $k+1$ (donc sans compter les $k-1$ tâches réservées, ni $\tau_k$ elle-même qui sert juste de référence pour la pénalité ci-dessous).</li>
+<li>$1-U(\tau_k)$ : le même type de "pénalité restante" que dans le Theorem 91, mais calculée par rapport à $U(\tau_k)$ (l'utilisation de la $k$-ème tâche) au lieu de $U_{\max}=U_1$. Comme $U_k\leqslant U_1$, cette pénalité est toujours <b>moins sévère</b>.</li>
+<li>$\lceil\cdot\rceil$ : le plafond — le nombre de processeurs doit être un entier, on arrondit donc vers le haut.</li>
+</ul>
+<p>Le membre de droite au complet donne donc : le nombre de processeurs réservés, <b>plus</b> le nombre de processeurs supplémentaires nécessaires pour faire tenir le reste du système sous un test "EDF global" local, moins pénalisant que l'original.</p>
+<div class="formal">
+<span class="lead">📝 Corollary 94</span>
+<p>On ne connaît pas à l'avance la meilleure valeur de $k$ — il faut donc toutes les essayer et garder celle qui minimise le nombre de processeurs requis :
+$$m_{\min}(\tau) = \min_{k=1}^{n}\left\{(k-1) + \left\lceil \frac{U(\tau^{(k+1)})}{1-U(\tau_k)} \right\rceil\right\}$$</p>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Système 95 : trouver le meilleur k, calcul complet</div>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i$</th><th>$U(\tau_i)$</th><th>$U(\tau^{(i)})$</th></tr>
+<tr><td>$\tau_1$</td><td>9</td><td>10</td><td>0.9</td><td>2.456</td></tr>
+<tr><td>$\tau_2$</td><td>14</td><td>19</td><td>0.737</td><td>1.556</td></tr>
+<tr><td>$\tau_3$</td><td>1</td><td>3</td><td>0.333</td><td>0.819</td></tr>
+<tr><td>$\tau_4$</td><td>2</td><td>7</td><td>0.286</td><td>0.486</td></tr>
+<tr><td>$\tau_5$</td><td>1</td><td>5</td><td>0.2</td><td>0.2</td></tr>
+</table>
+<p>Rappel de lecture : $U(\tau^{(i)})$ est juste la somme des utilisations de $\tau_i$ jusqu'à $\tau_5$ (les tâches sont déjà triées par utilisation décroissante). Par exemple $U(\tau^{(3)})=0{,}333+0{,}286+0{,}2=0{,}819$ — vérifie-le, c'est bien ce qui est écrit dans la dernière colonne pour $\tau_3$.</p>
+
+<p><span class="step-title">Calculons $k=1$ (EDF global pur, aucune tâche réservée) :</span> on applique directement le Theorem 91. La "pénalité" est basée sur $U_1=0{,}9$ (la tâche la plus lourde), et la demande à couvrir est $U(\tau^{(2)})=1{,}556$ (tout le monde sauf $\tau_1$, qui sert de référence). $$m = 0 + \left\lceil \frac{1{,}556}{1-0{,}9}\right\rceil = \left\lceil\frac{1{,}556}{0{,}1}\right\rceil = \lceil15{,}56\rceil = 16$$ Un dénominateur minuscule ($0{,}1$) fait exploser le résultat : il faudrait $16$ processeurs. C'est exactement la pathologie qu'on vient de voir en 8.5.</p>
+
+<p><span class="step-title">Calculons $k=3$ (on réserve les 2 tâches les plus lourdes, $\tau_1$ et $\tau_2$) :</span> $2$ processeurs sont sacrifiés ($k-1=2$), un pour $\tau_1$ et un pour $\tau_2$ — elles tournent chacune sans jamais attendre. Il reste à couvrir le reste du système, $U(\tau^{(4)})=0{,}486$ (soit $\tau_4$ et $\tau_5$ ensemble), avec une pénalité basée cette fois sur $U_3=0{,}333$ (la 3ème tâche, nettement plus légère que $\tau_1$) :
+$$m = 2 + \left\lceil \frac{0{,}486}{1-0{,}333}\right\rceil = 2+\left\lceil\frac{0{,}486}{0{,}667}\right\rceil = 2+\lceil0{,}73\rceil = 2+1 = 3$$
+Cette fois le dénominateur ($0{,}667$) est bien plus confortable : il ne faut qu'un seul processeur de plus pour le reste du système, pour un total de $3$.</p>
+
+<p><span class="step-title">Les valeurs intermédiaires, pour vérifier qu'on ne rate rien :</span></p>
+<table>
+<tr><th>$k$</th><th>$m$ requis</th></tr>
+<tr><td>1 (= EDF global pur)</td><td>$16$</td></tr>
+<tr><td>2</td><td>$1+\left\lceil \frac{0.819}{1-0.737}\right\rceil = 1+\left\lceil3.11\right\rceil = 5$</td></tr>
+<tr><td><b>3</b></td><td>$\mathbf{3}$ (calculé ci-dessus)</td></tr>
+<tr><td>4</td><td>$3+\left\lceil \frac{0.2}{1-0.286}\right\rceil = 3+\left\lceil0.28\right\rceil = 4$</td></tr>
+<tr><td>5</td><td>5</td></tr>
+</table>
+
+<p><span class="step-title">Le "aha" :</span> $k=3$ minimise le nombre de processeurs requis : seulement <b>3</b>, contre <b>16</b> avec EDF global pur ($k=1$) ! En "isolant" les deux tâches les plus lourdes ($\tau_1$, $U=0{,}9$, et $\tau_2$, $U=0{,}737$) sur leurs propres processeurs dédiés, le reste du système ($\tau_3,\tau_4,\tau_5$) échappe complètement à la pénalité que $U_{\max}=0{,}9$ imposait à tout le monde sous EDF global pur.</p>
+<div class="remark"><span class="lead">Nuances importantes</span> EDF(k) ne change <b>pas</b> le scheduler lui-même — c'est toujours EDF global, on modifie juste artificiellement les deadlines absolues des $k-1$ tâches prioritaires à $-\infty$ pour l'analyse. Seule l'<b>analyse de faisabilité</b> change. Ce test reste seulement <b>suffisant</b>, pas nécessaire : un système peut très bien être faisable même si aucune valeur de $k$ ne satisfait la condition.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s87">8.7 — Conclusion pratique</h2>
+<div class="concept">
+<p>Le multiprocesseur global apporte deux limites fondamentales et irréductibles : pas de clairvoyance possible en ligne (Theorem 80), et des anomalies contre-intuitives qui rendent la vérification de faisabilité bien plus délicate qu'en uniprocesseur. Malgré cela, le cas <b>périodique à deadline implicite</b> admet une réponse complète et positive : la condition $U(\tau)\leqslant m,\ U_{\max}\leqslant1$ est nécessaire et suffisante, et PFair l'atteint effectivement (au prix de nombreuses préemptions/migrations). EDF global est une alternative plus simple mais nettement plus pessimiste ; EDF(k) comble une bonne partie de cet écart en traitant à part les tâches les plus lourdes.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "EDF global est-il optimal comme en uniprocesseur ?" — non : sa borne suffisante $U(\tau)\leqslant m-(m-1)U_{\max}$ peut s'effondrer jusqu'à $U(\tau)\leqslant1$ (comme un seul processeur) dès que $U_{\max}\to1$. C'est précisément pour corriger ça qu'EDF(k) existe.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Résultats négatifs</h4>
+<p><b>Theorem 80</b> : $\forall m\gt1$, aucun ordonnanceur en ligne optimal n'existe (nécessite la "clairvoyance"). <b>Anomalie d'ordonnancement</b> : un changement intuitivement positif (période ↑, WCET ↓, vitesse CPU ↑) peut faire rater une deadline — spécifique au multiprocesseur (jamais en uniprocesseur), à cause du couple migration + non-parallélisme intra-job.</p>
+<h4>Condition générique (deadline implicite, périodique)</h4>
+<p>$$U(\tau)\leqslant m \quad\text{et}\quad U_{\max}\leqslant1 \iff \text{faisable (Theorem 84)}$$</p>
+<h4>PFair</h4>
+<p>$\text{lag}(\tau_i,t) = U(\tau_i)\cdot t - \sum_{\ell=0}^{t-1}S(\tau_i,\ell)$. PFair $\iff -1 \lt \text{lag} \lt 1$ pour tout $\tau_i,t$. PFair est <b>optimal</b> pour les systèmes périodiques à deadline implicite (Theorem 90) : il ordonnance exactement les systèmes satisfaisant $U(\tau)\leqslant m,\ U_{\max}\leqslant1$.</p>
+<h4>Global EDF</h4>
+<p>Test suffisant (Theorem 91) : $U(\tau)\leqslant m-(m-1)U_{\max}$. Très pessimiste quand $U_{\max}\to1$ (retombe à $U(\tau)\leqslant1$, comme un seul processeur).</p>
+<h4>EDF(k)</h4>
+<p>Les $k-1$ tâches les plus lourdes reçoivent priorité maximale ; le reste tourne en EDF global. Test suffisant (Theorem 93) : $m\geqslant(k-1)+\left\lceil\frac{U(\tau^{(k+1)})}{1-U(\tau_k)}\right\rceil$. On choisit $k$ pour minimiser $m$ (Corollary 94). $k=1$ = EDF global pur.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>PFair (Proportionate Fairness), $\text{lag}(\tau_i,t)$ (écart service idéal/réel), $\tau^{(i)}$ (sous-ensemble des tâches de $i$ à $n$, triées par $U$ décroissant), $U_{\max}$ (utilisation de la tâche la plus chargée), $m$ (nombre de processeurs).</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 10 — Fiche de révision — Introduction to Concurrency</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .quote{font-style:italic; color:var(--sub); text-align:center; margin:1.4rem 0; font-size:1.02rem;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.8rem 1rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.5;}
+  pre code{background:none; padding:0; color:inherit;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 10 — Fiche de révision</h1>
+<p class="subtitle">Introduction to Concurrency — INFO-F-404. On change de terrain : après l'ordonnancement et les algorithmes parallèles, on entre dans la Partie V du cours, consacrée à ce qui se passe quand plusieurs processus <i>partagent</i> des ressources. Ce chapitre pose juste le vocabulaire et le formalisme de base. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<p class="quote">« "Sometimes" is sometimes "not never". » — Leslie Lamport</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s100">Motivation : parallèle vs concurrent</a></li>
+<li><a href="#s101">Exécution concurrente</a></li>
+<li><a href="#s102">Diagrammes d'états</a></li>
+<li><a href="#s103">Scénario</a></li>
+<li><a href="#s104">Instructions atomiques</a></li>
+<li><a href="#s105">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s100">10.0 — Motivation : parallèle vs concurrent</h2>
+<div class="concept">
+<p><span class="lead">Deux mots qu'on confond souvent</span> Le terme <b>parallèle</b> <span class="eng">(parallel)</span> est généralement associé au <b>matériel</b> : plusieurs processeurs qui exécutent réellement plusieurs instructions <i>au même instant</i> (c'est tout le sujet des chapitres 6 à 9). Le terme <b>concurrent</b> <span class="eng">(concurrency)</span>, lui, est associé au <b>logiciel</b> : il désigne les situations où <i>plusieurs processus pourraient potentiellement s'exécuter en parallèle</i> — que ce soit vraiment le cas ou non.</p>
+<p><span class="lead">Pourquoi cette distinction compte</span> La concurrence est une <b>abstraction</b>, une généralisation de l'idée de parallélisme : même sur une machine à un seul cœur (où l'OS alterne rapidement entre processus, sans vrai parallélisme), on parle quand même de programmes <i>concurrents</i>, parce que le raisonnement (et les bugs potentiels) sont exactement les mêmes que s'ils tournaient vraiment en même temps. C'est ce cadre de pensée, plus général, qu'on développe à partir de maintenant.</p>
+<p><span class="lead">Où ça mène</span> Ce chapitre pose seulement le vocabulaire (processus, programme concurrent, scénario, atomicité). Les chapitres suivants (11 à 14) l'utilisent pour étudier des problèmes concrets : sections critiques, algorithmes de Bakery et de Dekker, sémaphores, algorithmes distribués.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s101">10.1 — Exécution concurrente</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 101 — Processus</span> <span class="eng">(process)</span> Un processus est une <b>séquence d'instructions atomiques</b> (voir Definition 105 en 10.4 pour la définition formelle de l'atomicité — pour l'instant, pense simplement à des étapes qui s'exécutent une par une, sans interruption possible au milieu).</div>
+<div class="def"><span class="lead">Definition 102 — Programme concurrent</span> <span class="eng">(concurrent program)</span> Un ensemble de processus qui pourraient être exécutés en parallèle. L'exécution d'un programme concurrent correspond à une séquence d'instructions atomiques — mais cette séquence n'est <b>pas unique</b> : avec plusieurs processus en jeu, il existe plusieurs façons valides d'entrelacer leurs instructions respectives.</div>
+<p><span class="lead">Le point clé, en une phrase</span> Si $A$ et $B$ sont deux instructions provenant de deux processus concurrents différents, il y a <i>a priori</i> deux ordres d'exécution possibles : $A$ puis $B$, ou $B$ puis $A$. On appelle <b>entrelacement</b> <span class="eng">(interleaving)</span> chacune de ces façons possibles de mélanger les instructions de plusieurs processus en une seule séquence — et il faut, en général, envisager <b>toutes</b> les combinaisons possibles, pas seulement celle à laquelle on pense spontanément.</p>
+<div class="remark"><span class="lead">Pourquoi c'est important</span> C'est précisément parce qu'il existe plusieurs entrelacements possibles — et que le résultat final peut <i>différer</i> d'un entrelacement à l'autre — que la concurrence introduit des bugs qui n'existent pas dans un programme séquentiel classique. On va le voir tout de suite avec un exemple, volontairement trivial.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s102">10.2 — Diagrammes d'états</h2>
+<div class="concept">
+<p><span class="lead">L'outil</span> Un <b>diagramme d'états</b> représente toutes les exécutions possibles d'un programme comme un graphe : chaque nœud est un <i>état</i> (les valeurs de toutes les variables à un instant donné), et chaque arête est une instruction qui fait passer d'un état à un autre. Pour un programme <b>séquentiel</b>, ce graphe est juste une ligne droite (une seule suite d'états possible). Pour un programme <b>concurrent</b>, il peut se ramifier — c'est là que ça devient intéressant.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 D'abord la version séquentielle (une seule trajectoire possible)</div>
+<p>Programme : $n\leftarrow0$ ; $k_1\leftarrow1$ ; $k_2\leftarrow2$ ; puis $p_1: n\leftarrow k_1$ ; $p_2: n\leftarrow k_2$ — exécuté dans cet ordre fixe, une instruction après l'autre.</p>
+<div class="diagram">
+<svg viewBox="0 0 620 120" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#555"/></marker></defs>
+<rect x="20" y="35" width="120" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="80.0" y="57.0" font-size="11" fill="#222" text-anchor="middle">n=0</text>
+<text x="80.0" y="71.0" font-size="11" fill="#222" text-anchor="middle">k1=1, k2=2</text>
+<line x1="140" y1="60" x2="242" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="195.0" y="52" font-size="10.5" fill="#3a5674" text-anchor="middle">p1: n←k1</text>
+<rect x="250" y="35" width="120" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="310.0" y="57.0" font-size="11" fill="#222" text-anchor="middle">n=1</text>
+<text x="310.0" y="71.0" font-size="11" fill="#222" text-anchor="middle">k1=1, k2=2</text>
+<line x1="370" y1="60" x2="472" y2="60" stroke="#555" stroke-width="1.3" marker-end="url(#arrow)"/>
+<text x="425.0" y="52" font-size="10.5" fill="#3a5674" text-anchor="middle">p2: n←k2</text>
+<rect x="480" y="35" width="120" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="540.0" y="57.0" font-size="11" fill="#222" text-anchor="middle">n=2 (end)</text>
+<text x="540.0" y="71.0" font-size="11" fill="#222" text-anchor="middle">k1=1, k2=2</text>
+</svg>
+<p class="caption">Une seule trajectoire : $n$ vaut toujours $2$ à la fin. Rien d'ambigu — c'est séquentiel.</p>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Maintenant la version concurrente (deux processus, deux trajectoires)</div>
+<p>Deux threads $p$ et $q$ tournent en concurrence, partageant la variable $n$ (initialisée à $0$) : $p$ exécute $p_1: n\leftarrow k_1$ (avec $k_1=1$, local à $p$) ; $q$ exécute $q_1: n\leftarrow k_2$ (avec $k_2=2$, local à $q$). Comme $p_1$ et $q_1$ sont des instructions de deux processus <i>différents</i>, il y a deux entrelacements possibles : $p_1$ avant $q_1$, ou $q_1$ avant $p_1$.</p>
+<div class="diagram">
+<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#555"/></marker></defs>
+<rect x="255" y="15" width="130" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="320.0" y="37.0" font-size="10.5" fill="#222" text-anchor="middle">n=0</text>
+<text x="320.0" y="51.0" font-size="10.5" fill="#222" text-anchor="middle">k1=1, k2=2</text>
+<line x1="300" y1="65" x2="180" y2="120" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="210" y="88" font-size="10" fill="#3a5674" text-anchor="middle">p1: n←k1</text>
+<line x1="365" y1="65" x2="460" y2="120" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="440" y="88" font-size="10" fill="#3a5674" text-anchor="middle">q1: n←k2</text>
+<rect x="110" y="120" width="140" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="180.0" y="142.0" font-size="10.5" fill="#222" text-anchor="middle">n=1</text>
+<text x="180.0" y="156.0" font-size="10.5" fill="#222" text-anchor="middle">(p terminé)</text>
+<rect x="390" y="120" width="140" height="50" fill="#f2efe8" stroke="#999" rx="6"/>
+<text x="460.0" y="142.0" font-size="10.5" fill="#222" text-anchor="middle">n=2</text>
+<text x="460.0" y="156.0" font-size="10.5" fill="#222" text-anchor="middle">(q terminé)</text>
+<line x1="180" y1="170" x2="180" y2="205" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="230" y="192" font-size="10" fill="#3a5674" text-anchor="middle">q1: n←k2</text>
+<line x1="460" y1="170" x2="460" y2="205" stroke="#555" stroke-width="1.3" marker-end="url(#arrow2)"/>
+<text x="410" y="192" font-size="10" fill="#3a5674" text-anchor="middle">p1: n←k1</text>
+<rect x="110" y="205" width="140" height="50" fill="#eef3ef" stroke="#999" rx="6"/>
+<text x="180.0" y="234.0" font-size="10.5" fill="#222" text-anchor="middle">n=2 (end)</text>
+<rect x="390" y="205" width="140" height="50" fill="#f7ece9" stroke="#999" rx="6"/>
+<text x="460.0" y="234.0" font-size="10.5" fill="#222" text-anchor="middle">n=1 (end)</text>
+</svg>
+<p class="caption">Deux branches, deux résultats finaux <b>différents</b> : $n=2$ si $p_1$ passe en premier, $n=1$ si $q_1$ passe en premier.</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> ce programme est pourtant on ne peut plus simple — une seule instruction par thread ! Et déjà, le résultat final <b>dépend de l'ordre d'exécution</b>, qui lui-même dépend de facteurs qu'on ne contrôle pas (la vitesse relative des deux threads, l'ordonnanceur du système, etc.). C'est exactement le genre de non-déterminisme que la concurrence introduit, et que les chapitres suivants (sections critiques) chercheront à maîtriser.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s103">10.3 — Scénario</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 103 — Scénario</span> <span class="eng">(scenario)</span> Une séquence d'états. Concrètement, un scénario correspond à une exécution particulière — informellement, c'est simplement le fait de suivre <b>un seul chemin</b> parmi tous ceux du diagramme d'états (par exemple, la branche de gauche de notre exemple ci-dessus : $p_1$ puis $q_1$).</div>
+<p><span class="lead">Comment le présenter</span> On décrit souvent un scénario sous forme de tableau, une ligne par étape, en indiquant quelle instruction s'exécute dans chaque processus à ce moment-là (le texte en gras désignant la prochaine instruction à exécuter).</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Le scénario "q1 avant p1", en tableau</div>
+<table>
+<tr><th>Processus $p$</th><th>Processus $q$</th><th>$n$</th><th>$k_1$</th><th>$k_2$</th></tr>
+<tr><td>$p_1: n\leftarrow k_1$</td><td>$q_1: n\leftarrow k_2$</td><td>$0$</td><td>$1$</td><td>$2$</td></tr>
+<tr><td>$p_1: n\leftarrow k_1$</td><td>(terminé)</td><td>$2$</td><td>$1$</td><td>$2$</td></tr>
+<tr><td>(terminé)</td><td>(terminé)</td><td>$1$</td><td>$1$</td><td>$2$</td></tr>
+</table>
+<p>Ligne par ligne : d'abord les deux processus sont prêts à démarrer ($n=0$). $q$ passe en premier ($q_1$), donc $n$ devient $2$ (valeur de $k_2$) tandis que $p$ reste en attente d'exécuter $p_1$. Puis $p$ termine à son tour ($p_1$), écrasant $n$ avec $k_1=1$. Résultat final : $n=1$ — exactement la branche de droite du diagramme d'états ci-dessus.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s104">10.4 — Instructions atomiques</h2>
+<div class="concept">
+<div class="def"><span class="lead">Definition 104 — Entrelacement</span> <span class="eng">(interleaving)</span> La technique consistant à exécuter plusieurs instructions provenant de programmes différents de façon imbriquée (en alternance). Elle permet à plusieurs tâches de progresser "en même temps" en se partageant les ressources de calcul disponibles (le CPU), plutôt que d'exécuter entièrement un programme avant de passer au suivant.</div>
+<div class="def"><span class="lead">Definition 105 — Instruction atomique</span> <span class="eng">(atomic statement)</span> Une instruction atomique est une opération <b>non divisible</b> qui s'exécute sans interruption possible.</div>
+<p><span class="lead">Pourquoi l'atomicité est essentielle au raisonnement</span> Grâce à l'atomicité, deux instructions "exécutées simultanément" produisent en réalité toujours le <b>même résultat</b> qu'une exécution séquentielle dans un certain ordre — peu importe lequel. Autrement dit, l'atomicité garantit qu'on peut toujours ramener le raisonnement sur un programme concurrent à un raisonnement sur une séquence d'entrelacements bien définis (comme dans nos diagrammes d'états), sans avoir à se soucier qu'une instruction soit "coupée en deux" au milieu par une autre.</p>
+<div class="remark"><span class="lead">Une simplification, assumée</span> Dans ce cours, on considère que les affectations simples (comme $n\leftarrow k_1$) et l'évaluation de conditions booléennes sont atomiques. Ce n'est <b>pas réaliste</b> en pratique — au niveau du vrai matériel, une affectation peut se décomposer en plusieurs micro-instructions non-atomiques (charger la valeur, la stocker...). Mais ce modèle simplifié donne un cadre suffisant pour étudier les problèmes de concurrence les plus importants, avant d'éventuellement descendre au niveau des instructions machine.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s105">10.5 — Conclusion pratique</h2>
+<div class="concept">
+<p>Ce chapitre pose uniquement le vocabulaire : un processus est une séquence d'instructions atomiques, un programme concurrent est un ensemble de processus qui peuvent s'entrelacer de multiples façons différentes, un scénario est un chemin particulier parmi ces entrelacements, et l'atomicité est ce qui rend tout ce raisonnement possible (en garantissant qu'une instruction ne peut jamais être "coupée en deux" par une autre). L'exemple trivial de la section 10.2 — une seule affectation par thread, et pourtant deux résultats finaux possibles — est le point de départ de tout ce qui suit : le chapitre 11 va montrer comment protéger une <b>section critique</b> pour éviter que ce genre de non-déterminisme ne cause de vrais bugs.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "quelle est la différence entre parallèle et concurrent ?" — parallèle décrit le matériel (plusieurs cœurs qui calculent vraiment en même temps), concurrent décrit le logiciel (plusieurs processus qui <i>pourraient</i> s'exécuter en parallèle, qu'ils le fassent vraiment ou non sur la machine réelle). La concurrence est le cadre de pensée général ; le parallélisme en est un cas particulier.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Parallèle vs concurrent</h4>
+<p><b>Parallèle</b> : plusieurs processeurs, exécution simultanée réelle (matériel). <b>Concurrent</b> : plusieurs processus qui pourraient s'exécuter en parallèle (logiciel) — une abstraction plus générale, qui s'applique même sur une seule machine à un seul cœur.</p>
+<h4>Définitions clés</h4>
+<p><b>Processus</b> (Def. 101) : séquence d'instructions atomiques. <b>Programme concurrent</b> (Def. 102) : ensemble de processus pouvant s'exécuter en parallèle ; son exécution correspond à un <b>entrelacement</b> particulier de ses instructions. <b>Scénario</b> (Def. 103) : une séquence d'états, c'est-à-dire un chemin particulier dans le diagramme d'états (une exécution concrète). <b>Entrelacement</b> (Def. 104) : la technique consistant à exécuter en alternance des instructions de plusieurs programmes. <b>Instruction atomique</b> (Def. 105) : opération non divisible, exécutée sans interruption.</p>
+<h4>Diagramme d'états</h4>
+<p>Nœuds = états (valeurs de toutes les variables) ; arêtes = instructions. Séquentiel → une seule trajectoire. Concurrent → peut se ramifier en plusieurs trajectoires menant à des états finaux différents, à cause des multiples entrelacements possibles.</p>
+<h4>Pourquoi ça compte</h4>
+<p>Même un programme concurrent trivial (une seule instruction par thread) peut produire des résultats finaux différents selon l'ordre d'exécution — la source de tous les bugs de concurrence étudiés dans les chapitres suivants (violation d'exclusion mutuelle, interblocage, famine...).</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 11 — Fiche de révision — Critical Sections with 2 Processes</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.85rem;}
+  th,td{border:1px solid var(--border); padding:.35rem .5rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .code-cols{display:flex; gap:1rem; flex-wrap:wrap;}
+  .code-cols pre{flex:1 1 260px; margin:.3rem 0;}
+  pre{background:#2b2a28; color:#e8e4da; padding:.7rem .9rem; border-radius:6px; overflow-x:auto; font-size:.82rem; line-height:1.55;}
+  pre code{background:none; padding:0; color:inherit;}
+  .badge{display:inline-block; font-family:Helvetica,Arial,sans-serif; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:.15rem .5rem; border-radius:10px; margin-left:.4rem;}
+  .badge-bad{background:#f7dede; color:#8a2e2e;}
+  .badge-good{background:#dcefe4; color:#2e6b45;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 11 — Fiche de révision</h1>
+<p class="subtitle">Critical Sections with 2 Processes — INFO-F-404. Quatre tentatives qui échouent chacune d'une façon différente et instructive, puis la solution correcte (Dekker). C'est le "catalogue des bugs classiques de la concurrence" du cours. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s110">Le problème des sections critiques</a></li>
+<li><a href="#s111">Tentative 1 : la variable turn</a></li>
+<li><a href="#s112">Tentative 2 : un drapeau par processus</a></li>
+<li><a href="#s113">Tentative 3 : déplacer l'attente</a></li>
+<li><a href="#s114">Tentative 4 : ajouter une boucle</a></li>
+<li><a href="#s115">L'algorithme de Dekker</a></li>
+<li><a href="#s116">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s110">11.1 — Le problème des sections critiques</h2>
+<div class="concept">
+<div class="def"><span class="lead">Section critique</span> <span class="eng">(critical section)</span> Quand plusieurs processus tentent d'accéder au même segment de code (typiquement, un accès à une variable ou une ressource partagée), ce segment est appelé une section critique. Il doit être protégé : à tout instant, <b>un seul</b> processus à la fois peut s'y trouver.</div>
+<p><span class="lead">Le squelette général</span> Une solution au problème des sections critiques encadre le code sensible d'un <b>pré-protocole</b> et d'un <b>post-protocole</b> :</p>
+<pre><code>loop forever
+    non-critical section
+    pre-protocole
+    section critique
+    post-protocole</code></pre>
+<p>Tout le travail de ce chapitre consiste à trouver le bon pré-protocole et post-protocole.</p>
+</div>
+
+<div class="concept">
+<p><span class="lead">Les 7 exigences d'une solution correcte</span> (le cours en donne 7 explicitement, plus une 8ème implicite sur le live-lock) :</p>
+<ol>
+<li><b>Exclusion mutuelle</b> : l'exécution de deux sections critiques ne peut jamais être entrelacée.</li>
+<li><b>Non-interférence</b> : un processus arrêté dans sa section non-critique ne doit pas gêner les autres.</li>
+<li><b>Pas d'interblocage</b> <span class="eng">(no deadlock)</span> : on évite qu'un ou plusieurs processus s'attendent mutuellement indéfiniment.</li>
+<li><b>Pas de famine</b> <span class="eng">(no starvation)</span> : aucun processus ne doit attendre indéfiniment pour entrer dans sa section critique.</li>
+<li><b>Entrée immédiate si libre</b> : si aucun processus n'est en section critique, tout processus qui la demande doit pouvoir y entrer sans délai.</li>
+<li><b>Aucune hypothèse sur les vitesses</b> : la solution ne doit supposer aucune vitesse relative particulière entre processus, ni un nombre donné de processeurs.</li>
+<li><b>Section critique bornée</b> : un processus ne reste dans sa section critique que pour une durée finie.</li>
+</ol>
+<div class="remark"><span class="lead">Et une 8ème, cruciale</span> <b>Pas de live-lock</b> : on évite que deux (ou plusieurs) processus répètent continuellement la même interaction en réaction aux changements de l'autre, sans jamais accomplir de travail utile. À la différence d'un interblocage (où les processus sont <i>bloqués</i>, à l'arrêt), dans un live-lock les processus sont activement <i>en cours d'exécution</i> — ils "tournent en rond" ensemble, sans jamais progresser.</div>
+</div>
+
+<div class="concept">
+<p><span class="lead">Convention utilisée dans ce chapitre</span> Le mot-clé <code>await condition</code> représente une <b>attente active</b> <span class="eng">(busy wait)</span> : le processus reste bloqué sur cette ligne, en testant en boucle, jusqu'à ce que la condition devienne vraie. Toutes les variables partagées (comme <code>turn</code>, <code>wantp</code>, <code>wantq</code>) résident en mémoire partagée, visible par les deux processus.</p>
+</div>
+
+<hr class="divider">
+<div class="concept">
+<p><span class="lead">Avant de commencer : comment lire ce qui suit</span> Rappel du chapitre 10 : deux processus concurrents ne signifie <b>pas</b> qu'ils avancent forcément "en même temps", instruction par instruction, comme deux coureurs au coude à coude. Ce qui se passe réellement, c'est un <b>entrelacement</b> : à chaque instant, <b>un seul</b> des deux processus exécute une instruction ; l'autre reste figé exactement là où il en était (soit parce qu'il n'a simplement pas encore eu "son tour" de CPU, soit parce qu'il est activement bloqué sur un <code>await</code>). On ne sait pas à l'avance dans quel ordre ni à quel rythme ces instructions vont s'entrelacer — c'est justement ce qui rend les quatre bugs suivants possibles.</p>
+<p>Pour éviter toute ambiguïté, les tableaux ci-dessous n'utilisent donc <b>plus deux colonnes qui avancent en parallèle</b>, mais une seule <b>ligne du temps</b> : chaque ligne correspond à <i>une seule</i> instruction exécutée par <i>un seul</i> processus (colonne "Qui agit"), et on note à côté ce que fait l'autre processus pendant ce temps (rien — il attend, figé).</p>
+</div>
+
+<h2 id="s111">11.2 — Tentative 1 : la variable <code>turn</code></h2>
+<div class="concept">
+<p><span class="lead">L'idée</span> Une seule variable partagée <code>turn</code> ("à qui le tour ?") indique quel processus a le droit d'entrer en section critique. Chaque processus attend que <code>turn</code> prenne la valeur qui lui correspond avant d'entrer, puis redonne la main à l'autre en sortant.</p>
+<div class="code-cols">
+<pre><code>variable partagée : turn ← 1
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: await turn = 1               q2: await turn = 2
+ p3: section critique             q3: section critique
+ p4: turn ← 2                     q4: turn ← 1</code></pre>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça échoue : famine <span class="badge badge-bad">Starvation</span></div>
+<p>Rappel de l'exigence 6 (chapitre 11.1) : on ne fait <b>aucune hypothèse</b> sur la vitesse à laquelle un processus progresse dans sa section non-critique ($p_1$) — en théorie, rien n'oblige $p$ à jamais en sortir.</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>Pendant ce temps...</th><th>turn</th></tr>
+<tr><td>$t_0$</td><td>—</td><td>état de départ</td><td>—</td><td>$1$</td></tr>
+<tr><td>$t_1$</td><td>$q$</td><td>$q_1$ : termine son travail hors zone, passe à $q_2$</td><td>$p$ est quelque part dans $p_1$</td><td>$1$</td></tr>
+<tr><td>$t_2$</td><td>$q$</td><td>$q_2$ : teste "turn = 2 ?" → faux → <b>se bloque ici</b></td><td>$p$ est toujours dans $p_1$</td><td>$1$</td></tr>
+<tr><td>$t_3, t_4,\dots$</td><td>$p$</td><td>$p_1$ : continue indéfiniment, ne passe jamais à $p_2$</td><td>$q$ reste bloqué sur $q_2$, sans jamais progresser</td><td>$1$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> $q$ attend que <code>turn</code> devienne $2$ — mais la <b>seule</b> instruction capable de produire cet événement est $p_4$, et $p$ ne l'atteint qu'après être passé par $p_2$ et $p_3$, qu'il n'a lui-même aucune obligation de jamais atteindre. Il existe donc une exécution valide où $q$ n'entre <b>jamais</b> en section critique : c'est la définition même de la famine.</p>
+<div class="remark"><span class="lead">Pourquoi ce n'est pas un interblocage</span> $p$ n'attend rien du tout — il continue de s'exécuter normalement, juste dans sa section non-critique. Seul $q$ est à l'arrêt. Ce n'est donc pas un cycle d'attente mutuelle (les deux qui se bloquent l'un l'autre) : c'est un seul processus affamé, pendant que l'autre vit sa vie normalement. D'où le nom <b>famine</b>, différent d'un <b>interblocage</b>.</div>
+<p><span class="lead">Propriété formelle violée</span> L'<b>attente bornée</b> <span class="eng">(bounded waiting)</span> : il devrait exister un nombre maximum $B$ de fois où d'autres processus peuvent passer devant $q$ après sa demande. Ici, $p$ peut "passer devant" une infinité de fois (en ne quittant jamais sa section non-critique) — aucune borne $B$ n'existe.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s112">11.3 — Tentative 2 : un drapeau par processus</h2>
+<div class="concept">
+<p><span class="lead">L'idée</span> Le problème de la tentative 1, c'est qu'elle dépend de la progression de l'<i>autre</i> processus dans sa section non-critique. Pour s'en affranchir, on donne à chaque processus son <b>propre</b> drapeau (une variable booléenne), qui indique seulement "je veux entrer" — chacun ne dépend plus que de lui-même pour signaler son intention.</p>
+<div class="code-cols">
+<pre><code>variables partagées : wantp ← false, wantq ← false
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: await wantq = false          q2: await wantp = false
+ p3: wantp ← true                 q3: wantq ← true
+ p4: section critique             q4: section critique
+ p5: wantp ← false                q5: wantq ← false</code></pre>
+</div>
+<p><span class="lead">Pour la suite, on utilise une version abrégée</span> — on retire la section non-critique elle-même, pour ne garder que le mécanisme d'entrée/sortie (le bug se trouve entièrement là) :</p>
+<div class="code-cols">
+<pre><code>p:                              q:
+loop forever                    loop forever
+ p1: await wantq = false          q1: await wantp = false
+ p2: wantp ← true                 q2: wantq ← true
+ p3: wantp ← false                q3: wantq ← false</code></pre>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça échoue : violation de l'exclusion mutuelle <span class="badge badge-bad">Mutual exclusion violée</span></div>
+<p>Le bug vient du fait que "vérifier" ($p_1$) et "signaler son intention" ($p_2$) sont deux instructions <b>séparées</b> — rien n'empêche l'autre processus de s'exécuter entre les deux.</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>Pendant ce temps...</th><th>wantp</th><th>wantq</th></tr>
+<tr><td>$t_0$</td><td>$p$</td><td>$p_1$ : teste "wantq = vrai ?" → faux → le test passe</td><td>$q$ n'a pas encore commencé</td><td>faux</td><td>faux</td></tr>
+<tr><td>$t_1$</td><td>$q$</td><td>$q_1$ : teste "wantp = vrai ?" → faux → le test passe <i>lui aussi</i></td><td>$p$ a déjà passé son test, attend son tour de CPU</td><td>faux</td><td>faux</td></tr>
+<tr><td>$t_2$</td><td>$p$</td><td>$p_2$ : signale son intention → <code>wantp ← vrai</code></td><td>$q$ a déjà passé son test aussi, attend son tour</td><td><b>vrai</b></td><td>faux</td></tr>
+<tr><td>$t_3$</td><td>$q$</td><td>$q_2$ : signale son intention → <code>wantq ← vrai</code></td><td>$p$ est déjà entré en section critique</td><td>vrai</td><td><b>vrai</b></td></tr>
+<tr><td>$t_4$</td><td>—</td><td>les deux sont maintenant en section critique <b>en même temps</b></td><td>—</td><td>vrai</td><td>vrai</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> à $t_0$ et $t_1$, les <b>deux</b> processus réussissent leur test <i>avant</i> qu'aucun des deux n'ait encore signalé son intention — parce que "tester" et "signaler" ne sont pas une seule opération indivisible. Résultat : à $t_4$, <code>wantp</code> <b>et</b> <code>wantq</code> valent vrai en même temps, et les deux processus se retrouvent en section critique simultanément. L'exigence 1 (exclusion mutuelle) est violée.</p>
+<div class="remark"><span class="lead">La leçon</span> Ce protocole illustre un piège très général en concurrence : <b>vérifier puis agir</b> <span class="eng">(test-then-act)</span> n'est jamais sûr si ces deux étapes ne forment pas une seule opération atomique. C'est exactement le genre de faille que les sémaphores (chapitre 13) éliminent, en rendant ce couple "vérifier + agir" indivisible par construction.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s113">11.4 — Tentative 3 : inverser l'ordre</h2>
+<div class="concept">
+<p><span class="lead">L'idée</span> Pour corriger la tentative 2, on inverse l'ordre des deux instructions : chaque processus signale <b>d'abord</b> son intention, et vérifie <b>ensuite</b> celle de l'autre.</p>
+<div class="code-cols">
+<pre><code>variables partagées : wantp ← false, wantq ← false
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: wantp ← true                 q2: wantq ← true
+ p3: await wantq = false          q3: await wantp = false
+ p4: section critique             q4: section critique
+ p5: wantp ← false                q5: wantq ← false</code></pre>
+</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça échoue : interblocage <span class="badge badge-bad">Deadlock</span></div>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>Pendant ce temps...</th><th>wantp</th><th>wantq</th></tr>
+<tr><td>$t_0$</td><td>$p$</td><td>$p_1$ : section non-critique</td><td>$q$ n'a pas encore commencé</td><td>faux</td><td>faux</td></tr>
+<tr><td>$t_1$</td><td>$q$</td><td>$q_1$ : section non-critique</td><td>$p$ a déjà fini $p_1$, attend son tour</td><td>faux</td><td>faux</td></tr>
+<tr><td>$t_2$</td><td>$p$</td><td>$p_2$ : signale son intention → <code>wantp ← vrai</code></td><td>$q$ vient de finir $q_1$</td><td><b>vrai</b></td><td>faux</td></tr>
+<tr><td>$t_3$</td><td>$q$</td><td>$q_2$ : signale son intention → <code>wantq ← vrai</code></td><td>$p$ s'apprête à tester $p_3$</td><td>vrai</td><td><b>vrai</b></td></tr>
+<tr><td>$t_4$</td><td>$p$</td><td>$p_3$ : teste "wantq = vrai ?" → vrai → <b>se bloque</b></td><td>$q$ va faire pareil juste après</td><td>vrai</td><td>vrai</td></tr>
+<tr><td>$t_5$</td><td>$q$</td><td>$q_3$ : teste "wantp = vrai ?" → vrai → <b>se bloque</b></td><td>$p$ déjà bloqué sur $p_3$</td><td>vrai</td><td>vrai</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> à $t_5$, $p$ est bloqué sur $p_3$, en attente que <code>wantq</code> redevienne faux ; $q$ est bloqué sur $q_3$, en attente que <code>wantp</code> redevienne faux. Mais <code>wantp</code> ne peut redevenir faux qu'à $p_5$ — <b>après</b> la section critique, donc après avoir passé $p_3$, qui est justement l'endroit où $p$ est coincé ! Symétriquement pour $q$. Les deux processus s'attendent mutuellement, et aucun des deux ne peut jamais débloquer l'autre : c'est un <b>interblocage</b>.</p>
+<div class="remark"><span class="lead">Différence avec la famine (tentative 1)</span> Ici, les <b>deux</b> processus sont bloqués en même temps — pas un seul. C'est un vrai cycle d'attente mutuelle et symétrique, alors que la famine n'impliquait qu'un seul processus à l'arrêt pendant que l'autre continuait sa vie normalement.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s114">11.5 — Tentative 4 : reculer pour mieux repartir</h2>
+<div class="concept">
+<p><span class="lead">L'idée</span> Pour éviter l'interblocage de la tentative 3, on remplace l'attente passive (bloquée) par une boucle <b>active</b> : si l'autre processus veut aussi entrer, on <b>recule temporairement</b> — on annule son propre drapeau, on laisse passer un peu de temps, puis on retente sa chance.</p>
+<div class="code-cols">
+<pre><code>variables partagées : wantp ← false, wantq ← false
+
+p:                              q:
+loop forever                    loop forever
+ p1: section non-critique         q1: section non-critique
+ p2: wantp ← true                 q2: wantq ← true
+ p3: while wantq                  q3: while wantp
+ p4:   wantp ← false              q4:   wantq ← false
+ p5:   wantp ← true                q5:   wantq ← true
+ p6: section critique             q6: section critique
+ p7: wantp ← false                q7: wantq ← false</code></pre>
+</div>
+<p>Ce protocole garantit bien l'exclusion mutuelle et l'absence d'interblocage — mais il introduit un tout nouveau problème.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi ça échoue : interblocage actif <span class="badge badge-bad">Live-lock</span></div>
+<p>Imagine que $p$ et $q$ signalent leur intention <i>presque en même temps</i>, puis que le CPU les fait alterner <b>au coup par coup</b>, un pas chacun, encore et encore. Voici ce qui peut se passer, instant par instant :</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>wantp</th><th>wantq</th></tr>
+<tr><td>$t_0$</td><td>—</td><td>les deux viennent de signaler leur intention ($p_2$, $q_2$ déjà faits)</td><td>vrai</td><td>vrai</td></tr>
+<tr><td>$t_1$</td><td>$p$</td><td>$p_3$ : teste "wantq = vrai ?" → vrai → entre dans la boucle</td><td>vrai</td><td>vrai</td></tr>
+<tr><td>$t_2$</td><td>$q$</td><td>$q_3$ : teste "wantp = vrai ?" → vrai → entre dans la boucle aussi</td><td>vrai</td><td>vrai</td></tr>
+<tr><td>$t_3$</td><td>$p$</td><td>$p_4$ : recule → <code>wantp ← faux</code></td><td><b>faux</b></td><td>vrai</td></tr>
+<tr><td>$t_4$</td><td>$q$</td><td>$q_4$ : recule → <code>wantq ← faux</code></td><td>faux</td><td><b>faux</b></td></tr>
+<tr><td>$t_5$</td><td>$p$</td><td>$p_5$ : retente → <code>wantp ← vrai</code></td><td><b>vrai</b></td><td>faux</td></tr>
+<tr><td>$t_6$</td><td>$q$</td><td>$q_5$ : retente → <code>wantq ← vrai</code></td><td>vrai</td><td><b>vrai</b></td></tr>
+<tr><td>$t_7$</td><td>$p$</td><td>$p_3$ (revérifie) : "wantq = vrai ?" → vrai → <b>reboucle</b></td><td>vrai</td><td>vrai</td></tr>
+</table>
+<p>Et on est revenu exactement à l'état de $t_1$ : le cycle $t_1\to t_7$ peut recommencer <b>indéfiniment</b>, à l'identique.</p>
+<div class="diagram">
+<svg viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arrowc" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b23b3b"/></marker></defs>
+<rect x="185.0" y="44.0" width="150" height="62" fill="#f7ece9" stroke="#999" rx="8"/>
+<text x="260.0" y="62.0" font-size="10.5" fill="#222" text-anchor="middle">p teste wantq (boucle)</text>
+<text x="260.0" y="78.0" font-size="10.5" fill="#222" text-anchor="middle">q teste wantp (boucle)</text>
+<text x="260.0" y="94.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=vrai, wantq=vrai</text>
+<rect x="341.9" y="158.0" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="416.9" y="176.0" font-size="10.5" fill="#222" text-anchor="middle">p recule (wantp←faux)</text>
+<text x="416.9" y="192.0" font-size="10.5" fill="#222" text-anchor="middle">q recule (wantq←faux)</text>
+<text x="416.9" y="208.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=vrai, wantq=vrai</text>
+<rect x="282.0" y="342.5" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="357.0" y="360.5" font-size="10.5" fill="#222" text-anchor="middle">p recule (wantp←faux)</text>
+<text x="357.0" y="376.5" font-size="10.5" fill="#222" text-anchor="middle">q retente (wantq←vrai)</text>
+<text x="357.0" y="392.5" font-size="10.5" fill="#222" text-anchor="middle">wantp=vrai, wantq=faux</text>
+<rect x="88.0" y="342.5" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="163.0" y="360.5" font-size="10.5" fill="#222" text-anchor="middle">p retente (wantp←vrai)</text>
+<text x="163.0" y="376.5" font-size="10.5" fill="#222" text-anchor="middle">q retente (wantq←vrai)</text>
+<text x="163.0" y="392.5" font-size="10.5" fill="#222" text-anchor="middle">wantp=faux, wantq=faux</text>
+<rect x="28.1" y="158.0" width="150" height="62" fill="#f2efe8" stroke="#999" rx="8"/>
+<text x="103.1" y="176.0" font-size="10.5" fill="#222" text-anchor="middle">p retente (wantp←vrai)</text>
+<text x="103.1" y="192.0" font-size="10.5" fill="#222" text-anchor="middle">q reteste wantp (boucle)</text>
+<text x="103.1" y="208.0" font-size="10.5" fill="#222" text-anchor="middle">wantp=faux, wantq=vrai</text>
+<line x1="322.3" y1="94.4" x2="348.2" y2="164.9" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="393.1" y1="220.4" x2="383.3" y2="334.5" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="280.0" y1="373.5" x2="248.0" y2="373.5" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="139.2" y1="342.1" x2="129.3" y2="228.0" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<line x1="165.4" y1="169.6" x2="191.2" y2="99.1" stroke="#b23b3b" stroke-width="1.6" marker-end="url(#arrowc)" opacity="0.8"/>
+<text x="260" y="234" font-size="12" fill="#b23b3b" text-anchor="middle" font-weight="bold">cycle</text>
+<text x="260" y="254" font-size="12" fill="#b23b3b" text-anchor="middle" font-weight="bold">infini</text>
+</svg>
+<p class="caption">Chaque flèche est une transition réelle du protocole (déroulée en détail dans le tableau ci-dessus). Les 5 états forment un cycle fermé — le système y tourne indéfiniment, sans jamais en sortir.</p>
+</div>
+<p><span class="step-title">Le "aha" :</span> à chaque tour du cycle, $p$ et $q$ <i>font</i> quelque chose — ils exécutent des instructions, ils ne sont jamais bloqués en attente passive — mais ce "quelque chose" ne fait que les ramener exactement au point de départ. Aucun des deux ne progresse jamais jusqu'à sa section critique.</p>
+<div class="remark"><span class="lead">Pourquoi c'est un live-lock et pas un deadlock</span> Un interblocage fige le système : plus aucune instruction ne s'exécute nulle part (les deux processus sont dans l'état "bloqué"). Ici, au contraire, des instructions s'exécutent en permanence (les deux processus sont dans l'état "en cours d'exécution") — c'est juste qu'elles ne font "rien d'utile". D'où le nom : le système est vivant, mais tout aussi bloqué qu'un interblocage au final.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s115">11.6 — L'algorithme de Dekker</h2>
+<div class="concept">
+<p><span class="lead">L'idée</span> Dekker combine les deux ingrédients des tentatives précédentes : les drapeaux <code>want</code> (tentative 4, avec sa boucle qui recule/retente) <b>et</b> une variable <code>turn</code> (tentative 1) qui sert d'arbitre en cas d'égalité — c'est précisément cette variable supplémentaire qui va casser la symétrie parfaite responsable du live-lock.</p>
+<pre><code>boolean wantp ← false, wantq ← false ; integer turn ← 1
+
+p:                          q:
+loop forever                loop forever
+ p1:  section non-critique    q1:  section non-critique
+ p2:  wantp ← true            q2:  wantq ← true
+ p3:  while wantq              q3:  while wantp
+ p4:    if turn = 2            q4:    if turn = 1
+ p5:      wantp ← false        q5:      wantq ← false
+ p6:      await turn = 1       q6:      await turn = 2
+ p7:      wantp ← true         q7:      wantq ← true
+ p8:  section critique        q8:  section critique
+ p9:  turn ← 2                q9:  turn ← 1
+ p10: wantp ← false           q10: wantq ← false</code></pre>
+<p><span class="lead">L'intuition (pas la preuve formelle)</span> Si les deux processus arrivent en même temps à leur boucle <code>while</code> (comme dans le live-lock de la tentative 4), <code>turn</code> départage : un seul des deux "a le tour" et va reculer proprement (<code>p4</code>–<code>p7</code>) pour laisser passer l'autre, au lieu que les deux reculent et retentent en parfaite synchronie. La preuve complète de correction de l'algorithme de Dekker n'est pas au programme de ce cours (elle relève plutôt d'un cours de vérification formelle) — ce qu'il faut en retenir, c'est <b>l'intuition de pourquoi il fonctionne</b>, et surtout, avoir bien identifié les quatre bugs classiques illustrés par les tentatives précédentes.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Exemple d'exécution : $p$ et $q$ arrivent en même temps</div>
+<p>Départ : <code>turn = 1</code> (c'est "le tour" de $p$ par défaut), <code>wantp = wantq = false</code>. Les deux processus veulent entrer en section critique quasiment au même instant.</p>
+<table>
+<tr><th>Instant</th><th>Qui agit</th><th>Instruction exécutée</th><th>wantp</th><th>wantq</th><th>turn</th></tr>
+<tr><td>$t_0$</td><td>—</td><td>état de départ</td><td>false</td><td>false</td><td>$1$</td></tr>
+<tr><td>$t_1$</td><td>$p$</td><td>$p_1$ (non-critique) puis $p_2$ : <code>wantp←true</code></td><td><b>true</b></td><td>false</td><td>$1$</td></tr>
+<tr><td>$t_2$</td><td>$q$</td><td>$q_1$ (non-critique) puis $q_2$ : <code>wantq←true</code></td><td>true</td><td><b>true</b></td><td>$1$</td></tr>
+<tr><td>$t_3$</td><td>$p$</td><td>$p_3$ : <code>while wantq</code> → vrai → entre dans la boucle</td><td>true</td><td>true</td><td>$1$</td></tr>
+<tr><td>$t_4$</td><td>$p$</td><td>$p_4$ : <code>if turn=2</code> ? → faux (turn=1, c'est <i>son</i> tour) → $p$ ne recule pas, retourne directement à $p_3$</td><td>true</td><td>true</td><td>$1$</td></tr>
+<tr><td>$t_5$</td><td>$q$</td><td>$q_3$ : <code>while wantp</code> → vrai → entre dans la boucle</td><td>true</td><td>true</td><td>$1$</td></tr>
+<tr><td>$t_6$</td><td>$q$</td><td>$q_4$ : <code>if turn=1</code> ? → vrai (ce n'est <i>pas</i> son tour) → $q$ recule : $q_5$ : <code>wantq←false</code></td><td>true</td><td><b>false</b></td><td>$1$</td></tr>
+<tr><td>$t_7$</td><td>$q$</td><td>$q_6$ : <code>await turn=2</code> → faux → <b>$q$ se bloque ici</b> (poliment, en attendant son tour)</td><td>true</td><td>false</td><td>$1$</td></tr>
+<tr><td>$t_8$</td><td>$p$</td><td>$p_3$ (revérifie) : <code>while wantq</code> → <code>wantq</code> est maintenant faux → $p$ <b>sort de la boucle</b></td><td>true</td><td>false</td><td>$1$</td></tr>
+<tr><td>$t_9$</td><td>$p$</td><td>$p_8$ : <b>$p$ entre en section critique</b> (seul, en toute sécurité)</td><td>true</td><td>false</td><td>$1$</td></tr>
+<tr><td>$t_{10}$</td><td>$p$</td><td>$p_9$ : <code>turn←2</code> (p signale que c'est maintenant au tour de $q$)</td><td>true</td><td>false</td><td><b>$2$</b></td></tr>
+<tr><td>$t_{11}$</td><td>$p$</td><td>$p_{10}$ : <code>wantp←false</code> ($p$ a fini, repart)</td><td><b>false</b></td><td>false</td><td>$2$</td></tr>
+<tr><td>$t_{12}$</td><td>$q$</td><td>$q_6$ (débloqué) : <code>turn=2</code> maintenant vrai → $q$ continue, $q_7$ : <code>wantq←true</code></td><td>false</td><td><b>true</b></td><td>$2$</td></tr>
+<tr><td>$t_{13}$</td><td>$q$</td><td>$q_3$ (revérifie) : <code>while wantp</code> → <code>wantp</code> est faux → $q$ <b>sort de la boucle</b></td><td>false</td><td>true</td><td>$2$</td></tr>
+<tr><td>$t_{14}$</td><td>$q$</td><td>$q_8$ : <b>$q$ entre en section critique</b> à son tour, en toute sécurité</td><td>false</td><td>true</td><td>$2$</td></tr>
+</table>
+<p><span class="step-title">Le "aha" :</span> à $t_3$–$t_6$, les deux processus se retrouvent bien coincés dans leur boucle <code>while</code> en même temps — exactement la situation qui, dans la tentative 4, menait au live-lock. Mais ici, <code>turn</code> les traite <b>différemment</b> : $p$ (à qui c'est le tour) ne recule pas et continue de re-tester ; $q$ (à qui ce n'est pas le tour) recule et se met en <b>attente passive</b> ($q_6$) plutôt que de retenter en boucle. La symétrie parfaite qui causait le live-lock est cassée — un seul des deux processus "insiste", l'autre patiente proprement. Résultat : $p$ entre en premier, passe la main via <code>turn←2</code>, et $q$ entre ensuite — aucune violation d'exclusion mutuelle, aucun interblocage, aucun live-lock.</p>
+</div>
+
+<div class="concept">
+<div class="remark"><span class="lead">Note historique</span> Dijkstra a ensuite généralisé cet algorithme à un nombre arbitraire de processus. Le cas général à $N$ processus est traité différemment au chapitre 12, via l'algorithme de la Boulangerie <span class="eng">(Bakery algorithm)</span> de Lamport.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s116">11.7 — Conclusion pratique</h2>
+<div class="concept">
+<p>Ce chapitre n'est pas vraiment "à propos" de l'algorithme de Dekker — c'est surtout un catalogue des quatre façons classiques dont une solution de section critique, pourtant intuitive à chaque étape, peut échouer : famine (tentative 1, une hypothèse implicite non respectée), violation d'exclusion mutuelle (tentative 2, un test-puis-action non atomique), interblocage (tentative 3, une attente mutuelle bloquante), et live-lock (tentative 4, une attente mutuelle <i>active</i> qui ne mène jamais nulle part). Reconnaître ces quatre signatures est la compétence clé de ce chapitre.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te montre un protocole de section critique et qu'on te demande "qu'est-ce qui cloche ?" — commence par identifier si l'échec vient d'une hypothèse implicite sur la progression d'un processus (→ famine), d'un test-puis-action séparable (→ violation d'exclusion mutuelle), d'une attente passive mutuelle (→ interblocage), ou d'un mécanisme de recul symétrique (→ live-lock). Ce sont, dans cet ordre, exactement les quatre tentatives de ce chapitre.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Les 7 (+1) exigences</h4>
+<p>Exclusion mutuelle ; non-interférence en section non-critique ; pas d'interblocage ; pas de famine ; entrée immédiate si section libre ; aucune hypothèse sur les vitesses/nb de processeurs ; section critique bornée ; <b>+ pas de live-lock</b>.</p>
+<h4>Les quatre bugs classiques</h4>
+<p><b>Famine</b> (starvation) : un processus attend indéfiniment, pendant que l'autre continue de fonctionner normalement — pas de cycle, juste une attente non bornée. <b>Violation d'exclusion mutuelle</b> : un test (<code>await</code>) et une action (positionner un drapeau) ne sont pas atomiques ensemble → les deux processus peuvent entrer en section critique en même temps. <b>Interblocage</b> (deadlock) : tous les processus impliqués sont bloqués (état <i>blocked</i>), s'attendant mutuellement pour toujours. <b>Live-lock</b> : les processus s'exécutent activement (état <i>running</i>) mais tournent en boucle sans jamais progresser vers leur section critique.</p>
+<h4>Les quatre tentatives (récapitulatif)</h4>
+<p>1. <code>turn</code> seul → famine. 2. drapeaux, test avant action → viole l'exclusion mutuelle. 3. drapeaux, action avant test (attente passive) → interblocage. 4. drapeaux + boucle de recul (attente active) → live-lock.</p>
+<h4>La solution : Dekker</h4>
+<p>Combine drapeaux (<code>want</code>) + boucle de recul (tentative 4) + variable <code>turn</code> arbitre (tentative 1). La variable <code>turn</code> casse la symétrie qui causait le live-lock. Preuve formelle hors programme.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p><code>await condition</code> (attente active / busy wait), <code>wantp</code>/<code>wantq</code> (drapeaux d'intention par processus), <code>turn</code> (variable d'arbitrage), bounded waiting (attente bornée).</p>
+</div>
+
+</body>
+</html>

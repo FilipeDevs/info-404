@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 6 — Fiche de révision — Introduction &amp; Motivation (Multiprocesseur)</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .legend{display:flex; gap:1.1rem; flex-wrap:wrap; font-family:Helvetica,Arial,sans-serif; font-size:.8rem; margin:.4rem 0 .8rem; justify-content:center;}
+  .legend span.sw{display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:.35rem; vertical-align:-1px;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 6 — Fiche de révision</h1>
+<p class="subtitle">Introduction &amp; Motivation — Ordonnancement multiprocesseur, INFO-F404. Début de la Partie III du cours : un chapitre presque entièrement conceptuel, pas de preuve lourde, mais du vocabulaire nouveau et deux résultats "surprise" à bien comprendre. 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s60">Pourquoi le multiprocesseur ? (loi de Moore)</a></li>
+<li><a href="#s61">Le problème d'ordonnancement multiprocesseur</a></li>
+<li><a href="#s62">Deux familles : partitionné vs global</a></li>
+<li><a href="#s63">Illustration : le partitionnement</a></li>
+<li><a href="#s64">Illustration : l'ordonnancement global et la migration</a></li>
+<li><a href="#s65">Partitionné et global sont incomparables</a></li>
+<li><a href="#s66">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s60">6.0 — Pourquoi le multiprocesseur ? (loi de Moore)</h2>
+<div class="concept">
+<p><span class="lead">Contexte</span> Toute la Partie II du cours (chapitres 2 à 5) supposait <b>un seul processeur</b>. On passe maintenant à des cartes mères possédant <b>plusieurs processeurs / cœurs</b>, capables d'exécuter plusieurs tâches <i>vraiment</i> en même temps.</p>
+<p><span class="lead">D'où ça vient</span> En 1965, Gordon Moore observait que le nombre de transistors par circuit intégré doublait environ chaque année, et prédisait que cette tendance continuerait. Vers 2002–2006, cette course à la fréquence a atteint une limite, pour deux raisons :</p>
+<ul>
+<li><b>Limites physiques</b> : température maximale supportable, taille minimale (atomique) d'un transistor.</li>
+<li><b>Limites financières</b> : fabriquer des puces toujours plus fines coûte de plus en plus cher.</li>
+</ul>
+<p>Pour continuer à gagner en puissance de calcul, l'industrie a donc arrêté de "pousser un seul cœur plus vite" et s'est mise à <b>empiler plusieurs cœurs</b> sur une même puce (architectures parallèles / multicœurs). C'est ce qui motive toute la Partie III du cours : il faut maintenant réinventer l'ordonnancement pour ces plateformes.</p>
+<div class="analogie"><span class="lead">Analogie</span> C'est comme un restaurant qui ne peut plus former un unique cuisinier à cuisiner toujours plus vite (il y a une limite physique à la vitesse humaine) — la seule solution qui reste pour servir plus de plats est d'embaucher plusieurs cuisiniers qui travaillent en parallèle. Mais cela pose un nouveau problème : comment répartir les commandes entre eux ?</div>
+</div>
+
+<hr class="divider">
+<h2 id="s61">6.1 — Le problème d'ordonnancement multiprocesseur</h2>
+<div class="concept">
+<p><span class="lead">Ce qui ne change PAS</span> Même avec plusieurs processeurs, le parallélisme reste limité par deux règles simples :</p>
+<ul>
+<li>À tout instant, chaque processeur est soit <b>inactif</b>, soit en train d'exécuter <b>un seul</b> job.</li>
+<li>À tout instant, un job est soit en attente, soit en cours d'exécution sur <b>un seul</b> processeur, soit terminé — <b>un job ne peut jamais être exécuté en parallèle sur plusieurs processeurs à la fois</b> (pas de "parallélisme intra-job").</li>
+</ul>
+<div class="remark"><span class="lead">Pourquoi c'est important</span> Cette deuxième règle est la source de la contrainte $u_i \leqslant 1$ qu'on retrouvera partout dans ce chapitre et le suivant : même avec $m$ processeurs disponibles, un job individuel ne va jamais plus vite qu'un seul processeur ne le permet.</div>
+</div>
+
+<h3><span class="n">6.1.1</span> Taxonomie des plateformes multiprocesseurs</h3>
+<div class="concept">
+<p>Le cours distingue trois types de plateformes, du plus simple au plus général :</p>
+<div class="def"><span class="lead">Definition 68</span> Une plateforme est dite à <b>machines parallèles identiques</b> <span class="eng">(identical parallel machines)</span> si tous les processeurs ont exactement la même puissance de calcul.</div>
+<div class="def"><span class="lead">Definition 69</span> Une plateforme est dite à <b>machines parallèles uniformes</b> <span class="eng">(uniform parallel machines)</span> si chaque processeur $\pi_i$ a sa propre capacité de calcul $s_i$ : un job exécuté sur $\pi_i$ pendant $t$ unités de temps y accomplit $s_i \times t$ unités de travail.</div>
+<div class="def"><span class="lead">Definition 70</span> Une plateforme est dite à <b>machines parallèles non reliées</b> <span class="eng">(unrelated parallel machines)</span> si le taux d'exécution dépend de <b>la paire</b> (job, processeur) : un job $J_i$ exécuté sur $\pi_j$ pendant $t$ unités de temps y accomplit $s_{i,j} \times t$ unités de travail (deux jobs différents peuvent avoir des vitesses différentes sur le même processeur).</div>
+<p><span class="lead">Hiérarchie</span> $\text{Identique} \subset \text{Uniforme} \subset \text{Non reliée}$ — chaque catégorie est un cas particulier de la suivante. <b>Tout le reste du cours (chapitres 6 à 8) se limite au cas identique</b> : $m$ processeurs $\pi_1, \pi_2, \dots, \pi_m$ tous équivalents.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s62">6.2 — Deux familles : partitionné vs global</h2>
+<div class="concept">
+<p><span class="lead">La grande question</span> Avec $m$ processeurs et $n$ tâches, comment décide-t-on <i>quel job tourne sur quel processeur, à quel instant</i> ? Le cours distingue deux philosophies radicalement différentes.</p>
+<div class="def"><span class="lead">Definition 71 — Ordonnancement partitionné</span> <span class="eng">(partitioned scheduling)</span> On répartit <b>statiquement</b> (une fois pour toutes, avant l'exécution) l'ensemble des tâches entre les cœurs. Chaque tâche est assignée à <b>un</b> cœur fixe, et chaque cœur ordonnance ensuite ses propres tâches indépendamment avec une politique uniprocesseur classique (RM, DM, EDF...). Chaque cœur a sa <b>propre file locale</b> ; les cœurs ne se voient pas entre eux.</div>
+<div class="def"><span class="lead">Definition 72 — Ordonnancement global</span> <span class="eng">(global scheduling)</span> Aucune assignation statique. Il existe une <b>unique file partagée</b> contenant tous les jobs du système, et à chaque instant, la décision de qui tourne où est prise <b>dynamiquement et globalement</b>, en tenant compte des priorités de tous les jobs et de la disponibilité de tous les processeurs. Un même job peut ainsi tourner sur un processeur différent d'un instant à l'autre.</div>
+<div class="remark"><span class="lead">Vocabulaire clé : la migration</span> On appelle <b>migration</b> le fait qu'un job/une tâche soit mis en pause sur un processeur, puis repris sur un <b>autre</b> processeur. C'est <b>impossible</b> par construction en ordonnancement partitionné (une fois assignée à un cœur, une tâche y reste et on retombe exactement sur les techniques uniprocesseur de la Partie II). C'est en revanche monnaie courante en ordonnancement global.</div>
+<p><span class="lead">Attention</span> Le cours insiste : l'ordonnancement global <b>n'est pas</b> une forme d'ordonnancement partitionné (ce ne sont pas deux nuances de la même idée, mais deux approches fondamentalement différentes, comme on va le voir en 6.5).</p>
+</div>
+
+<hr class="divider">
+<h2 id="s63">6.3 — Illustration : le partitionnement</h2>
+<div class="story">
+<div class="story-title">🔍 Système 73</div>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i$</th><th>$D_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>4</td><td>4</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>5</td><td>5</td></tr>
+<tr><td>$\tau_3$</td><td>7</td><td>20</td><td>20</td></tr>
+</table>
+<p><span class="step-title">Une partition faisable :</span> on assigne statiquement $\tau_1$ et $\tau_2$ au processeur $\pi_1$, et $\tau_3$ au processeur $\pi_2$. Pourquoi ça marche ? Sur $\pi_1$ : $U(\tau_1)+U(\tau_2) = \tfrac{1}{4}+\tfrac{3}{5} = 0.25+0.6 = 0.85 \leqslant 1$ — les techniques uniprocesseur du chapitre 3/4 (ex. EDF) suffisent alors à garantir la faisabilité sur ce cœur. Sur $\pi_2$ : $\tau_3$ tourne seule, $U(\tau_3) = 0.35 \leqslant 1$, trivialement faisable.</p>
+<p><span class="step-title">Le point important :</span> une fois cette assignation faite, $\pi_1$ et $\pi_2$ s'ordonnancent <b>indépendamment</b>, comme deux systèmes uniprocesseur séparés. Aucune tâche ne changera jamais de cœur — zéro migration, par construction.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s64">6.4 — Illustration : l'ordonnancement global et la migration</h2>
+<div class="story">
+<div class="story-title">🔍 Le même Système 73, mais ordonnancé globalement</div>
+<p>Reprenons exactement le même système, mais cette fois avec un ordonnanceur <b>global</b> Deadline Monotonic (priorité fixe par deadline croissante : $D_1=4 \lt D_2=5 \lt D_3=20$, donc $\tau_1 \succ \tau_2 \succ \tau_3$ pour <i>tous</i> les processeurs à la fois — une seule file, deux serveurs).</p>
+<p>À chaque instant, on prend les <b>deux</b> jobs actifs de plus haute priorité (il y a 2 processeurs) et on les fait tourner, peu importe sur quel processeur ils avaient tourné juste avant. Voici le résultat, simulé et vérifié sur $[0,20)$ :</p>
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 760 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="80.7" y1="18" x2="80.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="115.4" y1="18" x2="115.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="115.4" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="150.1" y1="18" x2="150.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="184.8" y1="18" x2="184.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="184.8" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="219.5" y1="18" x2="219.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="254.2" y1="18" x2="254.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="254.2" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="288.9" y1="18" x2="288.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="323.6" y1="18" x2="323.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="323.6" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="358.3" y1="18" x2="358.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="393.0" y1="18" x2="393.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="393.0" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="427.7" y1="18" x2="427.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="462.4" y1="18" x2="462.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="462.4" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="497.1" y1="18" x2="497.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="531.8" y1="18" x2="531.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="531.8" y="146" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="566.5" y1="18" x2="566.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="601.2" y1="18" x2="601.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="601.2" y="146" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.9" y1="18" x2="635.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="670.6" y1="18" x2="670.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="670.6" y="146" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.3" y1="18" x2="705.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="740.0" y1="18" x2="740.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="740.0" y="146" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="740.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="63.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="80.7" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="115.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="150.1" y="22.0" width="34.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="167.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="202.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="219.5" y="22.0" width="104.1" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="271.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="323.6" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="341.0" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="393.0" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="427.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="462.4" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="479.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="566.5" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="583.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="618.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="635.9" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="653.3" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="740.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="63.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="80.7" y="80.0" width="69.4" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="115.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="80.0" width="138.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="254.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="462.4" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="479.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="618.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Ordonnancement global DM du Système 73 sur 2 processeurs. Regarde $\tau_3$ (bleu) : elle démarre sur $\pi_2$ (t=1 à 3), puis passe sur $\pi_1$ (t=3 à 4), puis <b>revient</b> sur $\pi_2$ (t=4 à 8) — deux migrations pour ce seul job.</p>
+</div>
+<p><span class="step-title">Pourquoi $\tau_3$ migre :</span> $\tau_3$ a la priorité la plus basse. Dès qu'un job de $\tau_1$ ou $\tau_2$ se réveille, il prend immédiatement l'un des deux processeurs — peu importe lequel. $\tau_3$ doit alors "sauter" sur le processeur resté libre, qui n'est pas forcément celui où elle tournait juste avant.</p>
+<div class="remark"><span class="lead">Comparaison avec 6.3</span> Avec le partitionnement (section précédente), $\tau_3$ restait sagement sur $\pi_2$ du début à la fin : zéro migration. Ici, en global, elle migre. Les deux approches sont valides sur ce système — mais elles ne se comportent pas du tout pareil, et ce n'est qu'un début : la section suivante montre que ce n'est pas juste une question de "style", il y a de vraies différences de <b>pouvoir</b>.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s65">6.5 — Partitionné et global sont incomparables</h2>
+<div class="concept">
+<p><span class="lead">Le résultat surprenant</span> On pourrait penser que l'ordonnancement global, plus flexible (il autorise la migration), est <i>toujours au moins aussi bon</i> que le partitionnement. <b>C'est faux dans les deux sens.</b> Il existe des systèmes faisables en global mais pas en partitionné, <b>et</b> des systèmes faisables en partitionné mais pas en global.</p>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Lemme 74 — global réussit là où partitionné échoue</div>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$D_i$</th><th>$T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>2</td><td>2</td><td>3</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>3</td><td>4</td></tr>
+<tr><td>$\tau_3$</td><td>5</td><td>12</td><td>12</td></tr>
+</table>
+<p><span class="step-title">Pourquoi le partitionnement échoue toujours :</span> $U(\tau_1)=2/3\approx0.67$, $U(\tau_2)=3/4=0.75$, $U(\tau_3)=5/12\approx0.42$. Pour n'importe quelle paire de tâches parmi les trois, la somme des utilisations dépasse 1 (ex. $U(\tau_1)+U(\tau_2)\approx1.42$, $U(\tau_1)+U(\tau_3)\approx1.08$, $U(\tau_2)+U(\tau_3)\approx1.17$). Avec 2 processeurs, il faut forcément regrouper au moins deux tâches sur le même cœur — impossible, quelle que soit la répartition choisie.</p>
+<p><span class="step-title">Pourquoi le global réussit :</span> on donne à $\tau_3$ la priorité la plus basse. Comme $C_1=D_1$ et $C_2=D_2$, les jobs de $\tau_1$ et $\tau_2$ doivent démarrer <b>immédiatement</b> à leur réveil et tourner sans interruption — avec 2 processeurs, ils passent toujours en premier, sans jamais se gêner. Voici la simulation vérifiée sur $[0,12)$ :</p>
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 680 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="97.2" y1="18" x2="97.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="97.2" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="148.3" y1="18" x2="148.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="148.3" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="199.5" y1="18" x2="199.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="199.5" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="250.7" y1="18" x2="250.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="250.7" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="301.8" y1="18" x2="301.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="301.8" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="353.0" y1="18" x2="353.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="353.0" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="404.2" y1="18" x2="404.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="404.2" y="146" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="455.3" y1="18" x2="455.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="455.3" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="506.5" y1="18" x2="506.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="506.5" y="146" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="557.7" y1="18" x2="557.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="557.7" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="608.8" y1="18" x2="608.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="608.8" y="146" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="660.0" y1="18" x2="660.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="660.0" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="660.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="97.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="148.3" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="173.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="199.5" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="250.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="301.8" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="327.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="353.0" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="404.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="455.3" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="480.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="506.5" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="557.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="660.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="102.3" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="97.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="148.3" y="80.0" width="102.3" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="199.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="250.7" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="276.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="301.8" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="327.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="353.0" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="378.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="404.2" y="80.0" width="102.3" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="455.3" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="506.5" y="80.0" width="102.3" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="557.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Ordonnancement global FJP du Système 75 : $\tau_1$ et $\tau_2$ tournent immédiatement à chaque réveil, $\tau_3$ profite des trous laissés libres. Aucune deadline ratée.</p>
+</div>
+<div class="remark"><span class="lead">L'argument général du cours (au-delà de cette simulation)</span> Sur n'importe quelle fenêtre de 12 unités contiguës, $\tau_1$ ne peut tourner au maximum que 8 unités (elle a une période de 3, donc au plus 4 réveils par fenêtre de 12, chacun consommant 2 unités). Si $\tau_1$ tourne exactement 8 unités, ses réveils sont espacés d'exactement 3 unités — et comme $\tau_2$ (période 4) ne peut jamais tourner en parallèle avec $\tau_1$ pendant tout ce temps (leurs périodes sont différentes), il reste forcément au moins une unité disponible pour $\tau_3$ sur l'autre processeur, sur chaque fenêtre de 12. $\tau_3$ n'a besoin que de $C_3=5$, largement couvert.</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Lemme 76 — partitionné réussit là où global échoue</div>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$D_i$</th><th>$T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>2</td><td>2</td><td>3</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>3</td><td>4</td></tr>
+<tr><td>$\tau_3$</td><td>4</td><td>12</td><td>12</td></tr>
+<tr><td>$\tau_4$</td><td>3</td><td>12</td><td>12</td></tr>
+</table>
+<p><span class="step-title">Pourquoi le partitionnement réussit :</span> il suffit de séparer $\{\tau_1,\tau_3\}$ sur $\pi_1$ et $\{\tau_2,\tau_4\}$ sur $\pi_2$, chaque cœur utilisant EDF localement. Sur $\pi_1$ : $U(\tau_1)+U(\tau_3)=2/3+4/12=2/3+1/3=1 \leqslant 1$ ✓. Sur $\pi_2$ : $U(\tau_2)+U(\tau_4)=3/4+3/12=0.75+0.25=1 \leqslant 1$ ✓. Deux systèmes uniprocesseur, tous deux tout juste faisables avec EDF.</p>
+<p><span class="step-title">Pourquoi AUCUN ordonnanceur global FJP ne réussit :</span> considère l'instant $t=0$ où les 4 tâches se réveillent en même temps. Comme $C_1=D_1$ et $C_2=D_2$, il faut absolument servir <b>tous</b> les jobs de $\tau_1$ et $\tau_2$ en priorité (sinon deadline ratée immédiatement) — cela occupe les deux processeurs en continu pour ces deux tâches. Il ne reste alors à $\tau_3$ et $\tau_4$ que les créneaux libres. Mais peu importe l'ordre choisi entre elles ($J_3 \succ J_4$ ou $J_4 \succ J_3$) : l'une des deux finit par manquer sa deadline, alors même qu'un processeur reste inactif sur l'intervalle $[11,12)$ — la place existe, mais l'ordonnanceur global n'a pas su l'utiliser à temps.</p>
+<div class="remark"><span class="lead">Le "aha" de ce contre-exemple</span> Ce n'est pas un problème de capacité totale (on vient de montrer que $U(\tau)=2 \leqslant m=2$) : c'est un problème de <b>rigidité de la priorité globale</b>. En partitionné, chaque cœur gère sa propre petite marge de manœuvre localement ; en global FJP, une priorité fixée une fois pour toutes ($\tau_1,\tau_2$ toujours devant) ne peut pas "voir" qu'un processeur va se libérer juste à temps pour $\tau_3$ ou $\tau_4$ sur l'autre cœur.</div>
+</div>
+
+<div class="formal">
+<span class="lead">📝 Récapitulatif formel</span>
+<p><b>Lemme 74.</b> Il existe des ensembles de tâches faisables avec un algorithme FJP global mais pas avec un algorithme FJP partitionné (Système 75, ci-dessus).</p>
+<p><b>Lemme 76.</b> Il existe des ensembles de tâches faisables avec un algorithme FJP partitionné mais pas avec un algorithme FJP global (Système 77, ci-dessus).</p>
+<p><b>Conséquence.</b> Les classes "ordonnancement partitionné" et "ordonnancement global" sont <b>incomparables</b> : ni l'une ni l'autre ne domine systématiquement l'autre.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s66">6.6 — Conclusion pratique</h2>
+<div class="concept">
+<p>Ce chapitre pose juste le décor : vocabulaire (plateformes identiques/uniformes/non reliées, partitionné vs global, migration) et un message central à retenir pour l'oral — <b>il n'y a pas de gagnant universel entre partitionné et global</b>. C'est précisément parce que les deux familles ont chacune leurs forces et leurs limites que les deux prochains chapitres (7 — Partitionnement, 8 — Ordonnancement global) développent chacun sa propre boîte à outils : heuristiques de bin-packing pour le partitionnement, résultats négatifs et positifs (EDF global, PFair...) pour le global.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "pourquoi ne pas juste toujours utiliser l'ordonnancement global, puisqu'il est plus flexible ?" — la réponse directe est : flexibilité (autoriser la migration) ne veut pas dire domination. Le Lemme 76 est le contre-exemple à citer immédiatement.</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Contrainte fondamentale (héritée de l'uniprocesseur)</h4>
+<p>Un job ne s'exécute jamais sur plus d'un processeur à la fois $\Rightarrow$ vitesse max = 1 $\Rightarrow$ toujours $u_i \leqslant 1$, même avec $m$ processeurs disponibles.</p>
+<h4>Taxonomie des plateformes</h4>
+<p><b>Identique</b> : tous les processeurs égaux. <b>Uniforme</b> : capacité $s_i$ propre à chaque processeur $\pi_i$ (job fait $s_i \times t$ travail en $t$ unités). <b>Non reliée</b> : taux $s_{i,j}$ propre à chaque paire (job $i$, processeur $j$). Hiérarchie : Identique $\subset$ Uniforme $\subset$ Non reliée. Le cours ne traite que le cas identique.</p>
+<h4>Partitionné vs Global</h4>
+<p><b>Partitionné</b> : assignation statique tâche→cœur, files locales indépendantes, pas de migration, retombe sur les techniques uniprocesseur par cœur. <b>Global</b> : file unique partagée, décision dynamique à chaque instant sur $m$ processeurs, migration possible.</p>
+<h4>Migration</h4>
+<p>Un job mis en pause sur un processeur puis repris sur un <b>autre</b> processeur. Impossible en partitionné, courante en global.</p>
+<h4>Incomparabilité (résultat central du chapitre)</h4>
+<p>Lemme 74 : $\exists$ systèmes faisables en global FJP mais pas en partitionné FJP. Lemme 76 : $\exists$ systèmes faisables en partitionné FJP mais pas en global FJP. $\Rightarrow$ aucune des deux familles ne domine l'autre.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>$\pi_1,\dots,\pi_m$ (les $m$ processeurs), $s_i$ (capacité du processeur $i$, machines uniformes), $s_{i,j}$ (taux job $i$ / processeur $j$, machines non reliées), FJP (Fixed Job Priority, ex. EDF).</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questions &amp; Réponses — Partie 2 : Multiprocessor Scheduling</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+    --qbg:#eef1f5; --qline:#3a5674;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.6rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.2rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border); font-family:Helvetica,Arial,sans-serif;}
+  h3{font-size:1.0rem; color:var(--ink); margin:1.6rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  p{margin:.5rem 0;}
+  .qcard{border:1px solid var(--border); border-radius:10px; margin:1.4rem 0 2.4rem; overflow:hidden;}
+  .qhead{background:var(--qbg); border-left:5px solid var(--qline); padding:.8rem 1.1rem;}
+  .qnum{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--qline); margin-bottom:.3rem; display:block;}
+  .qtext{font-family:Helvetica,Arial,sans-serif; font-style:italic; color:#26344a; font-size:.97rem;}
+  .answer{padding:1rem 1.1rem;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .step-title{font-weight:700; color:#3a5e56;}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .side-by-side{display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; align-items:flex-start;}
+  .side-by-side .col{flex:1 1 220px; min-width:200px;}
+</style>
+</head>
+<body>
+
+<h1>Questions &amp; Réponses — Partie 2</h1>
+<p class="subtitle">Multiprocessor Scheduling — INFO-F404. Chaque réponse est autonome : aucune notion n'est supposée déjà connue ou expliquée ailleurs.</p>
+
+<div class="concept">
+<p><span class="lead">Vocabulaire de base (à garder sous le coude)</span> Ces quelques mots reviennent dans presque toutes les réponses ci-dessous — un aller-retour ici évite de se perdre plus loin.</p>
+<ul>
+<li><b>Tâche $\tau_i$</b> vs <b>job</b> : une tâche est la "recette" (ex. "τ1 doit s'exécuter 2 unités de temps toutes les 5 unités"). Un <b>job</b> est une <b>exécution concrète</b> de cette recette à un instant donné (ex. "le job de τ1 relâché à $t=10$"). Une tâche périodique génère un job à chaque période, indéfiniment.</li>
+<li><b>$C_i$</b> : le temps d'exécution pire cas de $\tau_i$ — combien de temps CPU un job de cette tâche demande au maximum.</li>
+<li><b>$T_i$</b> : la période — l'intervalle de temps entre deux relâchements successifs de $\tau_i$.</li>
+<li><b>$D_i$</b> : la deadline relative — le délai maximum, après son relâchement, qu'un job a pour terminer. "Deadline implicite" veut dire $D_i=T_i$ : le job doit finir avant que le suivant n'arrive.</li>
+<li><b>$U_i=C_i/T_i$</b> : l'utilisation de $\tau_i$ — la fraction de temps CPU qu'elle occupe en moyenne. $U(\tau)=\sum_i U_i$ est l'utilisation totale du système.</li>
+<li><b>Préemption</b> : interrompre un job en cours d'exécution (parce qu'un job plus prioritaire arrive) pour le reprendre plus tard, là où il s'était arrêté.</li>
+<li><b>Migration</b> : le fait qu'un job, une fois repris après une préemption, reprenne sur un <b>processeur différent</b> de celui où il tournait avant. Possible seulement en ordonnancement <i>global</i> (jamais en <i>partitionné</i>, où chaque tâche reste sur son cœur assigné).</li>
+<li><b>$m$</b> : le nombre de processeurs disponibles. $\pi_1,\pi_2,\dots$ désignent les processeurs eux-mêmes.</li>
+</ul>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 22</span>
+<span class="qtext">For global scheduling, prove that no online optimal scheduler exists.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Démontrer que, dès qu'on a plus d'un processeur ($m \gt 1$) et qu'on autorise la migration (ordonnancement global), il n'existe <b>aucun</b> algorithme d'ordonnancement en ligne — c'est-à-dire un algorithme qui décide au fur et à mesure, sans connaître l'avenir — capable de garantir le succès sur <b>tous</b> les systèmes faisables. Il faut construire un contre-exemple explicite.</p>
+</div>
+
+<h3>Rappels nécessaires</h3>
+<div class="concept">
+<div class="def"><span class="lead">Ordonnanceur en ligne</span> <span class="eng">(online scheduler)</span> Un ordonnanceur qui prend ses décisions <b>à l'exécution</b>, en se basant uniquement sur les jobs déjà relâchés jusqu'à l'instant présent — sans connaître à l'avance quand les jobs futurs seront relâchés, ni leurs caractéristiques ($e_i$, $d_i$).</div>
+<div class="def"><span class="lead">Ordonnanceur optimal</span> Un ordonnanceur est optimal s'il réussit à ordonnancer (sans rater de deadline) <b>tout</b> système qui est faisable — c'est-à-dire tout système pour lequel il existe <i>au moins un</i> ordonnancement valide, quel qu'il soit (même construit avec la connaissance complète du futur).</div>
+<p><span class="lead">La stratégie de preuve</span> Pour montrer qu'aucun ordonnanceur en ligne n'est optimal, il suffit d'exhiber <b>un seul</b> système sur lequel <i>tout</i> ordonnanceur en ligne échoue, alors qu'un ordonnanceur "voyant l'avenir" réussirait. C'est une preuve par contre-exemple : peu importe la stratégie choisie par l'ordonnanceur en ligne, on montre qu'un adversaire peut toujours construire, après coup, une suite d'événements qui la fait échouer.</p>
+</div>
+
+<h3>Construction du contre-exemple</h3>
+<div class="concept">
+<p><span class="lead">Le piège</span> On prend $m=2$ processeurs, en temps continu (dense). À l'instant $t=0$, trois jobs sont relâchés simultanément :</p>
+<table>
+<tr><th>Job</th><th>$e_i$ (temps d'exécution)</th><th>$d_i$ (deadline absolue)</th></tr>
+<tr><td>$J_1$</td><td>2</td><td>4</td></tr>
+<tr><td>$J_2$</td><td>2</td><td>4</td></tr>
+<tr><td>$J_3$</td><td>4</td><td>8</td></tr>
+</table>
+<p>Avec 2 processeurs disponibles à $t=0$ et trois jobs en concurrence, l'ordonnanceur doit choisir : sur l'intervalle $[0,2)$, est-ce que $J_3$ reçoit du temps de calcul, ou pas ? <b>Il n'existe que deux possibilités</b>, et n'importe quel ordonnanceur en ligne, quelle que soit sa stratégie interne, tombe forcément dans l'une des deux.</p>
+</div>
+
+<h3>Branche (i) : $J_3$ s'exécute un peu sur $[0,2)$</h3>
+<div class="concept">
+<p><span class="lead">Conséquence immédiate</span> Les deux processeurs sont occupés par, au total, $J_1$, $J_2$ et un peu de $J_3$ sur $[0,2)$ — cela ne fait que 4 unités de capacité disponibles ($2$ processeurs $\times$ $2$ unités de temps), pour une demande totale de $e_1+e_2+(\text{un peu de }e_3) \gt 4$. Il est donc <b>impossible</b> que $J_1$ <i>et</i> $J_2$ soient tous les deux entièrement terminés à $t=2$. Supposons, sans perte de généralité, que c'est $J_2$ qui n'est pas terminé.</p>
+<p><span class="lead">Le piège tendu par l'adversaire</span> À $t=2$, l'adversaire (qui observe ce que l'ordonnanceur en ligne a choisi) relâche deux <b>nouveaux</b> jobs $J_4$ et $J_5$ avec $e_4=e_5=2$ et $d_4=d_5=4$.</p>
+<p><span class="lead">Résultat</span> Sur $[2,4)$, il faut désormais terminer : le reste de $J_2$ (qui a raté une partie de son exécution), plus $J_4$, plus $J_5$ — soit une demande qui dépasse à nouveau les $4$ unités de capacité disponibles sur $[2,4)$ avec 2 processeurs. <b>Une deadline est ratée à $t=4$.</b></p>
+<p><span class="lead">Pourtant, une solution existait</span> Si l'ordonnanceur avait su à l'avance que $J_4$ et $J_5$ allaient arriver à $t=2$, il n'aurait <b>pas</b> dû faire tourner $J_3$ sur $[0,2)$ — il aurait dû garder les deux processeurs entièrement occupés par $J_1$ et $J_2$ sur $[0,2)$ (les terminant tous les deux à temps), puis démarrer $J_3$ seulement à partir de $t=4$ (sa deadline étant $d_3=8$, il a largement le temps).</p>
+</div>
+
+<h3>Branche (ii) : $J_3$ n'exécute pas du tout sur $[0,2)$</h3>
+<div class="concept">
+<p><span class="lead">Conséquence immédiate</span> $J_1$ et $J_2$ (chacun $e_i=2$) occupent entièrement les deux processeurs sur $[0,2)$ et terminent pile à temps. Mais $J_3$ n'a reçu <b>aucune</b> exécution : à $t=4$, il lui reste encore ses $4$ unités de travail à faire, et sa deadline est à $t=8$ — il ne reste que $4$ unités de temps pour $4$ unités de travail, ce qui n'est possible que si $J_3$ tourne <b>sans la moindre interruption</b> à partir de maintenant.</p>
+<p><span class="lead">Le piège tendu par l'adversaire</span> À $t=4$, l'adversaire relâche deux <b>nouveaux</b> jobs $J_4'$ et $J_5'$ avec $e_4'=e_5'=4$ et $d_4'=d_5'=8$.</p>
+<p><span class="lead">Résultat</span> Sur $[4,8)$, il faut désormais terminer : les $4$ unités restantes de $J_3$, plus $J_4'$ (4 unités), plus $J_5'$ (4 unités) — soit $12$ unités de travail pour seulement $2\times4=8$ unités de capacité disponible. <b>Une deadline est ratée à $t=8$.</b></p>
+<p><span class="lead">Pourtant, une solution existait</span> Si l'ordonnanceur avait su à l'avance que $J_4'$ et $J_5'$ allaient arriver à $t=4$ avec une deadline commune à $t=8$, il aurait dû faire démarrer $J_3$ dès $[0,2)$ (en plus de $J_1,J_2$ — avec 2 processeurs, on peut faire tourner $J_3$ en parallèle d'un des deux autres), pour qu'il ait fini d'accumuler ses 4 unités bien avant que $J_4'$ et $J_5'$ n'arrivent.</p>
+</div>
+
+<h3>Conclusion de la preuve</h3>
+<div class="concept">
+<p><span class="lead">Le "aha"</span> Regarde la symétrie : la stratégie gagnante en branche (i) est exactement celle qui perd en branche (ii), et inversement. Quelle que soit la décision prise par l'ordonnanceur en ligne sur $[0,2)$ — exécuter un peu de $J_3$, ou pas du tout — l'adversaire, <b>en observant ce choix</b>, construit ensuite la suite d'événements qui le fait échouer. Dans les deux cas, le système complet (jobs connus + jobs adverses) <b>était faisable</b> : il suffisait de connaître à l'avance quels jobs allaient arriver pour faire le bon choix sur $[0,2)$.</p>
+<p>Comme aucune des deux branches ne peut être évitée par un ordonnanceur qui ne connaît pas l'avenir, on conclut qu'<b>aucun</b> algorithme en ligne ne peut être optimal pour $m=2$ — et le même argument se généralise à n'importe quel $m \gt 1$. $\blacksquare$</p>
+</div>
+
+<h3>Pourquoi ça marche (l'intuition)</h3>
+<div class="concept">
+<p><span class="lead">Le terme du cours</span> Il faudrait de la <b>clairvoyance</b> — la capacité de prédire les événements futurs — pour prendre la bonne décision sur $[0,2)$. Un ordonnanceur en ligne, par définition, n'a accès qu'au passé et au présent : il ne peut jamais deviner de façon fiable si un futur job va rendre son choix actuel gagnant ou perdant.</p>
+<p><span class="lead">Portée du résultat</span> Ce résultat négatif concerne spécifiquement les systèmes <b>sporadiques/apériodiques</b>, où les dates de relâchement futures sont a priori inconnues. Il ne s'applique <b>pas</b> aux systèmes strictement <b>périodiques</b>, où toutes les dates de relâchement futures se déduisent directement des périodes $T_i$ — donc sont connues dès le départ. Dans ce cadre plus restreint, un ordonnanceur optimal existe bel et bien : il s'appelle PFair (voir Question 26 pour sa définition complète).</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 23</span>
+<span class="qtext">Explain why the task-partitioning problem for implicit-deadline periodic tasks on identical processors can be interpreted as a special case of the bin-packing problem. For m = 2, provide a small task set for which First-Fit Decreasing Utilisation (FFDU) and Worst-Fit Decreasing Utilisation (WFDU) produce different partitions, and discuss which of the two heuristics yields the better assignment with your example, where "better" is strictly defined as the ability to achieve a feasible assignment using fewer processors for the same task set.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Deux choses : (1) expliquer la correspondance entre le partitionnement de tâches et le bin-packing classique ; (2) construire un petit exemple concret (avec $m=2$ comme référence) où FFDU et WFDU donnent des partitions <b>différentes</b>, puis dire laquelle des deux est "meilleure" au sens strict où elle réussit à tout faire tenir sur <b>moins</b> de processeurs que l'autre pour ce même ensemble de tâches.</p>
+</div>
+
+<h3>Pourquoi le partitionnement est un cas particulier de bin-packing</h3>
+<div class="concept">
+<p><span class="lead">Le problème du bin-packing classique</span> On dispose d'un ensemble d'objets, chacun avec une <b>taille</b>, et de boîtes (bins) toutes de la même <b>capacité</b> fixe. Le but est de ranger tous les objets dans le moins de boîtes possible, sans jamais dépasser la capacité d'une boîte.</p>
+<p><span class="lead">La correspondance</span></p>
+<ul>
+<li><b>Objets</b> = les tâches $\tau_i$ du système.</li>
+<li><b>Taille d'un objet</b> = l'utilisation $U_i=C_i/T_i$ de la tâche $\tau_i$ (la fraction de temps CPU qu'elle consomme).</li>
+<li><b>Boîtes</b> = les processeurs identiques $\pi_1,\dots,\pi_m$.</li>
+<li><b>Capacité d'une boîte</b> = la borne d'utilisation garantissant la faisabilité locale sur un seul processeur : $1$ pour EDF (puisque $U(\tau)\le1$ est nécessaire et suffisant en uniprocesseur), ou $\ln2\approx0{,}69$ pour RM (via la borne de Liu &amp; Layland).</li>
+<li><b>Objectif</b> = minimiser le nombre de processeurs utilisés pour que le système entier soit faisable — exactement minimiser le nombre de boîtes.</li>
+</ul>
+<p>Cette correspondance n'est valable que pour les tâches à <b>deadline implicite</b> ($D_i=T_i$) : c'est précisément dans ce cas que la faisabilité locale d'un processeur se résume à une seule inégalité sur la somme des utilisations, comme la capacité d'une boîte en bin-packing. Comme le bin-packing classique est <b>NP-complet</b>, le partitionnement optimal l'est donc aussi — d'où l'usage d'heuristiques comme FFDU et WFDU plutôt qu'un algorithme exact.</p>
+</div>
+
+<h3>Rappel : FFDU et WFDU</h3>
+<div class="concept">
+<div class="def"><span class="lead">First-Fit Decreasing Utilisation (FFDU)</span> On trie d'abord les tâches par utilisation <b>décroissante</b>. Puis, pour chaque tâche (dans cet ordre), on parcourt les processeurs dans un ordre fixe $\pi_1,\pi_2,\dots$ et on l'assigne au <b>premier</b> processeur où elle rentre (assez de capacité restante). Si elle ne rentre nulle part, on ouvre un nouveau processeur.</div>
+<div class="def"><span class="lead">Worst-Fit Decreasing Utilisation (WFDU)</span> Même tri initial par utilisation décroissante. Mais pour chaque tâche, on l'assigne au processeur déjà ouvert qui a la <b>charge la plus faible</b> parmi ceux où elle rentre (celui qui a le plus de place libre) — et non au premier trouvé. Si elle ne rentre dans aucun processeur déjà ouvert, on en ouvre un nouveau.</div>
+</div>
+
+<h3>Construction de l'exemple</h3>
+<div class="concept">
+<p><span class="lead">Le système</span> Cinq tâches à deadline implicite, toutes de période $T_i=10$ :</p>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i$</th><th>$U_i=C_i/T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>6</td><td>10</td><td>0,6</td></tr>
+<tr><td>$\tau_2$</td><td>5</td><td>10</td><td>0,5</td></tr>
+<tr><td>$\tau_3$</td><td>4</td><td>10</td><td>0,4</td></tr>
+<tr><td>$\tau_4$</td><td>3</td><td>10</td><td>0,3</td></tr>
+<tr><td>$\tau_5$</td><td>2</td><td>10</td><td>0,2</td></tr>
+</table>
+<p>Déjà triées par utilisation décroissante. Utilisation totale : $U(\tau)=0{,}6+0{,}5+0{,}4+0{,}3+0{,}2=2{,}0$. On ordonnance chaque processeur avec EDF, donc la capacité de chaque "boîte" est $1$. Comme $U(\tau)=2{,}0$, il est <b>impossible</b> de faire tenir ce système sur moins de $2$ processeurs — la question est de savoir si $2$ processeurs <b>suffisent</b>, ou s'il en faut $3$.</p>
+</div>
+
+<h3>Application de FFDU, étape par étape</h3>
+<div class="concept">
+<table>
+<tr><th>Tâche</th><th>Décision</th><th>Charge du processeur après</th></tr>
+<tr><td>$\tau_1$ (0,6)</td><td>$\pi_1$ est vide → $\tau_1$ y va</td><td>$\pi_1=0{,}6$</td></tr>
+<tr><td>$\tau_2$ (0,5)</td><td>$\pi_1$: $0{,}6+0{,}5=1{,}1 \gt 1$, ne rentre pas → ouvre $\pi_2$</td><td>$\pi_1=0{,}6$ ; $\pi_2=0{,}5$</td></tr>
+<tr><td>$\tau_3$ (0,4)</td><td>$\pi_1$ (premier de la liste): $0{,}6+0{,}4=1{,}0\le1$ ✓ rentre</td><td>$\pi_1=1{,}0$ ; $\pi_2=0{,}5$</td></tr>
+<tr><td>$\tau_4$ (0,3)</td><td>$\pi_1$ plein ; $\pi_2$: $0{,}5+0{,}3=0{,}8\le1$ ✓ rentre</td><td>$\pi_1=1{,}0$ ; $\pi_2=0{,}8$</td></tr>
+<tr><td>$\tau_5$ (0,2)</td><td>$\pi_1$ plein ; $\pi_2$: $0{,}8+0{,}2=1{,}0\le1$ ✓ rentre</td><td>$\pi_1=1{,}0$ ; $\pi_2=1{,}0$</td></tr>
+</table>
+<div class="side-by-side">
+<div class="col">
+<div class="diagram">
+<svg viewBox="0 0 246 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="230" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="230" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="230" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="230" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="230" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="86.4" width="70.0" height="99.6" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="139.2" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="20.0" width="70.0" height="66.4" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="56.2" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="103.0" width="70.0" height="83.0" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="147.5" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<rect x="146.0" y="53.2" width="70.0" height="49.8" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="81.1" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<rect x="146.0" y="20.0" width="70.0" height="33.2" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="39.6" font-size="9" fill="white" text-anchor="middle">τ5</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">FFDU : $\pi_1=\{\tau_1,\tau_3\}=1{,}0$, $\pi_2=\{\tau_2,\tau_4,\tau_5\}=1{,}0$ — <b>2 processeurs</b>, tous deux remplis exactement.</p>
+</div>
+</div>
+</div>
+</div>
+
+<h3>Application de WFDU, étape par étape</h3>
+<div class="concept">
+<table>
+<tr><th>Tâche</th><th>Décision</th><th>Charge du processeur après</th></tr>
+<tr><td>$\tau_1$ (0,6)</td><td>Aucun processeur ouvert → ouvre $\pi_1$</td><td>$\pi_1=0{,}6$</td></tr>
+<tr><td>$\tau_2$ (0,5)</td><td>$\pi_1$: $0{,}6+0{,}5=1{,}1 \gt 1$, ne rentre pas → ouvre $\pi_2$</td><td>$\pi_1=0{,}6$ ; $\pi_2=0{,}5$</td></tr>
+<tr><td>$\tau_3$ (0,4)</td><td>Rentre dans $\pi_1$ (reste $0{,}4$) et dans $\pi_2$ (reste $0{,}5$) → on choisit le <b>moins chargé</b> : $\pi_2$</td><td>$\pi_1=0{,}6$ ; $\pi_2=0{,}9$</td></tr>
+<tr><td>$\tau_4$ (0,3)</td><td>$\pi_1$: $0{,}6+0{,}3=0{,}9\le1$ ✓ rentre ; $\pi_2$: $0{,}9+0{,}3=1{,}2 \gt 1$, ne rentre pas → seul choix : $\pi_1$</td><td>$\pi_1=0{,}9$ ; $\pi_2=0{,}9$</td></tr>
+<tr><td>$\tau_5$ (0,2)</td><td>$\pi_1$: $0{,}9+0{,}2=1{,}1 \gt 1$, ne rentre pas ; $\pi_2$: $0{,}9+0{,}2=1{,}1 \gt 1$, ne rentre pas non plus → <b>ouvre $\pi_3$</b></td><td>$\pi_1=0{,}9$ ; $\pi_2=0{,}9$ ; $\pi_3=0{,}2$</td></tr>
+</table>
+<div class="side-by-side">
+<div class="col">
+<div class="diagram">
+<svg viewBox="0 0 336 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="320" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="320" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="320" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="320" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="320" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="86.4" width="70.0" height="99.6" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="139.2" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="36.6" width="70.0" height="49.8" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="64.5" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="103.0" width="70.0" height="83.0" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="147.5" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<rect x="146.0" y="36.6" width="70.0" height="66.4" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="72.8" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<rect x="236.0" y="152.8" width="70.0" height="33.2" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="172.4" font-size="9" fill="white" text-anchor="middle">τ5</text>
+<text x="271.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π3</text>
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">WFDU : $\pi_1=\{\tau_1,\tau_4\}=0{,}9$, $\pi_2=\{\tau_2,\tau_3\}=0{,}9$, $\pi_3=\{\tau_5\}=0{,}2$ — <b>3 processeurs</b>.</p>
+</div>
+</div>
+</div>
+</div>
+
+<h3>Conclusion : laquelle est "meilleure" ?</h3>
+<div class="concept">
+<p><span class="lead">Résultat</span> Sur cet exemple, FFDU trouve une partition tenant sur <b>2 processeurs</b> ($m=2$, exactement le nombre minimal possible puisque $U(\tau)=2{,}0$), alors que WFDU a besoin de <b>3 processeurs</b>. Selon la définition stricte donnée dans l'énoncé — "meilleure" = atteindre une assignation faisable avec moins de processeurs — <b>FFDU est ici strictement meilleure que WFDU</b>.</p>
+<p><span class="lead">Le "aha" : pourquoi ça arrive</span> WFDU cherche systématiquement à <b>équilibrer</b> la charge entre les processeurs déjà ouverts (toujours choisir le moins chargé). Sur $\tau_3$ (0,4), ce réflexe l'a poussée vers $\pi_2$ plutôt que $\pi_1$ — ce qui semblait raisonnable sur le moment (répartir plutôt que concentrer). Mais cette décision a "gâché" $\pi_1$ : il ne restait alors que $0{,}4$ de libre sur $\pi_1$, une place trop juste pour accueillir $\tau_4$ confortablement plus tard, et $\pi_2$ s'est retrouvé à $0{,}9$, trop chargé pour absorber $\tau_5$. FFDU, au contraire, en remplissant <b>agressivement</b> le premier processeur disponible ($\pi_1$ atteint exactement $1{,}0$ avec $\tau_1+\tau_3$), libère complètement $\pi_2$ pour les trois tâches restantes, qui s'y emboîtent parfaitement.</p>
+<div class="remark"><span class="lead">Nuance importante</span> Ce résultat n'est pas une règle générale — il existe aussi des systèmes où c'est WFDU qui bat FFDU (aucune des deux heuristiques ne domine l'autre dans tous les cas, exactement comme pour n'importe quelle heuristique gloutonne de bin-packing). Ce qu'on vient de montrer, c'est qu'il <b>existe</b> au moins un système où l'écart se manifeste, et pour cet exemple précis, FFDU l'emporte.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 24</span>
+<span class="qtext">Define the Next-Fit Decreasing Utilisation (NFDU) heuristic in the context of partitioned EDF scheduling. Apply NFDU to the following task set: (C, T) = (5, 10), (2, 5), (1, 4), (1, 4), (1, 8), (1, 8), (1, 8), (1, 8). Show the resulting partition and comment on why NFDU may be highly sub-optimal, even when every task has utilisation at most 0.5.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Définir précisément NFDU, l'appliquer pas à pas au système donné (huit tâches), montrer la partition obtenue, puis expliquer le phénomène général de sous-optimalité de NFDU — même quand aucune tâche individuelle n'est "grosse" ($U_i\le0{,}5$ pour toutes).</p>
+</div>
+
+<h3>Définition de NFDU</h3>
+<div class="concept">
+<div class="def"><span class="lead">Next-Fit Decreasing Utilisation (NFDU)</span> On trie d'abord les tâches par utilisation <b>décroissante</b>. On garde ensuite la trace d'un seul processeur "courant". Pour chaque tâche (dans l'ordre trié) : si elle rentre dans le processeur courant (charge actuelle + $U_i \le 1$), on l'y ajoute ; sinon, on ouvre un <b>nouveau</b> processeur, qui devient le nouveau "courant", et on y place la tâche. Le point clé : une fois qu'on quitte un processeur pour en ouvrir un nouveau, on n'y <b>revient jamais</b>, même s'il reste de la place libre dessus.</div>
+<p><span class="lead">Pourquoi "dans le contexte d'EDF partitionné"</span> Une fois la partition construite par NFDU, chaque processeur est ensuite ordonnancé <b>indépendamment</b> avec EDF (chapitre 4) — d'où le nom complet. La capacité de chaque "boîte" du bin-packing est donc $1$ (puisque $U(\tau_\pi)\le1$ est nécessaire et suffisant pour la faisabilité EDF sur un processeur, à condition que les tâches soient à deadline implicite).</p>
+</div>
+
+<h3>Le système donné</h3>
+<div class="concept">
+<table>
+<tr><th>Tâche</th><th>$C_i$</th><th>$T_i$</th><th>$U_i=C_i/T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>5</td><td>10</td><td>0,5</td></tr>
+<tr><td>$\tau_2$</td><td>2</td><td>5</td><td>0,4</td></tr>
+<tr><td>$\tau_3$</td><td>1</td><td>4</td><td>0,25</td></tr>
+<tr><td>$\tau_4$</td><td>1</td><td>4</td><td>0,25</td></tr>
+<tr><td>$\tau_5$</td><td>1</td><td>8</td><td>0,125</td></tr>
+<tr><td>$\tau_6$</td><td>1</td><td>8</td><td>0,125</td></tr>
+<tr><td>$\tau_7$</td><td>1</td><td>8</td><td>0,125</td></tr>
+<tr><td>$\tau_8$</td><td>1</td><td>8</td><td>0,125</td></tr>
+</table>
+<p>Les tâches sont déjà listées par utilisation décroissante. Utilisation totale : $U(\tau)=0{,}5+0{,}4+0{,}25+0{,}25+4\times0{,}125=1{,}15+0{,}5=1{,}65$. Comme $U(\tau)=1{,}65 \gt 1$, il faut <b>au moins 2</b> processeurs (aucun processeur ne peut dépasser $1$).</p>
+</div>
+
+<h3>Application de NFDU, étape par étape</h3>
+<div class="concept">
+<table>
+<tr><th>Tâche</th><th>Rentre dans le processeur courant ?</th><th>Décision</th><th>Charge après</th></tr>
+<tr><td>$\tau_1$ (0,5)</td><td>Aucun processeur ouvert</td><td>Ouvre $\pi_1$ (devient courant)</td><td>$\pi_1=0{,}5$</td></tr>
+<tr><td>$\tau_2$ (0,4)</td><td>$0{,}5+0{,}4=0{,}9\le1$ ✓</td><td>Reste sur $\pi_1$ (courant)</td><td>$\pi_1=0{,}9$</td></tr>
+<tr><td>$\tau_3$ (0,25)</td><td>$0{,}9+0{,}25=1{,}15 \gt 1$ ✗</td><td>Ouvre $\pi_2$ (devient courant, $\pi_1$ abandonné pour de bon)</td><td>$\pi_1=0{,}9$ ; $\pi_2=0{,}25$</td></tr>
+<tr><td>$\tau_4$ (0,25)</td><td>$0{,}25+0{,}25=0{,}5\le1$ ✓</td><td>Reste sur $\pi_2$</td><td>$\pi_2=0{,}5$</td></tr>
+<tr><td>$\tau_5$ (0,125)</td><td>$0{,}5+0{,}125=0{,}625\le1$ ✓</td><td>Reste sur $\pi_2$</td><td>$\pi_2=0{,}625$</td></tr>
+<tr><td>$\tau_6$ (0,125)</td><td>$0{,}625+0{,}125=0{,}75\le1$ ✓</td><td>Reste sur $\pi_2$</td><td>$\pi_2=0{,}75$</td></tr>
+<tr><td>$\tau_7$ (0,125)</td><td>$0{,}75+0{,}125=0{,}875\le1$ ✓</td><td>Reste sur $\pi_2$</td><td>$\pi_2=0{,}875$</td></tr>
+<tr><td>$\tau_8$ (0,125)</td><td>$0{,}875+0{,}125=1{,}0\le1$ ✓</td><td>Reste sur $\pi_2$</td><td>$\pi_2=1{,}0$</td></tr>
+</table>
+<div class="diagram">
+<svg viewBox="0 0 266 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="250" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="250" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="250" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="250" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="250" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="250" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="103.0" width="80.0" height="83.0" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="96.0" y="147.5" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="36.6" width="80.0" height="66.4" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="96.0" y="72.8" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<text x="96.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="156.0" y="144.5" width="80.0" height="41.5" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="168.2" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<rect x="156.0" y="103.0" width="80.0" height="41.5" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="126.8" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<rect x="156.0" y="82.2" width="80.0" height="20.8" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="95.6" font-size="9" fill="white" text-anchor="middle">τ5</text>
+<rect x="156.0" y="61.5" width="80.0" height="20.8" fill="#5c4a8a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="74.9" font-size="9" fill="white" text-anchor="middle">τ6</text>
+<rect x="156.0" y="40.8" width="80.0" height="20.8" fill="#4a4640" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="54.1" font-size="9" fill="white" text-anchor="middle">τ7</text>
+<rect x="156.0" y="20.0" width="80.0" height="20.8" fill="#3a5674" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="196.0" y="33.4" font-size="9" fill="white" text-anchor="middle">τ8</text>
+<text x="196.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<line x1="42" y1="186.0" x2="250" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">NFDU sur ce système : $\pi_1=\{\tau_1,\tau_2\}=0{,}9$, $\pi_2=\{\tau_3,\tau_4,\tau_5,\tau_6,\tau_7,\tau_8\}=1{,}0$ — <b>2 processeurs</b>.</p>
+</div>
+</div>
+
+<h3>Un constat important avant de continuer</h3>
+<div class="concept">
+<p><span class="lead">Honnêteté sur ce résultat</span> Sur <b>ce système précis</b>, NFDU obtient une partition à $2$ processeurs — et comme on a montré plus haut que $U(\tau)=1{,}65 \gt 1$ impose $\ge2$ processeurs de toute façon, cette solution est en fait <b>optimale</b> ! Le calcul détaillé le montre sans ambiguïté : à chaque étape, la tâche courante rentrait dans le processeur ouvert, et NFDU n'a jamais eu besoin d'abandonner de la place libre inutilement.</p>
+<p>La question demande cependant de <b>commenter pourquoi NFDU peut être très sous-optimal</b> en général, même avec des tâches de petite utilisation. Ce phénomène est réel — il ne se manifeste simplement pas sur ce jeu de données particulier. Regardons un second exemple, construit spécifiquement pour l'illustrer.</p>
+</div>
+
+<h3>Un exemple où NFDU échoue vraiment (toutes les tâches ont $U_i\le0{,}4$)</h3>
+<div class="concept">
+<p>Six tâches, $U=(0{,}4,\ 0{,}4,\ 0{,}4,\ 0{,}4,\ 0{,}2,\ 0{,}2)$ (déjà triées, utilisation totale $=2{,}0$, donc $2$ processeurs suffiraient en théorie).</p>
+<p><span class="step-title">NFDU :</span> $\tau_1(0{,}4)\to\pi_1(0{,}4)$. $\tau_2(0{,}4)$: $0{,}4+0{,}4=0{,}8\le1$ ✓ → $\pi_1(0{,}8)$. $\tau_3(0{,}4)$: $0{,}8+0{,}4=1{,}2 \gt 1$ ✗ → ouvre $\pi_2(0{,}4)$. $\tau_4(0{,}4)$: $0{,}4+0{,}4=0{,}8\le1$ ✓ → $\pi_2(0{,}8)$. $\tau_5(0{,}2)$: $0{,}8+0{,}2=1{,}0\le1$ ✓ → $\pi_2(1{,}0)$. $\tau_6(0{,}2)$: $\pi_2$ plein → ouvre $\pi_3(0{,}2)$.</p>
+<div class="side-by-side">
+<div class="col">
+<div class="diagram">
+<svg viewBox="0 0 336 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="320" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="320" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="320" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="320" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="320" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="119.6" width="70.0" height="66.4" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="155.8" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="53.2" width="70.0" height="66.4" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="89.4" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="119.6" width="70.0" height="66.4" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="155.8" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<rect x="146.0" y="53.2" width="70.0" height="66.4" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="89.4" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<rect x="146.0" y="20.0" width="70.0" height="33.2" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="39.6" font-size="9" fill="white" text-anchor="middle">τ5</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<rect x="236.0" y="152.8" width="70.0" height="33.2" fill="#5c4a8a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="172.4" font-size="9" fill="white" text-anchor="middle">τ6</text>
+<text x="271.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π3</text>
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">NFDU : <b>3 processeurs</b> — $\pi_1=0{,}8$, $\pi_2=1{,}0$, $\pi_3=0{,}2$.</p>
+</div>
+</div>
+<div class="col">
+<div class="diagram">
+<svg viewBox="0 0 246 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="230" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="230" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="230" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="230" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="230" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="119.6" width="70.0" height="66.4" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="155.8" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="53.2" width="70.0" height="66.4" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="89.4" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<rect x="56.0" y="20.0" width="70.0" height="33.2" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="39.6" font-size="9" fill="white" text-anchor="middle">τ5</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="119.6" width="70.0" height="66.4" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="155.8" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<rect x="146.0" y="53.2" width="70.0" height="66.4" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="89.4" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<rect x="146.0" y="20.0" width="70.0" height="33.2" fill="#5c4a8a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="39.6" font-size="9" fill="white" text-anchor="middle">τ6</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">FFDU sur le même système : <b>2 processeurs</b>, tous deux remplis exactement à $1{,}0$ — l'optimum.</p>
+</div>
+</div>
+</div>
+<p><span class="step-title">Le "aha" :</span> ici, NFDU utilise <b>un processeur de trop</b> — 3 au lieu de 2 — alors qu'aucune tâche individuelle ne dépasse $U_i=0{,}4\le0{,}5$. En comparaison, FFDU (qui, lui, revient toujours vérifier <b>tous</b> les processeurs déjà ouverts, pas seulement le dernier) trouve directement l'assignation optimale à 2 processeurs.</p>
+</div>
+
+<h3>Pourquoi NFDU peut être très sous-optimal (l'explication générale)</h3>
+<div class="concept">
+<p><span class="lead">La cause profonde</span> NFDU ne garde la trace que d'<b>un seul</b> processeur "courant". Dès qu'une tâche ne rentre pas dedans, ce processeur est abandonné <b>définitivement</b> — même s'il lui reste de la place libre — et NFDU ne le reconsidère plus jamais, même si une tâche future, plus petite, aurait parfaitement pu y tenir.</p>
+<p><span class="lead">Le mécanisme de fragmentation</span> Dans l'exemple ci-dessus : $\pi_1$ est abandonné à $0{,}8$ (il reste $0{,}2$ de libre) au moment où $\tau_3$ (0,4) ne rentre plus. Cette place de $0{,}2$ ne sera <b>plus jamais réutilisée</b> par NFDU — alors que $\tau_5$ ou $\tau_6$ (chacune de taille $0{,}2$) y seraient rentrées parfaitement. Cette "place perdue" s'accumule à chaque nouveau processeur ouvert, et peut, dans le pire cas, forcer l'utilisation d'un nombre de processeurs arbitrairement plus grand que l'optimum — même quand chaque tâche individuelle reste modeste ($U_i\le0{,}5$). C'est précisément parce que la contrainte "petite tâche" ($U_i\le0{,}5$) ne dit rien sur <i>l'ordre d'arrivée</i> ni sur le fait que NFDU refuse de regarder en arrière : le problème n'est pas la taille des tâches, c'est la <b>myopie structurelle</b> de l'heuristique elle-même.</p>
+<div class="remark"><span class="lead">En résumé</span> NFDU est la plus simple des heuristiques de bin-packing (complexité $O(n)$ pour le placement une fois trié, contre $O(n\cdot m)$ pour FFDU/WFDU qui doivent rebalayer tous les processeurs ouverts à chaque tâche) — mais cette simplicité a un coût direct : elle est structurellement plus sujette à la fragmentation que FFDU ou WFDU, qui reconsidèrent toujours l'ensemble des processeurs déjà ouverts.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 25</span>
+<span class="qtext">Define the concept of scheduling anomalies, illustrate the phenomenon for global FTP scheduling and the period parameter.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Définir ce qu'est une anomalie d'ordonnancement, puis illustrer concrètement le phénomène dans le cas de l'ordonnancement global à priorité fixe (FTP), en faisant varier spécifiquement le paramètre "période" d'une tâche.</p>
+</div>
+
+<h3>Définitions</h3>
+<div class="concept">
+<div class="def"><span class="lead">Anomalie d'ordonnancement</span> Une anomalie se produit lorsqu'un changement des paramètres d'un système, qui semble <i>a priori</i> bénéfique (qui devrait faciliter l'ordonnancement), rend en fait le système <b>moins</b> ordonnançable — voire lui fait rater une deadline qu'il respectait avant ce changement.</div>
+<div class="def"><span class="lead">Changement "intuitivement positif"</span> Un changement qui <b>réduit</b> l'utilisation d'une tâche : augmenter sa période $T_i$, diminuer son temps d'exécution pire cas $C_i$, ou augmenter la vitesse du processeur qui l'exécute. Intuitivement, chacun de ces changements libère du temps CPU — on s'attendrait à ce que le système ne puisse que mieux se porter.</div>
+<p><span class="lead">FTP (Fixed Task Priority)</span> Rappel : une politique d'ordonnancement où chaque <b>tâche</b> reçoit une priorité fixée une fois pour toutes, à la conception (par exemple selon RM : plus la période est courte, plus la priorité est haute). En <b>global</b> FTP, cette priorité s'applique à travers une file unique partagée par tous les processeurs — le job actif de plus haute priorité passe toujours en premier, peu importe le processeur, et la migration est autorisée.</p>
+</div>
+
+<h3>Construction de l'exemple : augmenter une période... et rater une deadline</h3>
+<div class="concept">
+<p><span class="lead">Le système de départ</span> Trois tâches, ordonnancées avec global DM (Deadline Monotonic, une variante de FTP où la priorité suit l'ordre croissant des deadlines relatives) sur $m=2$ processeurs :</p>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$D_i$</th><th>$T_i$</th><th>$U_i=C_i/T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>2</td><td>4</td><td>0,25</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>3</td><td>5</td><td>0,6</td></tr>
+<tr><td>$\tau_3$</td><td>7</td><td>8</td><td>20</td><td>0,35</td></tr>
+</table>
+<p>Priorités sous DM : $D_1=2 \lt D_2=3 \lt D_3=8$, donc $\tau_1 \succ \tau_2 \succ \tau_3$ (ordre valable sur les deux processeurs à la fois, puisque l'ordonnancement est global).</p>
+</div>
+
+<h3>Étape 1 : le système original fonctionne</h3>
+<div class="concept">
+<div class="diagram">
+<svg viewBox="0 0 760 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="80.7" y1="18" x2="80.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="115.4" y1="18" x2="115.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="115.4" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="150.1" y1="18" x2="150.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="184.8" y1="18" x2="184.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="184.8" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="219.5" y1="18" x2="219.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="254.2" y1="18" x2="254.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="254.2" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="288.9" y1="18" x2="288.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="323.6" y1="18" x2="323.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="323.6" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="358.3" y1="18" x2="358.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="393.0" y1="18" x2="393.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="393.0" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="427.7" y1="18" x2="427.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="462.4" y1="18" x2="462.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="462.4" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="497.1" y1="18" x2="497.1" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="531.8" y1="18" x2="531.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="531.8" y="146" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="566.5" y1="18" x2="566.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="601.2" y1="18" x2="601.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="601.2" y="146" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="635.9" y1="18" x2="635.9" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="670.6" y1="18" x2="670.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="670.6" y="146" font-size="9" fill="#888" text-anchor="middle">18</text>
+<line x1="705.3" y1="18" x2="705.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="740.0" y1="18" x2="740.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="740.0" y="146" font-size="9" fill="#888" text-anchor="middle">20</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="740.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="63.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="80.7" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="115.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="150.1" y="22.0" width="34.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="167.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="202.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="219.5" y="22.0" width="104.1" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="271.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="323.6" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="341.0" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="393.0" y="22.0" width="69.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="427.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="462.4" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="479.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="566.5" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="583.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="22.0" width="34.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="618.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="635.9" y="22.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="653.3" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="740.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="63.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="80.7" y="80.0" width="69.4" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="115.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="184.8" y="80.0" width="138.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="254.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="462.4" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="479.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="601.2" y="80.0" width="34.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="618.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Avec $T_1=4$ : $\tau_3$ accumule ses 7 unités (en deux morceaux sur $\pi_2$, plus un petit passage sur $\pi_1$) bien avant sa deadline à $t=8$. Toutes les deadlines sont respectées, sur les deux processeurs.</p>
+</div>
+</div>
+
+<h3>Étape 2 : on augmente $T_1$ de 4 à 5 — un changement "intuitivement positif"</h3>
+<div class="concept">
+<p>$U_1$ passe de $1/4=0{,}25$ à $1/5=0{,}2$ : la tâche $\tau_1$ demande <i>moins</i> de CPU en moyenne qu'avant. $D_1=2$ ne change pas. Intuitivement, cela devrait rendre le système au moins aussi facile à ordonnancer, sinon plus. Voici pourtant ce qui se passe :</p>
+<div class="diagram">
+<svg viewBox="0 0 560 175" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="95.4" y1="18" x2="95.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="95.4" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="144.8" y1="18" x2="144.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="144.8" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="194.2" y1="18" x2="194.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="194.2" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="243.6" y1="18" x2="243.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="243.6" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="293.0" y1="18" x2="293.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="293.0" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="342.4" y1="18" x2="342.4" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="342.4" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="391.8" y1="18" x2="391.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="391.8" y="146" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="441.2" y1="18" x2="441.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="441.2" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="490.6" y1="18" x2="490.6" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="490.6" y="146" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="540.0" y1="18" x2="540.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="540.0" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="540.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="49.4" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="70.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="95.4" y="22.0" width="98.8" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="144.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="194.2" y="22.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="243.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="293.0" y="22.0" width="49.4" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="317.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="342.4" y="22.0" width="98.8" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="391.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="441.2" y="22.0" width="49.4" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="465.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="540.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="49.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="70.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="95.4" y="80.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="144.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="293.0" y="80.0" width="49.4" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="317.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="342.4" y="80.0" width="98.8" height="44" fill="#3a5ea6" opacity="0.85" stroke-width="1"/>
+<text x="391.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<line x1="441.2" y1="14" x2="441.2" y2="136" stroke="#b23b3b" stroke-width="2" stroke-dasharray="4,3"/>
+<text x="441.2" y="10" font-size="16" text-anchor="middle">💣</text>
+<text x="441.2" y="150" font-size="9" fill="#b23b3b" text-anchor="middle" font-weight="bold">τ3 rate sa deadline</text>
+</svg>
+<p class="caption">Avec $T_1=5$ : à $t=8$, il reste encore 1 unité de $\tau_3$ à exécuter — <b>deadline manquée</b> — alors que $\tau_1$ demande strictement <i>moins</i> de CPU qu'avant !</p>
+</div>
+</div>
+
+<h3>Pourquoi ça arrive</h3>
+<div class="concept">
+<p><span class="lead">Le mécanisme</span> Avec $T_1=4$, les réveils périodiques de $\tau_1$ (à $t=0,4,8,\dots$) "rythment" l'ordonnancement d'une manière qui laisse à $\tau_3$ (la tâche de plus basse priorité) suffisamment de créneaux bien répartis sur les <b>deux</b> processeurs pour accumuler ses 7 unités avant $t=8$. En décalant $T_1$ à 5, les réveils de $\tau_1$ se déplacent légèrement (à $t=0,5,10,\dots$) — ce qui déplace aussi les moments où $\tau_2$ et $\tau_1$ occupent les deux processeurs simultanément, et donc les moments où $\tau_3$ peut passer. Cette nouvelle disposition laisse $\tau_3$ avec moins de créneaux exploitables avant $t=8$ : elle ne parvient plus à accumuler ses 7 unités à temps.</p>
+<p><span class="lead">La cause structurelle</span> $\tau_3$ est un job <b>unique</b> : par la contrainte fondamentale du multiprocesseur (chapitre 6), un job ne peut jamais s'exécuter en parallèle sur deux processeurs à la fois. Elle est donc totalement dépendante du <i>moment précis</i> où un processeur se libère — pas seulement de la quantité totale de temps CPU disponible. Décaler les réveils de $\tau_1$, même de façon à réduire son utilisation totale, suffit à désynchroniser cette dépendance fine.</p>
+<div class="remark"><span class="lead">Pourquoi c'est spécifique au multiprocesseur</span> En <b>uniprocesseur</b>, ce phénomène est <b>impossible</b> : il n'y a ni parallélisme entre plusieurs processeurs à coordonner, ni migration d'un job entre plusieurs cœurs — un seul processeur, une seule file, l'ordre d'exécution ne dépend que des priorités et des temps de réveil sur cette unique ressource. C'est la combinaison de deux ingrédients propres au multiprocesseur global — plusieurs processeurs en parallèle, et la contrainte qu'un job ne peut utiliser qu'un seul processeur à la fois — qui rend les anomalies possibles.</div>
+<div class="remark"><span class="lead">Conséquence pratique</span> Ce phénomène implique qu'en multiprocesseur, il ne suffit <b>pas</b> de vérifier la faisabilité du cas périodique synchrone pour garantir la faisabilité du cas sporadique général (contrairement à l'uniprocesseur, chapitre 3). En uniprocesseur, on peut toujours se contenter de tester le pire scénario possible — l'<b>instant critique</b>, où toutes les tâches se relâchent en même temps, qui maximise l'attente subie par chacune. En multiprocesseur, à cause des anomalies, on ne sait même pas en général si un tel "pire scénario garanti" existe ni où il se situe — c'est encore une question ouverte pour la recherche.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 26</span>
+<span class="qtext">In the context of PFair scheduling, define lag and explain the requirement $-1 \lt \text{lag}(\tau_i,t) \lt 1$. Show, on a small example with two periodic tasks, that enforcing this bound ensures that each job completes within its deadline, and explain intuitively why PFair scheduling is optimal for periodic implicit-deadline systems.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Définir précisément le lag en PFair, expliquer terme par terme la contrainte $-1\lt\text{lag}\lt1$, illustrer sur un petit exemple à deux tâches que cette contrainte garantit le respect des deadlines, puis expliquer intuitivement pourquoi PFair est optimal pour les systèmes périodiques à deadline implicite.</p>
+</div>
+
+<h3>Rappels nécessaires</h3>
+<div class="concept">
+<p><span class="lead">D'où ça vient : le partage fluide idéal</span> Pour un système périodique à deadline implicite sur $m$ processeurs identiques, on sait (condition nécessaire et suffisante) que le système est faisable si et seulement si $U(\tau)\le m$ et $U_{\max}\le1$. L'argument de suffisance repose sur un <b>partage fluide idéal</b> : on imagine que chaque tâche $\tau_i$ reçoit, à chaque instant réel (continu), une fraction constante $U_i=C_i/T_i$ du processeur — comme si le CPU était "liquide" et se répartissait en continu. Ce partage est physiquement irréalisable (on ne peut pas exécuter "0,3 unité" à un instant discret), mais il sert de référence idéale. PFair est la version <b>discrète et réalisable</b> qui cherche à rester aussi proche que possible de ce partage fluide.</p>
+<div class="def"><span class="lead">Ordonnancement discret</span> Une fonction $S:\tau\times\mathbb{N}\to\{0,1\}$, où $S(\tau_i,t)=1$ signifie que $\tau_i$ tourne sur le créneau (quantum) $[t,t+1)$, et $0$ sinon. À chaque quantum, une tâche tourne entièrement ou pas du tout — jamais une fraction.</div>
+</div>
+
+<h3>Définition du lag</h3>
+<div class="concept">
+<div class="def">
+$$\text{lag}(\tau_i,t) \overset{\text{def}}{=} U(\tau_i)\cdot t \; - \sum_{\ell=0}^{t-1} S(\tau_i,\ell)$$
+</div>
+<p><span class="lead">Traduction terme par terme</span></p>
+<ul>
+<li>$U(\tau_i)\cdot t$ : le service <b>idéal</b> — ce que $\tau_i$ devrait avoir reçu sur $[0,t)$ selon le partage fluide.</li>
+<li>$\sum_{\ell=0}^{t-1} S(\tau_i,\ell)$ : le service <b>réel</b> — la somme des $0$ et $1$ pour chaque quantum $\ell$ déjà écoulé ; comme chaque terme vaut $0$ ou $1$, cette somme compte simplement le <b>nombre de quanta</b> où $\tau_i$ a réellement tourné avant $t$.</li>
+<li>$\text{lag}(\tau_i,t)$ = idéal $-$ réel. Positif = la tâche est en retard sur l'idéal. Négatif = elle est en avance (elle a reçu plus que ce que le partage fluide lui aurait donné jusque-là).</li>
+</ul>
+</div>
+
+<h3>La contrainte PFair, expliquée terme par terme</h3>
+<div class="concept">
+<div class="def">
+$$-1 \lt \text{lag}(\tau_i,t) \lt 1 \qquad \forall \tau_i \in \tau,\ \forall t \in \mathbb{N}$$
+</div>
+<p><span class="lead">Traduction</span> $-1\lt\text{lag}(\tau_i,t)\lt1$ : le lag doit rester strictement entre $-1$ et $1$ — jamais un écart d'un quantum entier ou plus. $\forall\tau_i\in\tau$ : pour <b>toutes</b> les tâches. $\forall t\in\mathbb{N}$ : à <b>tout</b> instant discret, pas seulement de temps en temps. Concrètement, cela force chaque tâche à avoir reçu, à chaque instant $t$, soit $\lfloor U_i\cdot t\rfloor$ (l'idéal arrondi vers le bas), soit $\lceil U_i\cdot t\rceil$ (arrondi vers le haut) — jamais autre chose. Un ordonnancement respectant cette contrainte à tout instant est dit <b>PFair</b>.</p>
+</div>
+
+<h3>Exemple : deux tâches périodiques, un processeur</h3>
+<div class="concept">
+<p>$\tau_1=(C_1=1,T_1=2)\Rightarrow U_1=0{,}5$, $\tau_2=(C_2=1,T_2=4)\Rightarrow U_2=0{,}25$. Ordonnancement choisi sur $[0,4)$ : $\tau_1$ tourne sur $[0,1)$ et $[2,3)$ ; $\tau_2$ tourne sur $[1,2)$ ; le processeur est inactif sur $[3,4)$.</p>
+<table>
+<tr><th>quantum $\ell$</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+<tr><td>$S(\tau_1,\ell)$</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>$S(\tau_2,\ell)$</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+</table>
+<p><span class="step-title">Calcul du lag à chaque instant :</span></p>
+<p>$t=1$ : $\text{lag}(\tau_1,1)=U_1\cdot1-S(\tau_1,0)=0{,}5-1=-0{,}5$. $\text{lag}(\tau_2,1)=U_2\cdot1-S(\tau_2,0)=0{,}25-0=0{,}25$.</p>
+<p>$t=2$ : $\text{lag}(\tau_1,2)=U_1\cdot2-(1+0)=1-1=0$. $\text{lag}(\tau_2,2)=U_2\cdot2-(0+1)=0{,}5-1=-0{,}5$.</p>
+<p>$t=3$ : $\text{lag}(\tau_1,3)=U_1\cdot3-(1+0+1)=1{,}5-2=-0{,}5$. $\text{lag}(\tau_2,3)=U_2\cdot3-(0+1+0)=0{,}75-1=-0{,}25$.</p>
+<p>$t=4$ : $\text{lag}(\tau_1,4)=U_1\cdot4-(1+0+1+0)=2-2=0$. $\text{lag}(\tau_2,4)=U_2\cdot4-(0+1+0+0)=1-1=0$.</p>
+<table>
+<tr><th>$t$</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+<tr><td>$\text{lag}(\tau_1,t)$</td><td>$-0{,}5$</td><td>$0$</td><td>$-0{,}5$</td><td>$0$</td></tr>
+<tr><td>$\text{lag}(\tau_2,t)$</td><td>$+0{,}25$</td><td>$-0{,}5$</td><td>$-0{,}25$</td><td>$0$</td></tr>
+</table>
+<p>Toutes les valeurs restent strictement dans $(-1,1)$ : cet ordonnancement est bien PFair.</p>
+</div>
+
+<h3>Pourquoi ce respect du lag garantit les deadlines</h3>
+<div class="concept">
+<p><span class="lead">L'argument général</span> Regarde ce qui se passe précisément aux instants $t=\ell\cdot T_i$ — les <b>frontières de période</b> de $\tau_i$ (là où tombe une deadline, puisque $D_i=T_i$). À un tel instant, le service idéal vaut
+$$U(\tau_i)\cdot t = \frac{C_i}{T_i}\cdot(\ell\cdot T_i) = \ell\cdot C_i$$
+c'est-à-dire un <b>nombre entier</b>. Si $|\text{lag}(\tau_i,t)|\lt1$ à cet instant, alors le service réel (lui aussi forcément entier, puisque c'est un compte de quanta) ne peut différer de cet entier $\ell\cdot C_i$ que de moins de $1$ — la seule possibilité est donc qu'il soit <b>exactement égal</b> à $\ell\cdot C_i$. Autrement dit, PFair "retombe pile" sur le service idéal aux frontières de période.</p>
+<p><span class="step-title">Vérification sur l'exemple :</span> pour $\tau_2$ ($T_2=4$, donc $t=4$ correspond à $\ell=1$) : $U_2\cdot4=1=\ell\cdot C_2=1\times1$. On a bien $\text{lag}(\tau_2,4)=0$ : $\tau_2$ a reçu exactement $C_2=1$ unité sur $[0,4)$ — pile ce qu'exige sa deadline $D_2=T_2=4$. Pour $\tau_1$ : à $t=2$ ($\ell=1$), $U_1\cdot2=1=\ell\cdot C_1$, et $\text{lag}(\tau_1,2)=0$ — le premier job de $\tau_1$ a reçu exactement $C_1=1$ unité avant sa deadline à $t=2$. À $t=4$ ($\ell=2$), même chose pour le deuxième job de $\tau_1$. Les trois deadlines de cet exemple sont donc respectées.</p>
+</div>
+
+<h3>Pourquoi PFair est optimal (intuition)</h3>
+<div class="concept">
+<p><span class="lead">Le résultat</span> Pour un système périodique synchrone à deadline implicite, il existe un ordonnancement PFair si et seulement si $U(\tau)\le m$ et $U_{\max}\le1$ — exactement la même condition nécessaire et suffisante que celle du partage fluide idéal (voir Question 32). Comme PFair <b>atteint</b> effectivement cette borne (contrairement au partage fluide, qui est irréalisable), il ordonnance <b>tout</b> système qui est faisable — c'est précisément la définition d'un ordonnanceur optimal.</p>
+<p><span class="lead">L'intuition</span> PFair réussit là où un ordonnanceur "naïf" pourrait échouer parce qu'il ne s'écarte <b>jamais</b> de plus d'un quantum du rythme idéal, pour <b>aucune</b> tâche, à <b>aucun</b> moment. Cette discipline stricte l'empêche de jamais accumuler assez de retard sur une tâche pour lui faire rater une deadline — la borne $|\text{lag}|\lt1$ agit comme un "élastique" qui ramène systématiquement chaque tâche vers son rythme idéal avant que l'écart ne devienne dangereux.</p>
+<div class="remark"><span class="lead">Nuance importante</span> Cette optimalité est spécifique aux systèmes <b>périodiques</b> (dates de relâchement connues à l'avance). Elle ne contredit pas le résultat négatif de la Question 22 (aucun ordonnanceur en ligne optimal pour des jobs sporadiques dont les caractéristiques futures sont inconnues) : ici, il n'y a rien à "deviner", puisque tout se déduit directement des périodes $T_i$.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 27</span>
+<span class="qtext">Given the task set (C, T) = (1, 3), (2, 6), (5, 15), (6, 18), construct the global DM schedule on two processors over interval [0, 18). Indicate all preemptions and migrations. State whether any deadline is missed and justify your conclusion.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Construire, pas à pas, l'ordonnancement global Deadline Monotonic de ce système à quatre tâches sur $2$ processeurs, sur l'intervalle $[0,18)$ ; identifier toutes les préemptions et migrations ; conclure sur le respect des deadlines.</p>
+</div>
+
+<h3>Mise en place</h3>
+<div class="concept">
+<p><span class="lead">Le système</span> (deadline implicite, $D_i=T_i$) :</p>
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i=D_i$</th><th>$U_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>3</td><td>0,333</td></tr>
+<tr><td>$\tau_2$</td><td>2</td><td>6</td><td>0,333</td></tr>
+<tr><td>$\tau_3$</td><td>5</td><td>15</td><td>0,333</td></tr>
+<tr><td>$\tau_4$</td><td>6</td><td>18</td><td>0,333</td></tr>
+</table>
+<p><span class="lead">Priorités sous DM</span> Deadline Monotonic : priorité décroissante avec la deadline relative croissante. $D_1=3\lt D_2=6\lt D_3=15\lt D_4=18$, donc $\tau_1\succ\tau_2\succ\tau_3\succ\tau_4$ — remarque : les quatre tâches ont la <b>même</b> utilisation ($1/3$ chacune), mais leurs périodes diffèrent, donc DM les départage sans ambiguïté malgré cette égalité.</p>
+<p><span class="lead">Règle globale</span> Une seule file partagée. À chaque instant, les 2 jobs actifs de plus haute priorité tournent — un sur chaque processeur —, peu importe où ils tournaient à l'instant précédent (migration autorisée).</p>
+<div class="def"><span class="lead">Préemption</span> Quand un job de priorité plus haute se réveille alors qu'un job de priorité plus basse est en train de tourner, ce dernier est <b>interrompu</b> immédiatement (on dit qu'il est "préempté") pour laisser la place. Il reprendra plus tard, là où il s'était arrêté, dès qu'un processeur se libère pour lui. C'est ce qui explique les "trous" qu'on va voir dans l'exécution de $\tau_2$, $\tau_3$ et $\tau_4$ sur le diagramme ci-dessous.</div>
+</div>
+
+<h3>Construction du planning</h3>
+<div class="concept">
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+<span><span class="sw" style="background:#8a6a3a"></span>τ4</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 780 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="85.7" y1="18" x2="85.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="125.3" y1="18" x2="125.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="125.3" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="165.0" y1="18" x2="165.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="204.7" y1="18" x2="204.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="204.7" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="244.3" y1="18" x2="244.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="284.0" y1="18" x2="284.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="284.0" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="323.7" y1="18" x2="323.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="363.3" y1="18" x2="363.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="363.3" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="403.0" y1="18" x2="403.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="442.7" y1="18" x2="442.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="442.7" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="482.3" y1="18" x2="482.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="522.0" y1="18" x2="522.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="522.0" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<line x1="561.7" y1="18" x2="561.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="601.3" y1="18" x2="601.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="601.3" y="146" font-size="9" fill="#888" text-anchor="middle">14</text>
+<line x1="641.0" y1="18" x2="641.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="680.7" y1="18" x2="680.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="680.7" y="146" font-size="9" fill="#888" text-anchor="middle">16</text>
+<line x1="720.3" y1="18" x2="720.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<line x1="760.0" y1="18" x2="760.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="760.0" y="146" font-size="9" fill="#888" text-anchor="middle">18</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="760.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="65.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="85.7" y="22.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="105.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="125.3" y="22.0" width="39.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="145.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="165.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="184.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="204.7" y="22.0" width="79.3" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="244.3" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="284.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="303.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="323.7" y="22.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="343.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="363.3" y="22.0" width="39.7" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="383.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="403.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="422.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="522.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="541.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="561.7" y="22.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="581.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="641.0" y="22.0" width="39.7" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="660.8" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="680.7" y="22.0" width="79.3" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="720.3" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="760.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="65.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="85.7" y="80.0" width="39.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="105.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="125.3" y="80.0" width="39.7" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="145.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="165.0" y="80.0" width="39.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="184.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="204.7" y="80.0" width="79.3" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="244.3" y="106.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="284.0" y="80.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="303.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="323.7" y="80.0" width="39.7" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="343.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="403.0" y="80.0" width="39.7" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="422.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="522.0" y="80.0" width="39.7" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="541.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="641.0" y="80.0" width="39.7" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="660.8" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+</svg>
+<p class="caption">Ordonnancement global DM construit pas à pas, vérifié instant par instant sur $[0,18)$.</p>
+</div>
+</div>
+
+<h3>Préemptions et migrations</h3>
+<div class="concept">
+<p><span class="lead">$\tau_1$ (priorité maximale, $C_1=1$)</span> Chaque job de $\tau_1$ tient dans un seul quantum : elle tourne toujours dès son réveil, sans jamais être préemptée, et toujours sur $\pi_1$ dans cette construction — <b>aucune migration</b>.</p>
+<p><span class="lead">$\tau_2$ ($C_2=2$)</span> Regarde son premier job (relâché à $t=0$, deadline $6$) : il tourne sur $\pi_2$ en $[0,1)$, <b>puis migre sur $\pi_1$</b> en $[3,4)$ (une fois $\tau_1$ et $\tau_3$ passés devant sur $\pi_1$ à cet instant). C'est une préemption (le job est interrompu entre $[1,3)$ pendant que $\tau_1$ et $\tau_3$ tournent) suivie d'une reprise sur un processeur différent — donc une <b>migration</b>. Le même schéma se répète pour chacun des trois jobs de $\tau_2$ dans la fenêtre.</p>
+<p><span class="lead">$\tau_3$ ($C_3=5$)</span> Son unique job dans la fenêtre (relâché à $t=0$, deadline $15$) alterne plusieurs fois entre $\pi_1$ et $\pi_2$ (visible sur le diagramme : $\pi_2$ en $[1,2)$, $\pi_1$ en $[2,3)$, $\pi_2$ en $[3,4)$, $\pi_1$ en $[4,6)$) avant de terminer — <b>plusieurs migrations</b> pour ce seul job, à chaque fois qu'une tâche plus prioritaire libère un processeur différent de celui que $\tau_3$ occupait.</p>
+<p><span class="lead">$\tau_4$ ($C_4=6$, priorité la plus basse)</span> Son unique job (relâché à $t=0$, deadline $18$) est le plus fréquemment préempté (il cède la place à $\tau_1$, $\tau_2$ et $\tau_3$ dès qu'elles se réveillent) et migre également entre $\pi_1$ et $\pi_2$ au fil de l'exécution (visible sur le diagramme entre $t=2$ et $t=10$).</p>
+</div>
+
+<h3>Conclusion : aucune deadline ratée</h3>
+<div class="concept">
+<p><span class="lead">Vérification</span> En suivant le diagramme jusqu'au bout : $\tau_1$ termine chacun de ses 6 jobs dans la même unité de temps que son réveil (jamais de retard, vu sa priorité maximale). $\tau_2$ termine ses 3 jobs bien avant chaque deadline (à $6,12,18$). $\tau_3$ accumule ses 5 unités bien avant $t=15$ (terminé dès $t=6$). $\tau_4$ accumule ses 6 unités avant $t=18$ (terminé dès $t=10$). <b>Aucune deadline n'est ratée</b> sur $[0,18)$.</p>
+<p><span class="lead">Pourquoi ce n'est pas surprenant</span> $U(\tau)=4\times\tfrac13\approx1{,}33$ et $U_{\max}=\tfrac13\le1$. Le test suffisant global EDF (Q28) donnerait $U(\tau)\le m-(m-1)U_{\max}=2-1\times\tfrac13\approx1{,}67$ — largement respecté ici, donc on s'attendrait à ce qu'EDF global réussisse. DM (une politique FTP, moins flexible qu'EDF) n'a pas cette garantie formelle, mais elle réussit bel et bien sur cette instance précise, comme le montre la construction explicite.</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 28</span>
+<span class="qtext">Provide the basic sufficient condition for EDF schedulability of implicit deadline tasks, present the EDF(k) improvement.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Donner la condition suffisante de base pour l'ordonnançabilité EDF (globale, multiprocesseur) de tâches à deadline implicite, puis présenter comment EDF(k) l'améliore.</p>
+</div>
+
+<h3>La condition suffisante de base : EDF global</h3>
+<div class="concept">
+<div class="def"><span class="lead">Théorème (EDF global)</span> Tout système sporadique à deadline implicite est ordonnançable avec EDF global sur $m$ processeurs si
+$$U(\tau) \le m - (m-1)\cdot U_{\max}$$
+où $U_{\max}=\max\{U(\tau_i)\mid i=1,\dots,n\}$ est l'utilisation de la tâche la plus chargée.</div>
+<p><span class="lead">Traduction terme par terme</span> $U(\tau)$ : la somme des utilisations de toutes les tâches (la demande totale). $m$ : le nombre de processeurs (la capacité totale disponible). $(m-1)\cdot U_{\max}$ : une <b>pénalité</b> retirée de cette capacité, proportionnelle au nombre de processeurs "au-delà du premier" ($m-1$) et à la taille de la tâche la plus lourde. Autrement dit : on ne peut pas compter sur la pleine capacité $m$ ; il faut se réserver une marge liée à $U_{\max}$.</p>
+<p><span class="lead">Pourquoi ce test est pessimiste</span> Quand $U_{\max}\to1$ (une tâche presque aussi lourde qu'un processeur entier), la borne devient $U(\tau)\le m-(m-1)=1$ — <b>exactement</b> comme s'il n'y avait qu'un seul processeur, quel que soit $m$ ! Une seule tâche très chargée "gèle" toute la capacité supplémentaire des autres processeurs. C'est cette faiblesse qu'EDF(k) vient corriger.</p>
+</div>
+
+<h3>L'amélioration : EDF(k)</h3>
+<div class="concept">
+<p><span class="lead">L'idée</span> On trie les tâches par utilisation décroissante : $U(\tau_1)\ge U(\tau_2)\ge\dots\ge U(\tau_n)$. On note $\tau^{(i)}=\{\tau_i,\dots,\tau_n\}$ le sous-ensemble des tâches à partir du rang $i$ (les moins chargées, à partir de la $i$-ème).</p>
+<div class="def"><span class="lead">Définition EDF(k)</span> Pour $i\lt k$ : le job de $\tau_i$ reçoit la priorité <b>maximale</b> (comme si sa deadline absolue était $-\infty$) — il passe toujours en premier, jamais retardé. Pour $i\ge k$ : les jobs de $\tau_i$ sont ordonnancés normalement par EDF. Autrement dit, on "réserve" en pratique les $k-1$ tâches les plus lourdes (elles ne sont jamais bloquées), et on applique EDF global classique au reste. Le cas $k=1$ correspond à EDF global standard (aucune tâche réservée).</div>
+<div class="def"><span class="lead">Théorème EDF(k)</span> Un système sporadique à deadline implicite est ordonnançable sur $m$ processeurs avec EDF(k) si
+$$m \ge (k-1) + \left\lceil \frac{U(\tau^{(k+1)})}{1-U(\tau_k)} \right\rceil$$</div>
+<p><span class="lead">Traduction terme par terme</span> $(k-1)$ : le nombre de processeurs "sacrifiés", un par tâche réservée parmi les $k-1$ les plus lourdes (chacune tourne seule sur son propre processeur, sans jamais attendre). $U(\tau^{(k+1)})$ : la demande totale du <b>reste</b> du système — toutes les tâches à partir du rang $k+1$ (donc en excluant les $k$ premières, y compris $\tau_k$ elle-même qui sert de référence pour la pénalité). $1-U(\tau_k)$ : le même type de pénalité que dans le test EDF global de base, mais calculée par rapport à $U(\tau_k)$ — la $k$-ème plus grosse utilisation — au lieu de $U_{\max}=U(\tau_1)$. Comme $U(\tau_k)\le U(\tau_1)$, cette pénalité est <b>moins sévère</b>, donc le test est moins pessimiste. Le plafond $\lceil\cdot\rceil$ : le nombre de processeurs doit être entier.</p>
+<div class="def"><span class="lead">Nombre minimal de processeurs (en optimisant sur $k$)</span>
+$$m_{\min}(\tau) = \min_{k=1}^{n}\left\{(k-1) + \left\lceil \frac{U(\tau^{(k+1)})}{1-U(\tau_k)} \right\rceil\right\}$$
+On essaie toutes les valeurs de $k$ de $1$ à $n$, et on garde celle qui minimise le nombre de processeurs requis (voir Question 29 pour un exemple chiffré complet).
+</div>
+<div class="remark"><span class="lead">Nuance importante</span> EDF(k) ne change <b>pas</b> l'algorithme d'ordonnancement lui-même — c'est toujours EDF global — seule l'<b>analyse de faisabilité</b> change (via la manipulation artificielle des deadlines des $k-1$ tâches réservées). Ce test reste seulement <b>suffisant</b>, pas nécessaire : un système peut être faisable même si aucune valeur de $k$ ne satisfait la condition.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 29</span>
+<span class="qtext">Consider the sporadic implicit-deadline system (C, T) = (7, 10), (3, 12), (3, 12), (2, 8), (1, 5). Sort the tasks by decreasing utilisation. For each value k ∈ {1, …, 5}, compute the required number of processors according to the EDF(k). Identify the optimal value of k and comment on the improvement compared to pure global EDF.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Trier ce système à 5 tâches par utilisation décroissante, calculer le nombre de processeurs requis par EDF(k) pour chaque $k$ de $1$ à $5$, identifier le $k$ optimal, et commenter le gain par rapport à EDF global pur.</p>
+</div>
+
+<h3>Tri par utilisation décroissante</h3>
+<div class="concept">
+<table>
+<tr><th>Rang</th><th>Tâche</th><th>$C_i$</th><th>$T_i$</th><th>$U_i=C_i/T_i$</th><th>$U(\tau^{(i)})$</th></tr>
+<tr><td>1</td><td>$\tau_1$ (7,10)</td><td>7</td><td>10</td><td>0,7</td><td>1,65</td></tr>
+<tr><td>2</td><td>$\tau_2$ (3,12)</td><td>3</td><td>12</td><td>0,25</td><td>0,95</td></tr>
+<tr><td>3</td><td>$\tau_3$ (3,12)</td><td>3</td><td>12</td><td>0,25</td><td>0,7</td></tr>
+<tr><td>4</td><td>$\tau_4$ (2,8)</td><td>2</td><td>8</td><td>0,25</td><td>0,45</td></tr>
+<tr><td>5</td><td>$\tau_5$ (1,5)</td><td>1</td><td>5</td><td>0,2</td><td>0,2</td></tr>
+</table>
+<p>($\tau_2$, $\tau_3$, $\tau_4$ ont toutes la même utilisation $0{,}25$ : leur ordre entre elles n'a pas d'importance pour le calcul, seul compte le total.) $U(\tau^{(i)})$ = somme des utilisations du rang $i$ jusqu'à $5$. Par exemple $U(\tau^{(2)})=0{,}25+0{,}25+0{,}25+0{,}2=0{,}95$.</p>
+</div>
+
+<h3>Calcul de $m(k)$ pour chaque $k$</h3>
+<div class="concept">
+<p>Rappel de la formule (Question 28) : $m(k)=(k-1)+\left\lceil\dfrac{U(\tau^{(k+1)})}{1-U(\tau_k)}\right\rceil$.</p>
+<table>
+<tr><th>$k$</th><th>Calcul détaillé</th><th>$m(k)$</th></tr>
+<tr><td>1</td><td>$0+\left\lceil\dfrac{U(\tau^{(2)})}{1-U(\tau_1)}\right\rceil=\left\lceil\dfrac{0{,}95}{1-0{,}7}\right\rceil=\left\lceil\dfrac{0{,}95}{0{,}3}\right\rceil=\lceil3{,}17\rceil$</td><td><b>4</b></td></tr>
+<tr><td>2</td><td>$1+\left\lceil\dfrac{U(\tau^{(3)})}{1-U(\tau_2)}\right\rceil=1+\left\lceil\dfrac{0{,}7}{1-0{,}25}\right\rceil=1+\left\lceil\dfrac{0{,}7}{0{,}75}\right\rceil=1+\lceil0{,}93\rceil=1+1$</td><td><b>2</b></td></tr>
+<tr><td>3</td><td>$2+\left\lceil\dfrac{U(\tau^{(4)})}{1-U(\tau_3)}\right\rceil=2+\left\lceil\dfrac{0{,}45}{1-0{,}25}\right\rceil=2+\left\lceil\dfrac{0{,}45}{0{,}75}\right\rceil=2+\lceil0{,}6\rceil=2+1$</td><td><b>3</b></td></tr>
+<tr><td>4</td><td>$3+\left\lceil\dfrac{U(\tau^{(5)})}{1-U(\tau_4)}\right\rceil=3+\left\lceil\dfrac{0{,}2}{1-0{,}25}\right\rceil=3+\left\lceil\dfrac{0{,}2}{0{,}75}\right\rceil=3+\lceil0{,}27\rceil=3+1$</td><td><b>4</b></td></tr>
+<tr><td>5</td><td>$4+\left\lceil\dfrac{U(\tau^{(6)})}{1-U(\tau_5)}\right\rceil=4+\left\lceil\dfrac{0}{1-0{,}2}\right\rceil=4+\lceil0\rceil$ (pas de tâche au rang 6, $U(\tau^{(6)})=0$)</td><td><b>4</b></td></tr>
+</table>
+</div>
+
+<h3>Conclusion</h3>
+<div class="concept">
+<p><span class="lead">Le $k$ optimal</span> $k^\*=2$ minimise le nombre de processeurs requis, avec $m(2)=2$ — largement mieux que $k=1$ (EDF global pur), qui demande $4$ processeurs.</p>
+<p><span class="lead">Pourquoi $k=1$ est si mauvais ici</span> $\tau_1$ a $U_1=0{,}7$, une valeur assez proche de $1$. Le test EDF global pur pénalise <b>tout le système</b> à cause de cette seule tâche lourde : le dénominateur $1-U_{\max}=1-0{,}7=0{,}3$ est petit, ce qui gonfle artificiellement le nombre de processeurs requis (le calcul divise une demande substantielle, $0{,}95$, par cette petite marge).</p>
+<p><span class="lead">Pourquoi $k=2$ répare ça</span> En réservant $\tau_1$ (la seule tâche vraiment lourde) sur son propre processeur dédié ($k-1=1$ processeur sacrifié), le reste du système ($\tau_2,\tau_3,\tau_4,\tau_5$, utilisation totale $0{,}95$) est alors analysé avec un test EDF global "local" basé sur $U(\tau_2)=0{,}25$ au lieu de $U_1=0{,}7$ — un dénominateur $1-0{,}25=0{,}75$ bien plus généreux. Ce sous-système ne nécessite qu'un seul processeur supplémentaire ($\lceil0{,}93\rceil=1$), pour un total de $1+1=2$.</p>
+<p><span class="lead">Pourquoi $k=3,4,5$ ne font pas mieux</span> Réserver une deuxième tâche ($k=3$) "coûte" un processeur de plus ($(k-1)=2$) sans réduire suffisamment la pénalité restante ($1-U(\tau_3)=0{,}75$, identique à celle de $k=2$ puisque $\tau_2$ et $\tau_3$ ont la même utilisation) — le gain marginal ne compense pas le coût fixe. Le calcul confirme que $2$ reste le minimum sur toute la plage de $k$.</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 30</span>
+<span class="qtext">Build a PFair schedule for the following system upon two processors (C, T): (2, 3)(2, 3)(4, 6). Indicate all preemptions and migrations.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Construire explicitement, quantum par quantum, un ordonnancement PFair valide pour ce système à 3 tâches sur 2 processeurs, en indiquant toutes les préemptions et migrations.</p>
+</div>
+
+<h3>Mise en place</h3>
+<div class="concept">
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i$</th><th>$U_i=C_i/T_i$</th></tr>
+<tr><td>$\tau_1$</td><td>2</td><td>3</td><td>0,667</td></tr>
+<tr><td>$\tau_2$</td><td>2</td><td>3</td><td>0,667</td></tr>
+<tr><td>$\tau_3$</td><td>4</td><td>6</td><td>0,667</td></tr>
+</table>
+<p><span class="lead">Remarque clé</span> Les trois tâches ont exactement la <b>même</b> utilisation $2/3$ ! $U(\tau)=3\times2/3=2=m$, et $U_{\max}=2/3\le1$ : d'après le Théorème d'optimalité de PFair (Question 26 / Question 32), un ordonnancement PFair existe.</p>
+<p><span class="lead">L'hyperpériode — c'est quoi, et pourquoi on en a besoin ?</span> Les trois tâches ont des périodes différentes ($3,3,6$) : leurs relâchements ne "retombent en phase" tous ensemble que de temps en temps. L'<b>hyperpériode</b> $H$ est le premier instant où ce motif complet de relâchements recommence à l'identique — mathématiquement, c'est le plus petit multiple commun (noté $\text{lcm}$, pour "least common multiple") des périodes. Concrètement : $H=\text{lcm}(3,3,6)=6$. L'intérêt pratique : il suffit de construire l'ordonnancement sur $[0,H)=[0,6)$ une seule fois — comme le motif se répète ensuite à l'identique indéfiniment, on n'a pas besoin de vérifier plus loin que $t=6$.</p>
+<p><span class="lead">Un constat utile avant de construire</span> Comme $U(\tau)=2=m$ exactement, la plateforme doit être <b>utilisée à 100%</b> à chaque quantum (aucun processeur ne peut rester inactif, sinon il serait impossible de rattraper le retard). Avec 2 processeurs et 3 tâches, cela veut dire qu'à chaque quantum, exactement <b>2 des 3 tâches</b> tournent, et la troisième est en attente.</p>
+</div>
+
+<h3>Construction : qui tourne à chaque quantum ?</h3>
+<div class="concept">
+<p><span class="lead">Stratégie</span> Sur 6 quanta, chaque tâche doit recevoir exactement $4$ unités d'exécution ($\tau_1$ : $2$ jobs $\times$ $C=2$ ; $\tau_2$ : pareil ; $\tau_3$ : $1$ job $\times$ $C=4$) — donc chaque tâche doit être <b>inactive</b> exactement $2$ des $6$ quanta. On fait tourner cette inactivité en rotation entre les trois tâches :</p>
+<table>
+<tr><th>Quantum</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+<tr><th>Tâche inactive</th><td>$\tau_3$</td><td>$\tau_2$</td><td>$\tau_1$</td><td>$\tau_3$</td><td>$\tau_2$</td><td>$\tau_1$</td></tr>
+<tr><th>Tâches actives</th><td>$\tau_1,\tau_2$</td><td>$\tau_1,\tau_3$</td><td>$\tau_2,\tau_3$</td><td>$\tau_1,\tau_2$</td><td>$\tau_1,\tau_3$</td><td>$\tau_2,\tau_3$</td></tr>
+</table>
+</div>
+
+<h3>Vérification du lag à chaque instant</h3>
+<div class="concept">
+<table>
+<tr><th>$t$</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+<tr><td>$\text{lag}(\tau_1,t)$</td><td>$-0{,}33$</td><td>$-0{,}67$</td><td>$0$</td><td>$-0{,}33$</td><td>$-0{,}67$</td><td>$0$</td></tr>
+<tr><td>$\text{lag}(\tau_2,t)$</td><td>$-0{,}33$</td><td>$+0{,}33$</td><td>$0$</td><td>$-0{,}33$</td><td>$+0{,}33$</td><td>$0$</td></tr>
+<tr><td>$\text{lag}(\tau_3,t)$</td><td>$+0{,}67$</td><td>$+0{,}33$</td><td>$0$</td><td>$+0{,}67$</td><td>$+0{,}33$</td><td>$0$</td></tr>
+</table>
+<p><span class="step-title">Exemple de calcul, $t=2$ :</span> $\tau_1$ a tourné aux quanta $0,1$ (2 unités) : $\text{lag}(\tau_1,2)=U_1\cdot2-2=1{,}33-2=-0{,}67$. $\tau_3$ n'a tourné qu'au quantum $1$ (1 unité) : $\text{lag}(\tau_3,2)=U_3\cdot2-1=1{,}33-1=0{,}33$.</p>
+<p>Toutes les valeurs restent strictement dans $(-1,1)$, et retombent à $0$ exactement aux frontières de période ($t=3$ pour $\tau_1,\tau_2$ ; $t=6$ pour les trois) : c'est bien un ordonnancement PFair, et toutes les deadlines sont respectées.</p>
+</div>
+
+<h3>Assignation aux processeurs, préemptions et migrations</h3>
+<div class="concept">
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 420 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="105.0" y1="18" x2="105.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="105.0" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="164.0" y1="18" x2="164.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="164.0" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="223.0" y1="18" x2="223.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="223.0" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="282.0" y1="18" x2="282.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="282.0" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="341.0" y1="18" x2="341.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="341.0" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="400.0" y1="18" x2="400.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="400.0" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="400.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="59.0" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="75.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="105.0" y="22.0" width="59.0" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="134.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="164.0" y="22.0" width="59.0" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="193.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="223.0" y="22.0" width="59.0" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="252.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="282.0" y="22.0" width="59.0" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="311.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="341.0" y="22.0" width="59.0" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="370.5" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="400.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="59.0" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="75.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="105.0" y="80.0" width="59.0" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="134.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="164.0" y="80.0" width="59.0" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="193.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="223.0" y="80.0" width="59.0" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="252.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="282.0" y="80.0" width="59.0" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="311.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="341.0" y="80.0" width="59.0" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="370.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Ordonnancement PFair sur $[0,6)$ (se répète ensuite à l'identique).</p>
+</div>
+<p><span class="lead">Préemptions</span> Chaque tâche est interrompue (préemptée) dès qu'elle devient la tâche "inactive" du quantum suivant selon le tableau de rotation — par exemple $\tau_1$ est préemptée entre le quantum $1$ et le quantum $2$ (elle devient inactive), puis reprend au quantum $3$. Ce schéma se répète pour les trois tâches, exactement $2$ fois chacune sur les $6$ quanta.</p>
+<p><span class="lead">Migrations</span> $\tau_1$ : actif aux quanta $0,1,3,4$, toujours sur $\pi_1$ dans cette construction — <b>aucune migration</b>. $\tau_2$ : actif aux quanta $0,2,3,5$, sur $\pi_2,\pi_1,\pi_2,\pi_2$ — <b>2 migrations</b> (au quantum $2$, puis au quantum $3$). $\tau_3$ : actif aux quanta $1,2,4,5$, sur $\pi_2,\pi_2,\pi_2,\pi_1$ — <b>1 migration</b> (au quantum $5$).</p>
+<div class="remark"><span class="lead">Nuance</span> Cette assignation précise aux processeurs $\pi_1/\pi_2$ n'est qu'un choix parmi d'autres tout aussi valides pour PFair — la propriété PFair contraint uniquement <i>quelles tâches tournent à chaque quantum</i> (via le lag), pas <i>sur quel processeur précis</i>. Un algorithme réel comme PF ou PD² choisirait une assignation particulière selon des règles supplémentaires, mais toute assignation cohérente avec le tableau de rotation ci-dessus est correcte.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 31</span>
+<span class="qtext">Build a global EDF schedule for the following system upon two processors (C, T): (1, 2)(3, 6)(6, 12). Indicate all preemptions and migrations.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Construire explicitement l'ordonnancement EDF global de ce système à 3 tâches sur 2 processeurs, en indiquant toutes les préemptions et migrations.</p>
+</div>
+
+<h3>Mise en place</h3>
+<div class="concept">
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$T_i=D_i$</th><th>$U_i$</th></tr>
+<tr><td>$\tau_1$</td><td>1</td><td>2</td><td>0,5</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>6</td><td>0,5</td></tr>
+<tr><td>$\tau_3$</td><td>6</td><td>12</td><td>0,5</td></tr>
+</table>
+<p>Encore une fois, les trois tâches ont la <b>même</b> utilisation ($0{,}5$ chacune). $U(\tau)=1{,}5\le m=2$ et $U_{\max}=0{,}5\le1$ : d'après le Théorème 84 (Question 32), ce système est faisable. Hyperpériode (le motif de relâchements se répète après ce délai — voir Question 30) : $H=\text{lcm}(2,6,12)=12$.</p>
+<p><span class="lead">Règle EDF global</span> À chaque instant, les jobs actifs sont triés par <b>deadline absolue croissante</b> — pas de priorité fixée à l'avance, la priorité de chaque job dépend de sa propre deadline. Les $2$ jobs actifs de plus haute priorité (deadline la plus proche) tournent, un par processeur, migration autorisée.</p>
+</div>
+
+<h3>Construction du planning</h3>
+<div class="concept">
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 680 162" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="97.2" y1="18" x2="97.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="97.2" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="148.3" y1="18" x2="148.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="148.3" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="199.5" y1="18" x2="199.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="199.5" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="250.7" y1="18" x2="250.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="250.7" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="301.8" y1="18" x2="301.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="301.8" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="353.0" y1="18" x2="353.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="353.0" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="404.2" y1="18" x2="404.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="404.2" y="146" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="455.3" y1="18" x2="455.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="455.3" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="506.5" y1="18" x2="506.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="506.5" y="146" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="557.7" y1="18" x2="557.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="557.7" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="608.8" y1="18" x2="608.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="608.8" y="146" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="660.0" y1="18" x2="660.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="660.0" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="660.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="71.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="97.2" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="122.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="148.3" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="173.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="199.5" y="22.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="225.1" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="250.7" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="276.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="301.8" y="22.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="327.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="353.0" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="378.6" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="404.2" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="429.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="455.3" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="480.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="506.5" y="22.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="532.1" y="48.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="557.7" y="22.0" width="51.2" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="583.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="660.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="71.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="97.2" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="122.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="148.3" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="173.9" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="250.7" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="276.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="353.0" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="378.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="404.2" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="429.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="455.3" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="480.9" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+</svg>
+<p class="caption">Ordonnancement EDF global, construit et vérifié pas à pas sur $[0,12)$.</p>
+</div>
+</div>
+
+<h3>Préemptions et migrations</h3>
+<div class="concept">
+<p><span class="lead">$\tau_1$ ($C_1=1$, deadline la plus courte à chaque réveil)</span> Chaque job tient dans un seul quantum et tourne toujours dès son réveil (elle a systématiquement la deadline la plus proche parmi les jobs actifs, vu $D_1=2$) — toujours sur $\pi_1$ dans cette construction, <b>aucune migration</b>, aucune préemption.</p>
+<p><span class="lead">$\tau_2$ ($C_2=3$)</span> Son premier job (relâché à $t=0$, deadline $6$) s'exécute en $[0,1)$ sur $\pi_2$, $[1,2)$ sur $\pi1$ — <b>migration</b> — puis $[2,3)$ sur $\pi_2$ — <b>seconde migration</b>. Entre-temps, ce job est préempté chaque fois qu'un job de $\tau_1$ se réveille avec une deadline plus proche. Le même schéma se répète pour son second job (relâché à $t=6$, deadline $12$).</p>
+<p><span class="lead">$\tau_3$ ($C_3=6$, deadline la plus lointaine)</span> Son unique job (relâché à $t=0$, deadline $12$) est réparti en six créneaux d'une unité, alternant constamment entre $\pi_1$ et $\pi_2$ au fil des réveils de $\tau_1$ et $\tau_2$ — <b>plusieurs préemptions et migrations</b> tout au long de son exécution, visibles sur le diagramme.</p>
+</div>
+
+<h3>Conclusion</h3>
+<div class="concept">
+<p>Toutes les deadlines sont respectées : $\tau_1$ termine chacun de ses $6$ jobs immédiatement, $\tau_2$ termine ses $2$ jobs bien avant $t=6$ et $t=12$, et $\tau_3$ accumule ses $6$ unités avant $t=12$ (en réalité, elle est terminée dès $t=10$ dans cette construction). Ce résultat est cohérent avec le test suffisant du Theorem 91 : $U(\tau)=1{,}5\le m-(m-1)U_{\max}=2-1\times0{,}5=1{,}5$ — la condition est satisfaite (à l'égalité), donc EDF global est garanti de réussir, ce que la construction confirme explicitement.</p>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 32</span>
+<span class="qtext">Provide a necessary and sufficient condition for the feasibility of implicit deadline systems upon multiprocessors. Provide a rigorous formal proof for both the necessity and the sufficiency of this condition.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Énoncer la condition nécessaire et suffisante de faisabilité pour les systèmes périodiques à deadline implicite sur multiprocesseur, puis prouver rigoureusement les deux directions : la nécessité (si faisable, alors la condition tient) et la suffisance (si la condition tient, alors faisable).</p>
+</div>
+
+<h3>Énoncé</h3>
+<div class="concept">
+<div class="def"><span class="lead">Théorème</span> Soit $\tau$ un système périodique à deadline implicite sur $m$ processeurs identiques. $\tau$ est faisable si et seulement si
+$$U(\tau) \le m \qquad \text{et} \qquad U_{\max}(\tau) \le 1$$
+où $U(\tau)=\sum_i U_i$ est l'utilisation totale et $U_{\max}(\tau)=\max_i U_i$ est l'utilisation de la tâche la plus chargée.</div>
+</div>
+
+<h3>Preuve de la nécessité</h3>
+<div class="concept">
+<p><span class="lead">Ce qu'il faut montrer</span> Si $\tau$ est faisable, alors $U(\tau)\le m$ <b>et</b> $U_{\max}\le1$. On prouve chaque partie séparément, par contraposée (on suppose la condition violée, et on montre que ça implique l'infaisabilité).</p>
+
+<p><span class="step-title">Partie 1 : nécessité de $U_{\max}\le1$.</span></p>
+<p>Supposons qu'il existe une tâche $\tau_i$ avec $U_i=C_i/T_i \gt 1$, c'est-à-dire $C_i \gt T_i=D_i$ (deadline implicite). Considère son premier job, relâché à $t=0$ avec deadline absolue $D_i$. Par la contrainte fondamentale du multiprocesseur (chapitre 6) : à tout instant, un job s'exécute sur <b>au plus un</b> processeur à la fois — il ne peut jamais bénéficier d'un "parallélisme intra-job", même avec $m$ processeurs disponibles. Donc, sur l'intervalle $[0,D_i)$, ce job ne peut recevoir au maximum que $D_i$ unités d'exécution (au rythme d'un seul processeur, pendant $D_i$ unités de temps). Comme $C_i \gt D_i$, ce job ne peut <b>jamais</b> accumuler les $C_i$ unités requises avant sa deadline, quel que soit l'ordonnanceur utilisé, quel que soit $m$. Le système est donc infaisable. Par contraposée : $\tau$ faisable $\Rightarrow$ $U_i\le1$ pour toute tâche $\Rightarrow$ $U_{\max}\le1$. $\blacksquare$</p>
+
+<p><span class="step-title">Partie 2 : nécessité de $U(\tau)\le m$.</span></p>
+<p>Soit $H=\text{lcm}(T_1,\dots,T_n)$ l'hyperpériode du système — le délai après lequel le motif de relâchements de toutes les tâches recommence à l'identique (voir Question 30 pour un exemple chiffré). Sur l'intervalle $[0,H)$, chaque tâche $\tau_i$ est relâchée exactement $H/T_i$ fois, et chaque job demande $C_i$ unités d'exécution. La <b>demande totale</b> de travail sur $[0,H)$ est donc :
+$$\sum_{i=1}^{n} \frac{H}{T_i}\cdot C_i = H\cdot\sum_{i=1}^{n}\frac{C_i}{T_i} = H\cdot U(\tau)$$
+La <b>capacité totale</b> disponible sur ce même intervalle est $m$ processeurs $\times$ $H$ unités de temps $= m\cdot H$. Pour que tous les jobs relâchés sur $[0,H)$ puissent terminer (a fortiori avant leurs deadlines respectives, qui tombent toutes dans $[0,H)$ ou juste après), il faut nécessairement que la demande totale ne dépasse pas la capacité totale disponible :
+$$H\cdot U(\tau) \le m\cdot H \quad\Longrightarrow\quad U(\tau)\le m$$
+Si cette inégalité était violée ($U(\tau) \gt m$), la demande totale de travail excéderait ce que $m$ processeurs peuvent physiquement fournir sur $[0,H)$, quelle que soit la façon dont on répartit ce travail dans le temps — le système serait infaisable par un simple argument de comptage. Par contraposée : $\tau$ faisable $\Rightarrow$ $U(\tau)\le m$. $\blacksquare$</p>
+</div>
+
+<h3>Preuve de la suffisance</h3>
+<div class="concept">
+<p><span class="lead">Ce qu'il faut montrer</span> Si $U(\tau)\le m$ et $U_{\max}\le1$, alors il existe un ordonnancement valide de $\tau$ sur $m$ processeurs. La stratégie : construire explicitement un tel ordonnancement, plutôt que de raisonner par l'absurde.</p>
+
+<p><span class="step-title">Étape 1 : le partage fluide idéal.</span> Imaginons un ordonnancement idéalisé (en temps continu, non réalisable tel quel) où chaque tâche $\tau_i$ reçoit, à <b>tout</b> instant réel $t$, un débit constant exactement égal à $U_i$ — comme si le CPU se répartissait en continu et proportionnellement. Sur n'importe quel intervalle $[0,t)$, $\tau_i$ reçoit alors exactement $U_i\cdot t$ unités de service. Ce partage est réalisable en tant que <i>modèle mathématique</i> (même s'il ne l'est pas physiquement) tant que la demande instantanée totale ne dépasse jamais la capacité : à tout instant, la somme des débits actifs est $\sum_i U_i = U(\tau)\le m$, ce qui tient dans la capacité de $m$ processeurs. Par construction, chaque job de $\tau_i$ relâché à $t_0$ avec deadline $t_0+T_i$ reçoit exactement $U_i\cdot T_i=C_i$ unités de service sur cette fenêtre — il termine <b>pile</b> à sa deadline, jamais en retard. Ce partage fluide est donc un ordonnancement valide (en temps continu) de $\tau$.</p>
+
+<p><span class="step-title">Étape 2 : de l'idéal continu au réalisable discret (PFair).</span> Le partage fluide n'est pas implémentable tel quel (il demanderait une granularité de temps infinitésimale et un nombre infini de préemptions). On construit à la place un ordonnancement <b>discret</b> $S:\tau\times\mathbb{N}\to\{0,1\}$ qui reste toujours proche de cet idéal, au sens du <b>lag</b> :
+$$\text{lag}(\tau_i,t) = U_i\cdot t - \sum_{\ell=0}^{t-1}S(\tau_i,\ell)$$
+Un tel ordonnancement <b>PFair</b>, respectant $-1\lt\text{lag}(\tau_i,t)\lt1$ pour toute tâche et tout instant discret $t$, peut toujours être construit dès que $U(\tau)\le m$ et $U_{\max}\le1$ (c'est le résultat central de la théorie PFair — voir Question 26 pour la construction explicite sur un exemple, et Baruah, Cohen, Plaxton &amp; Varvel pour l'algorithme général PF garantissant cette construction dans le cas général). Concrètement, à chaque quantum discret, on choisit les $m$ tâches actives dont l'écart au service idéal est le plus grand (les plus "en retard" relativement à leur rythme $U_i$), ce qui empêche mécaniquement le lag de sortir de l'intervalle $(-1,1)$.</p>
+
+<p><span class="step-title">Étape 3 : pourquoi le respect du lag garantit les deadlines.</span> Aux instants $t=\ell\cdot T_i$ (frontières de période de $\tau_i$, où tombe une deadline puisque $D_i=T_i$), le service idéal $U_i\cdot t=U_i\cdot\ell\cdot T_i=\ell\cdot C_i$ est un <b>entier</b>. Comme le service réel $\sum_{\ell=0}^{t-1}S(\tau_i,\ell)$ est lui aussi un entier (une somme de $0$ et de $1$), et que $|\text{lag}(\tau_i,t)|\lt1$ à cet instant, la seule possibilité est que le service réel soit <b>exactement égal</b> à $\ell\cdot C_i$. Chaque tâche a donc reçu, à chaque frontière de sa propre période, exactement le nombre d'unités requis par ses jobs précédents — aucune deadline n'est ratée.</p>
+
+<p><span class="lead">Conclusion</span> On a construit explicitement (par la voie fluide $\to$ PFair) un ordonnancement valide de $\tau$ sur $m$ processeurs, dès que $U(\tau)\le m$ et $U_{\max}\le1$. La condition est donc suffisante. $\blacksquare$</p>
+</div>
+
+<h3>Synthèse</h3>
+<div class="concept">
+<p>Les deux directions combinées établissent que $U(\tau)\le m$ et $U_{\max}\le1$ est une condition <b>nécessaire et suffisante</b> de faisabilité pour les systèmes périodiques à deadline implicite sur multiprocesseur identique. C'est un résultat remarquablement propre — comparable, dans son esprit, au test $U(\tau)\le1$ d'EDF en uniprocesseur (chapitre 4) — sauf qu'ici, contrairement à EDF seul, l'algorithme qui l'atteint effectivement (PFair) doit gérer explicitement la contrainte supplémentaire propre au multiprocesseur : qu'un job ne peut jamais s'exécuter en parallèle sur plusieurs processeurs à la fois.</p>
+<div class="remark"><span class="lead">Portée de la condition</span> Ce résultat est spécifique aux systèmes <b>périodiques</b> (ou au minimum synchrones) à deadline implicite. Pour des systèmes sporadiques généraux, ou des deadlines contraintes/arbitraires, la situation est nettement plus complexe (voir les anomalies d'ordonnancement, Question 25, et l'absence d'ordonnanceur en ligne optimal, Question 22) — cette condition nécessaire et suffisante ne s'étend pas automatiquement à ces cadres plus généraux.</div>
+</div>
+
+</div>
+</div>
+
+<div class="qcard">
+<div class="qhead">
+<span class="qnum">Question 33</span>
+<span class="qtext">To demonstrate that partitioning and global scheduling are incomparable, provide a specific task set and a configuration of m processors such that a feasible partition exists, yet no global Fixed Job Priority (FJP) scheduler can successfully schedule the system.</span>
+</div>
+<div class="answer">
+
+<div class="concept">
+<p><span class="lead">Ce qu'on te demande</span> Trouver un système de tâches et un nombre de processeurs $m$ tel que : (1) on peut le rendre faisable en le <b>partitionnant</b> (assignation statique tâche → cœur), mais (2) <b>aucun</b> ordonnanceur global à priorité fixe par job (FJP — chaque job garde une priorité fixée dès son relâchement, comme EDF ou DM) ne peut l'ordonnancer, quel que soit l'ordre de priorité choisi entre les jobs concurrents.</p>
+<p><span class="lead">Pourquoi c'est surprenant</span> On pourrait penser que l'ordonnancement global, plus flexible (il autorise la migration), est toujours au moins aussi bon que le partitionnement (plus rigide, aucune migration). Ce contre-exemple montre que c'est faux : la flexibilité de bouger les tâches d'un processeur à l'autre ne compense pas toujours la rigidité d'avoir figé les priorités des jobs à l'avance.</p>
+</div>
+
+<h3>Le système et la partition qui fonctionne</h3>
+<div class="concept">
+<table>
+<tr><th>$\tau_i$</th><th>$C_i$</th><th>$D_i$</th><th>$T_i$</th><th>$U_i$</th></tr>
+<tr><td>$\tau_1$</td><td>2</td><td>2</td><td>3</td><td>0,667</td></tr>
+<tr><td>$\tau_2$</td><td>3</td><td>3</td><td>4</td><td>0,75</td></tr>
+<tr><td>$\tau_3$</td><td>4</td><td>12</td><td>12</td><td>0,333</td></tr>
+<tr><td>$\tau_4$</td><td>3</td><td>12</td><td>12</td><td>0,25</td></tr>
+</table>
+<p>On prend $m=2$ processeurs. Remarque importante sur $\tau_1$ et $\tau_2$ : $C_1=D_1$ et $C_2=D_2$. Ça veut dire que leurs jobs n'ont <b>aucune marge</b> : dès qu'un job de $\tau_1$ ou $\tau_2$ se réveille, il doit démarrer <b>immédiatement</b> et tourner sans la moindre interruption, sinon il rate sa deadline à coup sûr.</p>
+<p><span class="step-title">La partition qui marche :</span> on assigne statiquement $\{\tau_1,\tau_3\}$ au processeur $\pi_1$, et $\{\tau_2,\tau_4\}$ au processeur $\pi_2$, chaque cœur étant ensuite ordonnancé localement avec EDF.</p>
+<div class="diagram">
+<svg viewBox="0 0 246 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="230" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="230" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="230" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="230" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="230" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="75.3" width="70.0" height="110.7" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="133.7" font-size="9" fill="white" text-anchor="middle">τ1</text>
+<rect x="56.0" y="20.0" width="70.0" height="55.3" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="50.7" font-size="9" fill="white" text-anchor="middle">τ3</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="61.5" width="70.0" height="124.5" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="126.8" font-size="9" fill="white" text-anchor="middle">τ2</text>
+<rect x="146.0" y="20.0" width="70.0" height="41.5" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="43.8" font-size="9" fill="white" text-anchor="middle">τ4</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<line x1="42" y1="186.0" x2="230" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+<p class="caption">$\pi_1$ : $U_1+U_3=0{,}667+0{,}333=1{,}0$. $\pi_2$ : $U_2+U_4=0{,}75+0{,}25=1{,}0$. Chaque cœur est rempli exactement à $100\%$ — faisable avec EDF localement (Theorem 53, chapitre 4).</p>
+</div>
+</div>
+
+<h3>Pourquoi aucun ordonnanceur global FJP ne peut réussir</h3>
+<div class="concept">
+<p><span class="lead">Le point de départ du raisonnement</span> Regarde l'instant $t=0$ : les quatre tâches se réveillent toutes en même temps (cas synchrone). Comme $C_1=D_1$ et $C_2=D_2$, il est <b>obligatoire</b> de servir immédiatement tous les jobs de $\tau_1$ et $\tau_2$ — n'importe quel ordonnanceur qui voudrait faire autrement rate une deadline instantanément. Avec $2$ processeurs, $\tau_1$ et $\tau_2$ occupent donc entièrement les deux cœurs sur $[0,2)$ (le temps que dure le job de $\tau_1$).</p>
+<p><span class="lead">La conséquence pour $\tau_3$ et $\tau_4$</span> Peu importe la priorité fixe qu'on choisit de leur donner l'un par rapport à l'autre (c'est ça, "FJP" : chaque job garde sa priorité fixée dès son relâchement — donc il n'y a que deux choix possibles : $J_3\succ J_4$ ou $J_4\succ J_3$), l'un des deux sera systématiquement repoussé derrière $\tau_1$ et $\tau_2$ dès qu'elles se réveillent. Voici ce qui se passe concrètement avec le choix $J_3\succ J_4$ (l'autre choix, $J_4\succ J_3$, échoue de façon symétrique) :</p>
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3</span>
+<span><span class="sw" style="background:#8a6a3a"></span>τ4</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 680 175" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="46.0" y1="18" x2="46.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="46.0" y="146" font-size="9" fill="#888" text-anchor="middle">0</text>
+<line x1="97.2" y1="18" x2="97.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="97.2" y="146" font-size="9" fill="#888" text-anchor="middle">1</text>
+<line x1="148.3" y1="18" x2="148.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="148.3" y="146" font-size="9" fill="#888" text-anchor="middle">2</text>
+<line x1="199.5" y1="18" x2="199.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="199.5" y="146" font-size="9" fill="#888" text-anchor="middle">3</text>
+<line x1="250.7" y1="18" x2="250.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="250.7" y="146" font-size="9" fill="#888" text-anchor="middle">4</text>
+<line x1="301.8" y1="18" x2="301.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="301.8" y="146" font-size="9" fill="#888" text-anchor="middle">5</text>
+<line x1="353.0" y1="18" x2="353.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="353.0" y="146" font-size="9" fill="#888" text-anchor="middle">6</text>
+<line x1="404.2" y1="18" x2="404.2" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="404.2" y="146" font-size="9" fill="#888" text-anchor="middle">7</text>
+<line x1="455.3" y1="18" x2="455.3" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="455.3" y="146" font-size="9" fill="#888" text-anchor="middle">8</text>
+<line x1="506.5" y1="18" x2="506.5" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="506.5" y="146" font-size="9" fill="#888" text-anchor="middle">9</text>
+<line x1="557.7" y1="18" x2="557.7" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="557.7" y="146" font-size="9" fill="#888" text-anchor="middle">10</text>
+<line x1="608.8" y1="18" x2="608.8" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="608.8" y="146" font-size="9" fill="#888" text-anchor="middle">11</text>
+<line x1="660.0" y1="18" x2="660.0" y2="132" stroke="#e3e0d8" stroke-width="1"/>
+<text x="660.0" y="146" font-size="9" fill="#888" text-anchor="middle">12</text>
+<text x="4" y="48.0" font-size="12" fill="#222" font-weight="bold">π1</text>
+<line x1="46" y1="44.0" x2="660.0" y2="44.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="97.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="148.3" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="173.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="199.5" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="250.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="301.8" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="327.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="353.0" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="404.2" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="455.3" y="22.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="480.9" y="48.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="506.5" y="22.0" width="102.3" height="44" fill="#7a3b2e" opacity="0.85" rx="2"/>
+<text x="557.7" y="48.0" font-size="10" fill="white" text-anchor="middle">τ1</text>
+<rect x="608.8" y="22.0" width="51.2" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="634.4" y="48.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<text x="4" y="106.0" font-size="12" fill="#222" font-weight="bold">π2</text>
+<line x1="46" y1="102.0" x2="660.0" y2="102.0" stroke="#ccc" stroke-width="1"/>
+<rect x="46.0" y="80.0" width="102.3" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="97.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="148.3" y="80.0" width="102.3" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="199.5" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="250.7" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="276.2" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="301.8" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="327.4" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="353.0" y="80.0" width="51.2" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="378.6" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="404.2" y="80.0" width="51.2" height="44" fill="#3a5ea6" opacity="0.85" rx="2"/>
+<text x="429.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ3</text>
+<rect x="455.3" y="80.0" width="51.2" height="44" fill="#8a6a3a" opacity="0.85" rx="2"/>
+<text x="480.9" y="106.0" font-size="10" fill="white" text-anchor="middle">τ4</text>
+<rect x="506.5" y="80.0" width="102.3" height="44" fill="#3a5e56" opacity="0.85" rx="2"/>
+<text x="557.7" y="106.0" font-size="10" fill="white" text-anchor="middle">τ2</text>
+<rect x="608.8" y="80.0" width="51.2" height="44" fill="none" stroke="#b23b3b" stroke-width="1.5" stroke-dasharray="3,2"/>
+<text x="634.4" y="106.0" font-size="9" fill="#b23b3b" text-anchor="middle" font-style="italic">idle</text>
+<line x1="660.0" y1="14" x2="660.0" y2="136" stroke="#b23b3b" stroke-width="2" stroke-dasharray="4,3"/>
+<text x="660.0" y="10" font-size="16" text-anchor="middle">💣</text>
+<text x="660.0" y="150" font-size="9" fill="#b23b3b" text-anchor="middle" font-weight="bold">τ4 rate sa deadline</text>
+</svg>
+<p class="caption">Ordonnancement global FJP construit et vérifié pas à pas, avec $J_3\succ J_4$. $\tau_4$ n'accumule que $2$ unités sur ses $3$ requises avant $t=12$ : deadline ratée.</p>
+</div>
+<p><span class="step-title">Le "aha" — regarde bien le dernier créneau :</span> sur $[11,12)$, $\pi_1$ exécute le dernier morceau de $\tau_4$ (in extremis), mais $\pi_2$ reste <b>inactif</b> ! Il y avait pourtant de la place libre pour terminer $\tau_4$ plus tôt — le problème n'est <b>pas</b> un manque de capacité totale (on a vérifié $U(\tau)=2=m$ exactement), c'est que la priorité de $\tau_4$ a été fixée trop bas dès le départ, et un ordonnanceur FJP ne peut pas revenir en arrière une fois cette priorité choisie.</p>
+</div>
+
+<h3>Conclusion</h3>
+<div class="concept">
+<p><span class="lead">Ce que ce contre-exemple démontre</span> Avec la partition $\{\tau_1,\tau_3\}\,/\,\{\tau_2,\tau_4\}$, le système est parfaitement faisable — chaque cœur est ordonnancé indépendamment par EDF, sans jamais rater de deadline. Mais <b>aucun</b> choix de priorité fixe entre $\tau_3$ et $\tau_4$ ne permet à un ordonnanceur global FJP de réussir : $\tau_1$ et $\tau_2$ monopolisent obligatoirement les deux processeurs à chaque réveil simultané, et celle des deux tâches restantes qui hérite de la priorité la plus basse est condamnée à rater sa deadline.</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Ce résultat (couplé à l'exemple inverse du chapitre 6 — un système faisable en global mais pas en partitionné) prouve que <b>partitionné et global sont incomparables</b> : ni l'un ni l'autre ne domine systématiquement l'autre. Le "aha" à citer si le prof demande pourquoi : la rigidité d'une priorité FJP fixée à l'avance peut empêcher d'exploiter une capacité qui, elle, est pourtant bien présente dans le système (ici, le processeur inactif sur $[11,12)$).</div>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

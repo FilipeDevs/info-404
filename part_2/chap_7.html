@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 7 — Fiche de révision — Partitioning</title>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true } };
+</script>
+<script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+<style>
+  :root{
+    --bg:#fbfaf8; --ink:#242322; --sub:#68655e; --accent:#7a3b2e; --border:#ddd8cd;
+    --shade:#f2efe8; --shade2:#eef3ef; --formal:#f2f0eb; --formalline:#4a4640;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink); font-family: Georgia, "Iowan Old Style", serif;
+    line-height:1.58; max-width:840px; margin:0 auto; padding:2rem 1.3rem 5rem; font-size:16.5px;
+  }
+  h1{font-size:1.7rem; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:.4rem; margin-bottom:.2rem;}
+  .subtitle{color:var(--sub); font-style:italic; margin-top:0; font-size:.95rem;}
+  h2{font-size:1.32rem; color:var(--accent); margin-top:2.6rem; padding-bottom:.2rem; border-bottom:1px solid var(--border);}
+  h3{font-size:1.05rem; color:var(--ink); margin:1.8rem 0 .5rem; font-family:Helvetica,Arial,sans-serif; font-weight:700;}
+  h3 .n{color:var(--accent);}
+  .toc{background:var(--shade); border:1px solid var(--border); border-radius:6px; padding:.9rem 1.2rem; margin:1.3rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.86rem;}
+  .toc a{color:var(--accent); text-decoration:none;}
+  .toc ol{margin:.3rem 0;}
+  p{margin:.5rem 0;}
+  .concept{border:1px solid var(--border); border-radius:8px; padding:.85rem 1.1rem; margin:.9rem 0; background:#fff;}
+  .concept p{margin:.35rem 0;}
+  .lead{font-weight:700; font-family:Helvetica,Arial,sans-serif; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin-right:.3rem;}
+  .def{background:var(--shade); border-left:3px solid var(--accent); padding:.6rem .9rem; margin:.6rem 0; border-radius:0 4px 4px 0;}
+  .def .lead{color:var(--accent);}
+  .remark{border-left:3px solid var(--sub); padding:.5rem .9rem; margin:.6rem 0; background:transparent; font-size:.95rem;}
+  .remark .lead{color:var(--sub);}
+  .story{border:1px solid var(--border); border-radius:8px; padding:.9rem 1.1rem; margin:.8rem 0; background:#fdfcfa;}
+  .story-title{font-family:Helvetica,Arial,sans-serif; font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:#3a5e56; margin-bottom:.4rem;}
+  .story .step-title{font-weight:700; color:#3a5e56;}
+  .formal{background:var(--formal); border-left:4px solid var(--formalline); border-radius:0 6px 6px 0; padding:.7rem 1rem; margin:.8rem 0; font-size:.91rem;}
+  .formal .lead{color:var(--formalline);}
+  table{border-collapse:collapse; width:100%; margin:.7rem 0; font-family:Helvetica,Arial,sans-serif; font-size:.87rem;}
+  th,td{border:1px solid var(--border); padding:.4rem .55rem; text-align:center;}
+  th{background:var(--shade); font-weight:700;}
+  .diagram{background:#fff; border:1px solid var(--border); border-radius:6px; padding:.8rem; margin:.7rem 0; text-align:center;}
+  .diagram svg{max-width:100%; height:auto;}
+  .caption{font-family:Helvetica,Arial,sans-serif; font-size:.78rem; color:var(--sub); margin-top:.3rem;}
+  .divider{border:none; border-top:1px solid var(--border); margin:2.2rem 0;}
+  .eng{font-style:italic;}
+  ul,ol{padding-left:1.3rem; margin:.4rem 0;}
+  li{margin:.15rem 0;}
+  .formulaire{background:var(--shade2); border:1px solid var(--border); border-radius:6px; padding:1rem 1.2rem;}
+  .formulaire h4{margin:.9rem 0 .3rem; font-family:Helvetica,Arial,sans-serif; font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .analogie{background:#f7f2ec; border:1px solid var(--border); border-radius:6px; padding:.6rem .9rem; margin:.6rem 0; font-size:.94rem;}
+  .analogie .lead{color:#8a6a3a;}
+  .legend{display:flex; gap:1.1rem; flex-wrap:wrap; font-family:Helvetica,Arial,sans-serif; font-size:.8rem; margin:.4rem 0 .8rem; justify-content:center;}
+  .legend span.sw{display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:.35rem; vertical-align:-1px;}
+  .side-by-side{display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; align-items:flex-start;}
+  .side-by-side .col{flex:1 1 260px; min-width:220px;}
+</style>
+</head>
+<body>
+
+<h1>Chapitre 7 — Fiche de révision</h1>
+<p class="subtitle">Partitioning — Ordonnancement multiprocesseur, INFO-F404. Comment répartir statiquement des tâches sur des cœurs ? Un problème de bin-packing, ses heuristiques, et deux tests de faisabilité (RM partitionné, EDF-FFDU). 🔍 = exemple chiffré, 📝 = version formelle.</p>
+
+<div class="toc">
+<b>Sommaire</b>
+<ol>
+<li><a href="#s70">Introduction : partitionner, c'est empaqueter</a></li>
+<li><a href="#s71">Les heuristiques gloutonnes</a></li>
+<li><a href="#s72">Illustration : FFDU vs WFDU</a></li>
+<li><a href="#s73">Illustration : la faiblesse de NFDU</a></li>
+<li><a href="#s74">Rate Monotonic partitionné</a></li>
+<li><a href="#s75">EDF partitionné : FFDU</a></li>
+<li><a href="#s76">Conclusion pratique</a></li>
+<li><a href="#formulaire">Fiche formules &amp; vocabulaire</a></li>
+</ol>
+</div>
+
+<hr class="divider">
+<h2 id="s70">7.0 — Introduction : partitionner, c'est empaqueter</h2>
+<div class="concept">
+<p><span class="lead">Rappel du chapitre 6</span> Partitionner, c'est assigner <b>statiquement</b> chaque tâche à un cœur fixe, une fois pour toutes. Une fois cette assignation faite, chaque cœur redevient un problème purement uniprocesseur (RM, DM, EDF... du chapitre 3/4). Ce chapitre ne s'intéresse qu'à <b>comment construire cette assignation</b>.</p>
+<p><span class="lead">Le lien avec le bin-packing</span> Ce chapitre se limite aux tâches à <b>deadline implicite</b> ($D_i = T_i$). Le problème revient exactement au <b>bin-packing</b> : on a $n$ objets (les tâches) de taille $U_i = C_i/T_i$, et on veut les ranger dans le moins de boîtes possible (les cœurs) de capacité $C$ — la capacité étant la plus grande utilisation totale que le scheduler local peut garantir : $1$ pour EDF (Theorem 53), $\ln 2 \approx 0.69$ pour RM (Corollary 34).</p>
+<div class="analogie"><span class="lead">Analogie</span> Comme ranger des valises (tailles différentes) dans le moins de coffres de voiture possible. Chaque coffre a une capacité fixe ; on veut utiliser le moins de coffres. Le seul détail temps-réel en plus : la "capacité" d'un coffre dépend de <i>qui</i> conduit (EDF remplit à 100%, RM seulement à $\ln 2 \approx 69\%$).</div>
+<div class="remark"><span class="lead">Mauvaise nouvelle</span> Le bin-packing est <b>NP-complet</b>. Il n'existe pas d'algorithme rapide garantissant la solution optimale (le moins de cœurs possible) pour tout système. D'où l'usage d'<b>heuristiques</b> : des algorithmes gloutons, rapides, mais qui peuvent parfois utiliser plus de cœurs que nécessaire.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s71">7.1 — Les heuristiques gloutonnes</h2>
+<div class="concept">
+<p><span class="lead">Le principe</span> On construit la solution "morceau par morceau" : on trie d'abord les tâches (par utilisation croissante ou décroissante), puis pour chaque tâche on choisit un cœur selon une règle fixe — <b>sans jamais revenir en arrière</b> sur les décisions déjà prises.</p>
+<p>Le cours distingue quatre règles pour choisir <i>quel</i> cœur recevoir la tâche courante :</p>
+<div class="def"><span class="lead">First-Fit</span> Parcourir les cœurs dans un ordre fixe $\pi_1, \pi_2, \dots$ et assigner la tâche au <b>premier</b> cœur où elle rentre (assez de capacité restante).</div>
+<div class="def"><span class="lead">Best-Fit</span> Assigner la tâche au cœur éligible qui a la <b>charge maximale</b> parmi ceux où elle rentre — c'est-à-dire celui qui laissera le moins d'espace libre après l'ajout.</div>
+<div class="def"><span class="lead">Worst-Fit</span> Assigner la tâche au cœur éligible qui a la <b>charge minimale</b> — celui qui a le plus de place libre.</div>
+<div class="def"><span class="lead">Next-Fit</span> Assigner la tâche au cœur <b>courant</b> tant qu'elle y rentre ; sinon, passer définitivement au cœur suivant. On ne revient <b>jamais</b> à un cœur déjà quitté.</div>
+<p><span class="lead">En pratique, sous EDF</span> on combine toujours ces règles avec un tri par utilisation <b>décroissante</b> — d'où les noms <b>FFDU</b>, <b>BFDU</b>, <b>WFDU</b>, <b>NFDU</b> <span class="eng">(…Decreasing Utilisation)</span>. Trier en décroissant maximise l'utilisation de chaque cœur dès le départ, ce qui réduit en pratique le nombre total de cœurs utilisés.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s72">7.2 — Illustration : FFDU vs WFDU</h2>
+<div class="story">
+<div class="story-title">🔍 Trois tâches, deux processeurs</div>
+<p>Considérons trois tâches à deadline implicite : $U_1=0.6$, $U_2=0.4$, $U_3=0.4$ (déjà triées par ordre décroissant), et $m=2$ processeurs.</p>
+<div class="side-by-side">
+<div class="col">
+<p><span class="step-title">FFDU (First-Fit) :</span></p>
+<ul>
+<li>$\tau_1$ (0.6) → $\pi_1$ : charge 0.6</li>
+<li>$\tau_2$ (0.4) → $\pi_1$ : $0.6+0.4=1.0$ ✓ (premier cœur où ça rentre) → charge 1.0</li>
+<li>$\tau_3$ (0.4) → $\pi_1$ plein (1.0+0.4>1) → $\pi_2$ : charge 0.4</li>
+</ul>
+<p><b>Résultat :</b> $\pi_1=1.0$, $\pi_2=0.4$.</p>
+</div>
+<div class="col">
+<p><span class="step-title">WFDU (Worst-Fit) :</span></p>
+<ul>
+<li>$\tau_1$ (0.6) → $\pi_1$ (vide, choix arbitraire) : charge 0.6</li>
+<li>$\tau_2$ (0.4) → $\pi_1$ donnerait 1.0, $\pi_2$ donnerait 0.4 → on choisit le <b>moins chargé</b> : $\pi_2$ : charge 0.4</li>
+<li>$\tau_3$ (0.4) → $\pi_1$ donnerait 1.0, $\pi_2$ donnerait 0.8 → $\pi_1$ (encore le moins chargé après ajout) : charge 1.0</li>
+</ul>
+<p><b>Résultat :</b> $\pi_1=1.0$, $\pi_2=0.8$.</p>
+</div>
+</div>
+<p><span class="step-title">Le "aha" :</span> les deux heuristiques utilisent le même nombre de cœurs (2) ici, mais pas du tout la même répartition. FFDU <b>remplit</b> $\pi_1$ à ras bord et laisse $\pi_2$ à moitié vide ; WFDU <b>équilibre</b> la charge entre les deux cœurs.</p>
+<div class="remark"><span class="lead">Pourquoi ça compte</span> Si une nouvelle tâche $\tau_4$ avec $U_4=0.3$ arrive ensuite : avec FFDU, $\pi_2$ a $0.6$ de libre → elle rentre. Avec WFDU, le cœur le moins chargé ($\pi_2$, $0.2$ de libre) ne peut pas l'accueillir → il faudrait un 3<sup>e</sup> cœur ! FFDU (qui remplit vite) laisse ici plus de marge pour l'avenir ; WFDU (qui équilibre) est plus robuste si les charges existantes varient. Ni l'une ni l'autre n'est universellement meilleure — cela dépend de l'objectif (nombre de cœurs, équilibrage, extensibilité future).</div>
+</div>
+
+<hr class="divider">
+<h2 id="s73">7.3 — Illustration : la faiblesse de NFDU</h2>
+<div class="story">
+<div class="story-title">🔍 Quand ne jamais revenir en arrière coûte cher</div>
+<p>Six tâches, déjà triées par utilisation décroissante : $U=(0.6,\ 0.6,\ 0.5,\ 0.5,\ 0.4,\ 0.4)$. Utilisation totale $U(\tau)=3.0$ — il faut donc <b>au moins 3</b> processeurs, quelle que soit la méthode (aucun cœur ne peut dépasser $U=1$).</p>
+<div class="legend">
+<span><span class="sw" style="background:#7a3b2e"></span>τ1 (0.6)</span>
+<span><span class="sw" style="background:#3a5e56"></span>τ2 (0.6)</span>
+<span><span class="sw" style="background:#3a5ea6"></span>τ3 (0.5)</span>
+<span><span class="sw" style="background:#8a6a3a"></span>τ4 (0.5)</span>
+<span><span class="sw" style="background:#b23b3b"></span>τ5 (0.4)</span>
+<span><span class="sw" style="background:#5c4a8a"></span>τ6 (0.4)</span>
+</div>
+<div class="side-by-side">
+<div class="col">
+<p style="text-align:center"><b>NFDU</b> — 4 processeurs utilisés</p>
+<div class="diagram">
+<svg viewBox="0 0 426 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="410" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="410" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="410" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="410" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="410" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="410" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="86.4" width="70.0" height="99.6" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="139.2" font-size="9" fill="white" text-anchor="middle">t1</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="86.4" width="70.0" height="99.6" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="139.2" font-size="9" fill="white" text-anchor="middle">t2</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<rect x="236.0" y="103.0" width="70.0" height="83.0" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="147.5" font-size="9" fill="white" text-anchor="middle">t3</text>
+<rect x="236.0" y="20.0" width="70.0" height="83.0" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="64.5" font-size="9" fill="white" text-anchor="middle">t4</text>
+<text x="271.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π3</text>
+<rect x="326.0" y="119.6" width="70.0" height="66.4" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="361.0" y="155.8" font-size="9" fill="white" text-anchor="middle">t5</text>
+<rect x="326.0" y="53.2" width="70.0" height="66.4" fill="#5c4a8a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="361.0" y="89.4" font-size="9" fill="white" text-anchor="middle">t6</text>
+<text x="361.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π4</text>
+<line x1="42" y1="186.0" x2="410" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+</div>
+<p class="caption">$\tau_1$ (0.6) occupe $\pi_1$ ; $\tau_2$ (0.6) ne rentre plus avec $\tau_1$ → NFDU passe <b>définitivement</b> à $\pi_2$, sans jamais revenir remplir les 0.4 restants de $\pi_1$.</p>
+</div>
+<div class="col">
+<p style="text-align:center"><b>FFDU</b> — 3 processeurs (optimal)</p>
+<div class="diagram">
+<svg viewBox="0 0 336 220" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="189.0" font-size="9" fill="#888" text-anchor="end">0.0</text>
+<line x1="42" y1="152.8" x2="320" y2="152.8" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="155.8" font-size="9" fill="#888" text-anchor="end">0.2</text>
+<line x1="42" y1="119.6" x2="320" y2="119.6" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="122.6" font-size="9" fill="#888" text-anchor="end">0.4</text>
+<line x1="42" y1="86.4" x2="320" y2="86.4" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="89.4" font-size="9" fill="#888" text-anchor="end">0.6</text>
+<line x1="42" y1="53.2" x2="320" y2="53.2" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="56.2" font-size="9" fill="#888" text-anchor="end">0.8</text>
+<line x1="42" y1="20.0" x2="320" y2="20.0" stroke="#e3e0d8" stroke-width="1"/>
+<text x="38" y="23.0" font-size="9" fill="#888" text-anchor="end">1.0</text>
+<rect x="56.0" y="86.4" width="70.0" height="99.6" fill="#7a3b2e" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="139.2" font-size="9" fill="white" text-anchor="middle">t1</text>
+<rect x="56.0" y="20.0" width="70.0" height="66.4" fill="#b23b3b" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="91.0" y="56.2" font-size="9" fill="white" text-anchor="middle">t5</text>
+<text x="91.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π1</text>
+<rect x="146.0" y="86.4" width="70.0" height="99.6" fill="#3a5e56" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="139.2" font-size="9" fill="white" text-anchor="middle">t2</text>
+<rect x="146.0" y="20.0" width="70.0" height="66.4" fill="#5c4a8a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="181.0" y="56.2" font-size="9" fill="white" text-anchor="middle">t6</text>
+<text x="181.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π2</text>
+<rect x="236.0" y="103.0" width="70.0" height="83.0" fill="#3a5ea6" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="147.5" font-size="9" fill="white" text-anchor="middle">t3</text>
+<rect x="236.0" y="20.0" width="70.0" height="83.0" fill="#8a6a3a" opacity="0.85" stroke="#fff" stroke-width="1"/>
+<text x="271.0" y="64.5" font-size="9" fill="white" text-anchor="middle">t4</text>
+<text x="271.0" y="202.0" font-size="10" fill="#222" text-anchor="middle" font-weight="bold">π3</text>
+<line x1="42" y1="186.0" x2="320" y2="186.0" stroke="#999" stroke-width="1.2"/>
+</svg>
+</div>
+<p class="caption">FFDU <b>revient</b> chercher un cœur déjà ouvert pour $\tau_5$ et $\tau_6$ (les 0.4 restants sur $\pi_1$ et $\pi_2$), et atteint l'optimum : 3 cœurs.</p>
+</div>
+</div>
+<p><span class="step-title">Le "aha" :</span> NFDU perd la trace des cœurs déjà entamés dès qu'il en ouvre un nouveau. Les $0.4$ de marge laissés sur $\pi_1$ et $\pi_2$ restent à jamais inutilisés — <b>fragmentation</b> pure — et NFDU se retrouve à utiliser un cœur de plus que nécessaire, alors même que <i>chaque</i> tâche individuelle a une utilisation $\leqslant 0.6$.</p>
+<div class="remark"><span class="lead">Complexité</span> Les trois heuristiques ont la même complexité globale : $O(n\log n)$ pour le tri initial, puis $O(n)$ (NFDU) à $O(n \cdot m)$ (FFDU/WFDU, un balayage des cœurs par tâche) pour le placement.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s74">7.4 — Rate Monotonic partitionné</h2>
+<div class="concept">
+<p><span class="lead">Rappel uniprocesseur</span> Le Theorem 33 (chapitre 3) donne un test suffisant pour RM sur un seul cœur : $U(\tau) \leqslant n(2^{1/n}-1)$, où $n$ est le nombre de tâches.</p>
+<div class="def"><span class="lead">Test suffisant — RM partitionné</span> Sur un cœur $\pi$ recevant $n_\pi$ tâches, le même test s'applique localement :
+$$U(\tau) \leqslant n_\pi\left(2^{\frac{1}{n_\pi}} - 1\right)$$
+où $U(\tau)$ est ici la somme des utilisations des tâches assignées à $\pi$.</div>
+</div>
+
+<div class="story">
+<div class="story-title">🔍 Pourquoi cette borne est mauvaise : jusqu'à 50% de capacité perdue</div>
+<p>Prenons $m$ processeurs et $m+1$ tâches, toutes avec $T_i=1$ et $C_i = \sqrt{2}-1+\epsilon$ (donc $U_i \approx 0.4142+\epsilon$, un tout petit peu plus que $\sqrt2-1$).</p>
+<p><span class="step-title">Le piège :</span> avec $m+1$ tâches à répartir sur $m$ cœurs, il y a forcément (pigeonhole) un cœur $\pi_\ell$ qui reçoit <b>au moins deux</b> tâches. Sur ce cœur, $n_\pi=2$, et le test exige :</p>
+<div class="formal">
+<span class="lead">📝 Calcul numérique (avec $\epsilon=0.001$)</span>
+<p>$C_i = \sqrt{2}-1+\epsilon \approx 0.4152$. Borne pour $n_\pi=2$ : $2(2^{1/2}-1) = 2(\sqrt2-1) \approx 0.8284$. Somme des deux tâches sur $\pi_\ell$ : $2 \times 0.4152 \approx 0.8304$.</p>
+<p>$0.8304 \gt 0.8284$ — la somme <b>dépasse</b> la borne admissible ! Le test suffisant échoue, quel que soit le partitionnement choisi (n'importe quelle paire de ces tâches identiques donne le même dépassement).</p>
+</div>
+<p><span class="step-title">La conclusion générale :</span> en faisant tendre $\epsilon \to 0$ et $m \to \infty$, ce test ne peut <b>jamais</b> garantir une utilisation totale au-delà de $\sqrt2-1 \approx 41\%$ de la capacité de la plateforme — alors qu'on sait (borne EDF) que jusqu'à $100\%$ serait exploitable avec un ordonnanceur optimal. Dans le pire cas, on perd donc environ <b>la moitié</b> de la capacité de la plateforme avec ce test.</p>
+</div>
+
+<hr class="divider">
+<h2 id="s75">7.5 — EDF partitionné : FFDU</h2>
+<div class="concept">
+<p><span class="lead">Pourquoi EDF s'en sort mieux</span> Sous EDF, le test uniprocesseur est <b>exact</b> (nécessaire et suffisant) : $U(\tau) \leqslant 1$ (Theorem 53). La borne locale par cœur n'a donc pas le même problème de "gâchis" structurel que RM — chaque cœur peut en principe être rempli jusqu'à $100\%$.</p>
+<div class="formal">
+<span class="lead">📝 Theorem 78 — Test suffisant EDF-FFDU</span>
+<p>Un système sporadique à deadline implicite $\tau$ est ordonnançable avec FFDU si :
+$$U(\tau) \leqslant \frac{m+1}{2} \quad \text{et} \quad U_{\max} \leqslant 1$$
+où $U_{\max} \overset{\text{def}}{=} \max\{U(\tau_i) \mid i=1,\dots,n\}$ et $m$ est le nombre de processeurs. <span class="eng">(La preuve n'est pas au programme.)</span></p>
+</div>
+<p><span class="lead">Comment lire cette borne</span> $U_{\max}\leqslant1$ est trivial (une seule tâche ne peut de toute façon jamais dépasser un cœur entier — cf. chapitre 6). La vraie contrainte est $U(\tau) \leqslant \frac{m+1}{2}$ : avec $m$ processeurs, on peut garantir une utilisation totale allant jusqu'à environ la <b>moitié</b> de $m$ processeurs supplémentaires par rapport à $m/2$. Concrètement, pour $m=4$ : $U(\tau) \leqslant 2.5$, alors que la capacité théorique totale est $4$.</p>
+<div class="remark"><span class="lead">Comparaison avec 7.4</span> Ce test FFDU est <i>lui aussi</i> seulement suffisant (pas nécessaire) — mais il n'a pas la même pathologie extrême que RM partitionné : il garantit toujours une fraction significative de la capacité, alors que RM partitionné peut s'effondrer vers $\sqrt2-1 \approx 41\%$ dans le pire cas.</div>
+</div>
+
+<hr class="divider">
+<h2 id="s76">7.6 — Conclusion pratique</h2>
+<div class="concept">
+<p>Le partitionnement transforme un problème multiprocesseur en une collection de sous-problèmes uniprocesseur — au prix d'un problème de bin-packing NP-complet pour construire l'assignation. Les heuristiques gloutonnes (FFDU, WFDU, BFDU, NFDU) donnent des solutions rapides mais sous-optimales, chacune avec ses forces (FFDU : remplissage rapide ; WFDU : équilibrage ; NFDU : le plus simple, mais le plus fragile à la fragmentation). Les tests de faisabilité qui en découlent (RM partitionné, EDF-FFDU) restent eux aussi seulement <b>suffisants</b>, avec une perte de capacité garantie qui dépend fortement du choix du scheduler local (RM : jusqu'à 50% perdus dans le pire cas ; EDF : bien mieux, via Theorem 78).</p>
+<div class="remark"><span class="lead">Pour l'oral</span> Si on te demande "pourquoi ne pas juste utiliser NFDU partout, c'est le plus simple ?" — réponds avec l'exemple à 6 tâches : NFDU peut utiliser un cœur de plus que nécessaire simplement parce qu'il refuse de revenir en arrière, même quand chaque tâche individuelle est petite (ici $U_i \leqslant 0.6$).</div>
+</div>
+
+<hr class="divider">
+<h2 id="formulaire">Fiche formules &amp; vocabulaire</h2>
+<div class="formulaire">
+<h4>Bin-packing</h4>
+<p>Objets = tâches (taille $U_i=C_i/T_i$), boîtes = cœurs (capacité = $1$ sous EDF, $\ln 2$ sous RM). Objectif : minimiser le nombre de boîtes utilisées. NP-complet $\Rightarrow$ heuristiques gloutonnes.</p>
+<h4>Les quatre règles de placement</h4>
+<p><b>First-Fit</b> : premier cœur où ça rentre. <b>Best-Fit</b> : cœur éligible le plus chargé. <b>Worst-Fit</b> : cœur éligible le moins chargé. <b>Next-Fit</b> : cœur courant uniquement, jamais de retour en arrière. Combinées à un tri par utilisation décroissante : FFDU, BFDU, WFDU, NFDU.</p>
+<h4>RM partitionné</h4>
+<p>Test suffisant local : $U(\tau) \leqslant n_\pi(2^{1/n_\pi}-1)$ sur chaque cœur. Pathologie : peut perdre jusqu'à $\approx 50\%$ de la capacité de la plateforme dans le pire cas (limite $\sqrt2-1\approx41\%$ d'utilisation garantie quand $m\to\infty$).</p>
+<h4>EDF partitionné — FFDU (Theorem 78)</h4>
+<p>Test suffisant : $U(\tau) \leqslant \frac{m+1}{2}$ et $U_{\max}\leqslant1$. Bien meilleur comportement que RM partitionné dans le pire cas ; preuve hors programme.</p>
+<h4>Acronymes &amp; symboles</h4>
+<p>FFDU/BFDU/WFDU/NFDU (First/Best/Worst/Next-Fit Decreasing Utilisation), $n_\pi$ (nombre de tâches sur le cœur $\pi$), $U_{\max}$ (utilisation de la tâche la plus chargée), $m$ (nombre de processeurs).</p>
+</div>
+
+</body>
+</html>
